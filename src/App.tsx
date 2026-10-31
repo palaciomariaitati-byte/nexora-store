@@ -1260,7 +1260,7 @@ export default function App() {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => { setIsPortalOpen(false); window.location.hash = ''; }}>
             <img
-              src="/brand/logo-full.png"
+              src="/brand/logo-full.png?v=3"
               alt="Nexora One Engine"
               className="h-10 w-auto object-contain mix-blend-screen hover:opacity-90 transition"
             />
@@ -1752,7 +1752,7 @@ export default function App() {
                 {/* LOGO OFICIAL CON RESPLANDOR DIFUSO */}
                 <div className="relative py-2 px-4 flex items-center justify-center w-full">
                   <img
-                    src="/brand/logo-full.png"
+                    src="/brand/logo-full.png?v=3"
                     alt="Nexora One Engine Sovereign Architecture"
                     className="w-full max-w-[280px] h-auto object-contain mix-blend-screen transition-transform duration-500 group-hover:scale-105"
                     style={{ filter: 'drop-shadow(0 0 25px rgba(0, 242, 254, 0.35))' }}
