@@ -12,6 +12,11 @@ import {
   type PresencialPaymentMethod
 } from './lib/licensing';
 import { generateQrSvgString } from './lib/qrCode';
+import { generateCopilotResponse, COPILOT_KNOWLEDGE_BASE, type CopilotTopic } from './lib/noraCopilot';
+
+// --- ENTORNO Y BLINDAJE PERIMETRAL ---
+const APP_MODE = (import.meta.env.VITE_APP_MODE as string) || 'full';
+const IS_PUBLIC_ONLY = APP_MODE === 'public';
 
 // --- TIPOS DE DATOS ---
 export interface SystemItem {
@@ -311,10 +316,23 @@ export default function App() {
   } | null>(null);
   const [copiedKey, setCopiedKey] = useState(false);
 
-  const [portalTab, setPortalTab] = useState<'licenses' | 'payments' | 'catalog'>('licenses');
+  const [portalTab, setPortalTab] = useState<'licenses' | 'payments' | 'catalog' | 'copilot'>('licenses');
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [openAccordionId, setOpenAccordionId] = useState<string | null>(null);
+
+  // --- NORA COPILOT PARA EL BACKOFFICE ---
+  const [copilotMessages, setCopilotMessages] = useState<Array<{ sender: 'user' | 'nora'; text: string; timestamp: string }>>([
+    {
+      sender: 'nora',
+      text: 'Hola, soy Nora Copilot. Asistente técnico exclusivo para el operador del backoffice. ¿En qué tarea operativa puedo orientarle hoy?',
+      timestamp: 'Ahora'
+    }
+  ]);
+  const [copilotInput, setCopilotInput] = useState('');
+  const [isCopilotSending, setIsCopilotSending] = useState(false);
+  const [selectedCopilotTopic, setSelectedCopilotTopic] = useState<CopilotTopic | null>(null);
+  const copilotChatEndRef = useRef<HTMLDivElement>(null);
 
   // --- CATÁLOGO Y LICENCIAS DINÁMICAS (SINCRONIZADAS) ---
   const [systems, setSystems] = useState<SystemItem[]>(INITIAL_SYSTEMS);
@@ -424,6 +442,10 @@ export default function App() {
   useEffect(() => {
     const handleHash = () => {
       if (window.location.hash === '#admin') {
+        if (IS_PUBLIC_ONLY) {
+          window.location.hash = '';
+          return;
+        }
         if (isAdminAuthenticated) {
           setIsPortalOpen(true);
         } else {
@@ -1337,9 +1359,45 @@ export default function App() {
     }
   };
 
+  // --- NORA EN MODO COPILOT PARA EL BACKOFFICE ---
+  const handleSendCopilotChat = async (queryText?: string) => {
+    const textToSend = (typeof queryText === 'string' ? queryText : copilotInput).trim();
+    if (!textToSend || isCopilotSending) return;
+    if (!queryText) setCopilotInput('');
+
+    setCopilotMessages(prev => [...prev, { sender: 'user', text: textToSend, timestamp: 'Ahora' }]);
+    setIsCopilotSending(true);
+
+    try {
+      const activeCount = licenses.filter(l => getLicenseDynamicStatus(l).label === 'Activo').length;
+      const graceCount = licenses.filter(l => getLicenseDynamicStatus(l).label === 'En Gracia').length;
+      const resp = await generateCopilotResponse(textToSend, {
+        totalLicenses: licenses.length,
+        activeLicenses: activeCount,
+        graceLicenses: graceCount,
+        systemsCount: systems.length
+      });
+      setCopilotMessages(prev => [...prev, { sender: 'nora', text: resp, timestamp: 'Ahora' }]);
+    } catch {
+      setCopilotMessages(prev => [...prev, {
+        sender: 'nora',
+        text: 'Disculpe, ocurrió una demora en el procesamiento perimetral interno.',
+        timestamp: 'Ahora'
+      }]);
+    } finally {
+      setIsCopilotSending(false);
+      setTimeout(() => copilotChatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+    }
+  };
+
   // --- AUTENTICACIÓN ADMIN POR PIN SOBERANO ---
   const handleVerifyPin = (e: FormEvent) => {
     e.preventDefault();
+    if (IS_PUBLIC_ONLY) {
+      alert('Entorno público restringido. Consola administrativa desacoplada.');
+      setShowPinModal(false);
+      return;
+    }
     if (adminPinInput.trim() === '2026' || adminPinInput.trim() === '1984') {
       setIsAdminAuthenticated(true);
       setIsPortalOpen(true);
@@ -1515,7 +1573,7 @@ export default function App() {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => { setIsPortalOpen(false); window.location.hash = ''; }}>
             <img
-              src="/brand/logo-full.png?v=3"
+              src="/brand/logo-full.png?v=2026"
               alt="Nexora One Engine"
               className="h-10 w-auto object-contain mix-blend-screen hover:opacity-90 transition"
             />
@@ -1610,6 +1668,12 @@ export default function App() {
                   className={`px-3 py-1.5 rounded-lg transition ${portalTab === 'catalog' ? 'bg-[#00f2fe] text-slate-950 font-bold shadow-[0_0_15px_-3px_rgba(0,242,254,0.4)]' : 'text-slate-400 hover:text-white'}`}
                 >
                   Catálogo & Precios
+                </button>
+                <button
+                  onClick={() => setPortalTab('copilot')}
+                  className={`px-3 py-1.5 rounded-lg transition ${portalTab === 'copilot' ? 'bg-[#00f2fe] text-slate-950 font-bold shadow-[0_0_15px_-3px_rgba(0,242,254,0.4)]' : 'text-slate-400 hover:text-white'}`}
+                >
+                  🤖 Nora Copilot
                 </button>
               </div>
               <button
@@ -2028,6 +2092,174 @@ export default function App() {
               </div>
             </div>
           )}
+
+          {/* TAB 4: NORA COPILOT OPERATIVO DEL BACKOFFICE */}
+          {portalTab === 'copilot' && (
+            <div className="space-y-6">
+              <div className="p-6 rounded-3xl bg-gradient-to-br from-[#141822] via-[#0d121c] to-[#070b12] border border-cyan-500/30 shadow-2xl space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-[#090b0e] border border-cyan-400/40 flex items-center justify-center text-cyan-400 text-lg font-bold shadow-[0_0_15px_rgba(0,242,254,0.3)]">
+                      🤖
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-base sm:text-lg font-bold text-white font-mono uppercase tracking-wider">
+                          Nora Copilot — Terminal de Operaciones Internas
+                        </h2>
+                        <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+                          BACKOFFICE EXCLUSIVO
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-400 font-mono mt-0.5">
+                        Guía técnica interactiva para el operador: altas de sistemas, cobros presenciales, ciclo 30+5 y blindaje perimetral.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-xl">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>100% Cómputo Local (Sin Fugas)</span>
+                  </div>
+                </div>
+
+                {/* BOTONES DE CONSULTA RÁPIDA (CHIPS) */}
+                <div className="space-y-2">
+                  <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">
+                    Consultas Frecuentes del Operador:
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleSendCopilotChat('¿Cómo dar de alta y estructurar un nuevo sistema en el catálogo?')}
+                      className="px-3 py-1.5 rounded-xl bg-[#090b0e] hover:bg-white/10 border border-white/10 text-slate-300 hover:text-cyan-300 text-xs font-mono transition flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <span>📦</span>
+                      <span>Estructura de Sistemas</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSendCopilotChat('¿Cómo emitir una licencia en mostrador/presencial y cobrar en efectivo o CBU?')}
+                      className="px-3 py-1.5 rounded-xl bg-[#090b0e] hover:bg-white/10 border border-white/10 text-slate-300 hover:text-cyan-300 text-xs font-mono transition flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <span>🏪</span>
+                      <span>Emisión Presencial</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSendCopilotChat('¿Cómo funciona la regla de 30+5 días de gracia y qué hacer ante clientes en corte?')}
+                      className="px-3 py-1.5 rounded-xl bg-[#090b0e] hover:bg-white/10 border border-white/10 text-slate-300 hover:text-cyan-300 text-xs font-mono transition flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <span>⏳</span>
+                      <span>Regla 30 + 5 Días</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSendCopilotChat('¿Cómo modificar las cuentas de CBU, Mercado Pago y wallets USDT?')}
+                      className="px-3 py-1.5 rounded-xl bg-[#090b0e] hover:bg-white/10 border border-white/10 text-slate-300 hover:text-cyan-300 text-xs font-mono transition flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <span>💳</span>
+                      <span>Canales de Cobro</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSendCopilotChat('¿Cómo correr Nexora en las PCs de la oficina sin internet usando el archivo .bat?')}
+                      className="px-3 py-1.5 rounded-xl bg-[#090b0e] hover:bg-white/10 border border-white/10 text-slate-300 hover:text-cyan-300 text-xs font-mono transition flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <span>💻</span>
+                      <span>Despliegue Local (.bat)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSendCopilotChat('¿Qué blindaje perimetral y políticas RLS protegen la base de datos de desarrolladores externos?')}
+                      className="px-3 py-1.5 rounded-xl bg-[#090b0e] hover:bg-white/10 border border-white/10 text-slate-300 hover:text-cyan-300 text-xs font-mono transition flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <span>🛡️</span>
+                      <span>Blindaje & RLS</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* VENTANA DE CONVERSACIÓN DE NORA COPILOT */}
+                <div className="rounded-2xl bg-[#090b0e] border border-white/10 p-4 space-y-3">
+                  <div className="h-80 overflow-y-auto space-y-3 pr-1 text-xs font-mono">
+                    {copilotMessages.map((m, idx) => (
+                      <div key={idx} className={`flex flex-col ${m.sender === 'user' ? 'items-end' : 'items-start'}`}>
+                        <div
+                          className={`p-3.5 rounded-2xl max-w-[90%] sm:max-w-[80%] whitespace-pre-wrap leading-relaxed shadow-lg ${
+                            m.sender === 'user'
+                              ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-bold'
+                              : 'bg-[#141822] text-slate-200 border border-cyan-500/20'
+                          }`}
+                        >
+                          {m.text}
+                        </div>
+                        <span className="text-[9px] text-slate-500 mt-1 px-1">{m.timestamp}</span>
+                      </div>
+                    ))}
+                    {isCopilotSending && (
+                      <div className="text-[11px] text-cyan-400 font-mono animate-pulse">
+                        Nora Copilot analizando protocolo operativo...
+                      </div>
+                    )}
+                    <div ref={copilotChatEndRef} />
+                  </div>
+
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      void handleSendCopilotChat();
+                    }}
+                    className="flex gap-2 pt-2 border-t border-white/10"
+                  >
+                    <input
+                      type="text"
+                      placeholder="Pregunte a Nora Copilot (ej: ¿cómo dar de alta un sistema o registrar un pago en CBU?)..."
+                      value={copilotInput}
+                      onChange={(e) => setCopilotInput(e.target.value)}
+                      className="flex-1 bg-[#141822] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-cyan-400"
+                    />
+                    <button
+                      type="submit"
+                      disabled={isCopilotSending}
+                      className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 font-bold text-xs font-mono hover:brightness-110 transition cursor-pointer"
+                    >
+                      Consultar
+                    </button>
+                  </form>
+                </div>
+
+                {/* TARJETAS DE CONOCIMIENTO TÉCNICO DIRECTO */}
+                <div className="space-y-3 pt-2">
+                  <h3 className="text-xs font-mono font-bold text-white uppercase tracking-wider text-cyan-400">
+                    Fichas Técnicas del Manual Operativo:
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 font-mono">
+                    {Object.values(COPILOT_KNOWLEDGE_BASE).map((t) => (
+                      <div
+                        key={t.id}
+                        className="p-4 rounded-2xl bg-[#090b0e] border border-white/10 hover:border-cyan-500/40 transition flex flex-col justify-between space-y-3"
+                      >
+                        <div className="space-y-1.5">
+                          <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+                            {t.badge}
+                          </span>
+                          <h4 className="text-sm font-bold text-white">{t.title}</h4>
+                          <p className="text-[11px] text-slate-400 leading-relaxed">{t.summary}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedCopilotTopic(t)}
+                          className="w-full py-1.5 rounded-lg bg-white/5 hover:bg-cyan-500/20 text-cyan-300 text-[11px] font-bold border border-white/10 hover:border-cyan-500/30 transition text-center cursor-pointer"
+                        >
+                          Ver Guía Completa →
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </main>
       ) : (
         /* VISTA B: SITIO PÚBLICO OFICIAL */
@@ -2080,7 +2312,7 @@ export default function App() {
                 {/* LOGO OFICIAL CON RESPLANDOR DIFUSO */}
                 <div className="relative py-2 px-4 flex items-center justify-center w-full">
                   <img
-                    src="/brand/logo-full.png?v=3"
+                    src="/brand/logo-full.png?v=2026"
                     alt="Nexora One Engine Sovereign Architecture"
                     className="w-full max-w-[280px] h-auto object-contain mix-blend-screen transition-transform duration-500 group-hover:scale-105"
                     style={{ filter: 'drop-shadow(0 0 25px rgba(0, 242, 254, 0.35))' }}
@@ -3382,6 +3614,44 @@ Nexora One Engine — Arquitectura Soberana`;
           </div>
         );
       })()}
+
+      {/* MODAL DETALLE DE GUÍA OPERATIVA (NORA COPILOT) */}
+      {selectedCopilotTopic && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="w-full max-w-2xl rounded-3xl bg-[#141822] border border-cyan-500/40 p-6 sm:p-7 shadow-[0_0_60px_rgba(0,242,254,0.3)] space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div>
+                <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+                  {selectedCopilotTopic.badge}
+                </span>
+                <h3 className="text-base font-bold text-white font-mono mt-1">
+                  {selectedCopilotTopic.title}
+                </h3>
+              </div>
+              <button
+                onClick={() => setSelectedCopilotTopic(null)}
+                className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center text-sm transition cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-[#090b0e] border border-white/10 font-mono text-xs text-slate-300 whitespace-pre-wrap leading-relaxed">
+              {selectedCopilotTopic.content}
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => setSelectedCopilotTopic(null)}
+                className="px-5 py-2 rounded-xl bg-[#090b0e] border border-white/15 text-slate-300 hover:text-white text-xs font-mono transition cursor-pointer"
+              >
+                Cerrar Guía
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* CHAT FLOTANTE NORA ITU - ELEVADO PARA NO TAPAR EL FOOTER */}
       <div className="fixed bottom-10 right-6 sm:bottom-12 sm:right-10 z-40 flex flex-col items-end">

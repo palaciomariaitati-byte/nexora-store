@@ -337,7 +337,7 @@ export function generatePresencialLicense(data: {
   const graceLimitStr = graceDate.toISOString().split('T')[0];
 
   const sysPrefix = data.systemId.slice(0, 4).toUpperCase();
-  const randomHex = Math.random().toString(16).substring(2, 6).toUpperCase();
+  const randomHex = Math.random().toString(16).substring(2, 10).toUpperCase();
   const licenseKey = `NX-PRE-${randomHex}-${sysPrefix}-30D`;
 
   const newLicense: ExtendedLicense = {

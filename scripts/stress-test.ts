@@ -15,6 +15,7 @@
 import { generatePresencialLicense, getLicenseLifecycle, buildNotificationTemplates, simulateEmailDispatch } from '../src/lib/licensing';
 import { generateNoraResponse, SYSTEMS_CATALOG } from '../src/lib/noraEngine';
 import { generateQrSvgString } from '../src/lib/qrCode';
+import { generateCopilotResponse, COPILOT_KNOWLEDGE_BASE } from '../src/lib/noraCopilot';
 
 const SYSTEMS = ['restobar', 'carribar', 'clasificados', 'inmuebles', 'autentico', 'prensa'];
 
@@ -193,7 +194,7 @@ async function runStressTest() {
   // ──────────────────────────────────────────────────────────────────
   // TEST 6: Cobertura de los 6 Sistemas en Catálogo
   // ──────────────────────────────────────────────────────────────────
-  console.log('\n[6/6] Verificando Catálogo de los 6 Sistemas y Metadatos...');
+  console.log('\n[6/7] Verificando Catálogo de los 6 Sistemas y Metadatos...');
   let catalogValid = true;
   for (const sysId of SYSTEMS) {
     const sys = SYSTEMS_CATALOG[sysId];
@@ -203,6 +204,27 @@ async function runStressTest() {
     }
   }
   assert(catalogValid, 'Catálogo Bilingüe Completo (6 Sistemas)', 'Todos los sistemas cuentan con metadata ES/EN');
+
+  // ──────────────────────────────────────────────────────────────────
+  // TEST 7: Nora Copilot Operativo del Backoffice
+  // ──────────────────────────────────────────────────────────────────
+  console.log('\n[7/7] Evaluando Motor Operativo de Nora Copilot para el Dashboard...');
+  const copilotTopicsCount = Object.keys(COPILOT_KNOWLEDGE_BASE).length;
+  assert(copilotTopicsCount >= 6, 'Base de Conocimiento de Nora Copilot', `${copilotTopicsCount} fichas operativas cargadas`);
+
+  const copilotResp = await generateCopilotResponse('¿Cómo funciona la regla de 30+5 de gracia y corte?');
+  assert(
+    copilotResp.includes('30 + 5') && copilotResp.includes('En Gracia') && copilotResp.includes('Suspendido'),
+    'Resolución Contextual de Nora Copilot',
+    'Explica el ciclo determinista de 30+5 días con acciones de restitución'
+  );
+
+  const copilotOfflineResp = await generateCopilotResponse('¿Cómo correr el sistema en las PCs de la oficina sin internet?');
+  assert(
+    copilotOfflineResp.includes('iniciar-nexora-local.bat') || copilotOfflineResp.includes('dist-offline'),
+    'Guía de Empaquetado Local Offline',
+    'Detalla el despliegue con doble clic .bat'
+  );
 
   // ──────────────────────────────────────────────────────────────────
   // RESUMEN FINAL
