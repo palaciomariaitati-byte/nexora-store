@@ -140,3 +140,4 @@ const pngBuf = createPng(width, height, (x, y) => {
 const outPath = path.join(process.cwd(), 'public', 'brand', 'nexora-logo.png');
 fs.writeFileSync(outPath, pngBuf);
 console.log('Logo guardado con éxito en:', outPath);
+
