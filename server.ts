@@ -208,7 +208,7 @@ class CircuitBreaker {
   constructor(
     private readonly threshold: number,
     private readonly cooldownMs: number,
-  ) {}
+  ) { }
 
   /**
    * Returns true if a call may proceed. Every `true` MUST be followed by
@@ -371,7 +371,7 @@ async function* streamFromDaemon(messages: ChatMessage[], signal: AbortSignal): 
   const parse = isOllama ? parseOllamaLine : parseOpenAiLine;
   let buffer = '';
   try {
-    for (;;) {
+    for (; ;) {
       let chunk: ReadableStreamReadResult<string>;
       try {
         chunk = await reader.read();
@@ -407,7 +407,7 @@ async function* streamFromDaemon(messages: ChatMessage[], signal: AbortSignal): 
       }
     }
   } finally {
-    reader.cancel().catch(() => {});
+    reader.cancel().catch(() => { });
   }
 }
 
@@ -522,7 +522,7 @@ async function* streamText(text: string, signal: AbortSignal): AsyncGenerator<st
   for (const p of parts) {
     if (signal.aborted) return;
     yield p;
-    await sleep(14, signal).catch(() => {});
+    await sleep(14, signal).catch(() => { });
   }
 }
 
@@ -597,7 +597,7 @@ app.use((_req, res, next) => {
     res.setHeader(
       'Content-Security-Policy',
       "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; " +
-        "font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+      "font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
     );
   }
   next();
@@ -858,7 +858,7 @@ async function shutdown(signal: string) {
   force.unref();
   server.close(() => log('info', 'HTTP server closed'));
   server.closeIdleConnections?.();
-  await closeVite?.().catch(() => {});
+  await closeVite?.().catch(() => { });
   setTimeout(() => {
     server.closeAllConnections?.();
     process.exit(0);
