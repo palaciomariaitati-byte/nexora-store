@@ -1,0 +1,15 @@
+{
+  "firm": "Nexora One Engine",
+  "protocol": "Sovereign Runtime Architecture",
+  "license_model": "30 Days Active + 5 Days Grace",
+  "offline_first": true,
+  "support_hotline": "+54 9 3786 414533",
+  "email": "nexoraone@nexativanews.com.ar",
+  "instructions": [
+    "1. Descomprima este archivo o conserve su clave criptográfica de 15 días.",
+    "2. Ingrese la clave en la terminal de punto de venta o suite correspondiente.",
+    "3. La base de datos SQLite local operará de forma inmediata sin requerir internet continuo.",
+    "4. Para asistencia ejecutiva o registrar su pago vía CBU/Alias o USDT, comuníquese con Nora Itu."
+  ]
+}
+

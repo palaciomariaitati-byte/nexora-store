@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, type FormEvent } from 'react';
 import * as THREE from 'three';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
+import { generateNoraResponse, DEFAULT_PAYMENTS, type PaymentDetails } from './lib/noraEngine';
 
 // --- TIPOS DE DATOS ---
 export interface SystemItem {
@@ -30,9 +31,27 @@ export interface CorporateLicense {
   id: string;
   key: string;
   client: string;
+  whatsapp?: string;
+  email?: string;
   systemId: string;
-  status: 'active' | 'trial' | 'suspended';
+  status: 'active' | 'trial' | 'grace' | 'suspended';
+  startDate: string;
   expires: string;
+  graceLimit: string;
+}
+
+export function getLicenseDynamicStatus(lic: CorporateLicense): { label: 'Trial' | 'Activo' | 'En Gracia' | 'Suspendido'; color: string } {
+  if (lic.status === 'trial') {
+    return { label: 'Trial', color: 'bg-amber-500/15 text-amber-400 border-amber-500/30' };
+  }
+  const today = new Date().toISOString().split('T')[0];
+  if (today <= lic.expires) {
+    return { label: 'Activo', color: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' };
+  }
+  if (today <= lic.graceLimit) {
+    return { label: 'En Gracia', color: 'bg-orange-500/15 text-orange-400 border-orange-500/30' };
+  }
+  return { label: 'Suspendido', color: 'bg-red-500/15 text-red-400 border-red-500/30' };
 }
 
 interface ChatMessage {
@@ -66,10 +85,16 @@ interface DbLicense {
   id?: string;
   key?: string;
   client?: string;
+  whatsapp?: string;
+  email?: string;
   system_id?: string;
   systemId?: string;
-  status?: 'active' | 'trial' | 'suspended';
+  status?: 'active' | 'trial' | 'grace' | 'suspended';
+  start_date?: string;
+  startDate?: string;
   expires?: string;
+  grace_limit?: string;
+  graceLimit?: string;
 }
 
 // --- CATÁLOGO DETERMINISTA LOCAL OFFLINE-FIRST ---
@@ -161,9 +186,42 @@ const INITIAL_SYSTEMS: SystemItem[] = [
 ];
 
 const INITIAL_LICENSES: CorporateLicense[] = [
-  { id: 'lic_1', key: 'NX-7701-RESTOBAR-SOV', client: 'Bistró Central', systemId: 'restobar', status: 'active', expires: '2027-10-31' },
-  { id: 'lic_2', key: 'NX-9942-STAGE-LIVE', client: 'Producciones Tour', systemId: 'autentico', status: 'active', expires: '2027-05-15' },
-  { id: 'lic_3', key: 'NX-4108-CARRIBAR-PASS', client: 'Complejo Gastronómico Park', systemId: 'carribar', status: 'active', expires: '2027-12-01' }
+  {
+    id: 'lic_1',
+    key: 'NX-7701-RESTOBAR-SOV',
+    client: 'Bistró Central',
+    whatsapp: '+54 9 11 4522-8901',
+    email: 'gerencia@bistrocentral.com.ar',
+    systemId: 'restobar',
+    status: 'active',
+    startDate: '2026-10-15',
+    expires: '2026-11-14',
+    graceLimit: '2026-11-19'
+  },
+  {
+    id: 'lic_2',
+    key: 'NX-9942-STAGE-LIVE',
+    client: 'Producciones Tour 2026',
+    whatsapp: '+54 9 3786 51-2290',
+    email: 'escenario@tourlive.com',
+    systemId: 'autentico',
+    status: 'grace',
+    startDate: '2026-09-20',
+    expires: '2026-10-20',
+    graceLimit: '2026-10-25'
+  },
+  {
+    id: 'lic_3',
+    key: 'NX-4108-CARRIBAR-PASS',
+    client: 'Food Park Costanera',
+    whatsapp: '+54 9 3794 88-1244',
+    email: 'contacto@foodpark.ar',
+    systemId: 'carribar',
+    status: 'active',
+    startDate: '2026-10-28',
+    expires: '2026-11-27',
+    graceLimit: '2026-12-02'
+  }
 ];
 
 export default function App() {
@@ -180,9 +238,9 @@ export default function App() {
   const [leadWhatsapp, setLeadWhatsapp] = useState('');
   const [leadEmail, setLeadEmail] = useState('');
   const [isSubmittingTrial, setIsSubmittingTrial] = useState(false);
-  const [trialResult, setTrialResult] = useState<{ key: string; downloadUrl: string; expires: string } | null>(null);
+  const [trialResult, setTrialResult] = useState<{ key: string; expires: string } | null>(null);
 
-  const [portalTab, setPortalTab] = useState<'catalog' | 'payments' | 'licenses'>('catalog');
+  const [portalTab, setPortalTab] = useState<'licenses' | 'payments' | 'catalog'>('licenses');
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [openAccordionId, setOpenAccordionId] = useState<string | null>(null);
@@ -193,15 +251,20 @@ export default function App() {
   const [systems, setSystems] = useState<SystemItem[]>(INITIAL_SYSTEMS);
   const [licenses, setLicenses] = useState<CorporateLicense[]>(INITIAL_LICENSES);
 
-  // --- FORMAS DE PAGO ADMINISTRABLES ---
-  const [payments] = useState<PaymentMethod[]>([
-    { id: 'pay_1', name: 'Transferencia Bancaria Directa (ARS)', type: 'cbu', details: 'Alias: nexora.engine / CBU habilitado', active: true },
-    { id: 'pay_2', name: 'Mercado Pago (Cobro QR / Link)', type: 'mercadopago', details: 'Cobro instantáneo sin retención forzosa', active: true },
-    { id: 'pay_3', name: 'Cripto Soberano (USDT / USDC)', type: 'crypto', details: 'Red TRC20 / Polygon (Cero comisión pasarela)', active: true }
-  ]);
+  // --- FORMAS DE PAGO ADMINISTRABLES (CANALES DIRECTOS CBU / MP / USDT) ---
+  const [paymentSettings, setPaymentSettings] = useState<PaymentDetails>(() => {
+    try {
+      const saved = localStorage.getItem('nexora_payment_settings');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return DEFAULT_PAYMENTS;
+  });
+  const [paymentSavedToast, setPaymentSavedToast] = useState(false);
 
   // Formularios de Backoffice
   const [newLicClient, setNewLicClient] = useState('');
+  const [newLicWhatsapp, setNewLicWhatsapp] = useState('');
+  const [newLicEmail, setNewLicEmail] = useState('');
   const [newLicSystem, setNewLicSystem] = useState('restobar');
 
   // Nora Chat (Protocolo Concierge Ejecutivo Internacional - SOUL.md)
@@ -260,14 +323,27 @@ export default function App() {
             id: String(l.id || `lic_${Date.now()}`),
             key: l.key || `NX-SOV-${Math.random().toString(16).slice(2, 6).toUpperCase()}`,
             client: l.client || 'Cliente Corporativo',
+            whatsapp: l.whatsapp || '',
+            email: l.email || '',
             systemId: l.systemId || l.system_id || 'restobar',
             status: l.status || 'active',
-            expires: l.expires || '2027-10-31'
+            startDate: l.startDate || l.start_date || '2026-10-31',
+            expires: l.expires || '2026-11-30',
+            graceLimit: l.graceLimit || l.grace_limit || '2026-12-05'
           }));
           setLicenses(mappedLics);
+        } else {
+          const localLics = localStorage.getItem('nexora_licenses');
+          if (localLics && isMounted) {
+            setLicenses(JSON.parse(localLics));
+          }
         }
       } catch (err) {
         console.warn('Operando con licencias locales:', err);
+        const localLics = localStorage.getItem('nexora_licenses');
+        if (localLics && isMounted) {
+          setLicenses(JSON.parse(localLics));
+        }
       }
     }
 
@@ -804,7 +880,7 @@ export default function App() {
     };
   }, []);
 
-  // Chat con Nora Itu Core
+  // --- MOTOR AUTÓNOMO DE NORA ITU (CLIENTE OFFLINE-FIRST) ---
   const handleSendChat = async (e: FormEvent) => {
     e.preventDefault();
     if (!chatInput.trim() || isSendingChat) return;
@@ -814,49 +890,19 @@ export default function App() {
     setIsSendingChat(true);
 
     try {
-      const res = await fetch('/api/nora/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: [{ role: 'user', content: q }]
-        })
-      });
-
-      const reader = res.body?.pipeThrough(new TextDecoderStream()).getReader();
-      let completeText = '';
-      if (reader) {
-        let buf = '';
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          buf += value;
-          let idx: number;
-          while ((idx = buf.indexOf('\n\n')) >= 0) {
-            const raw = buf.slice(0, idx);
-            buf = buf.slice(idx + 2);
-            for (const line of raw.split('\n')) {
-              if (line.startsWith('data:')) {
-                try {
-                  const data = JSON.parse(line.slice(5).trim());
-                  if (data.t) completeText += data.t;
-                  else if (data.message) completeText = data.message;
-                } catch {
-                  // ignorar keep-alive
-                }
-              }
-            }
-          }
-        }
-      }
-
+      const responseText = await generateNoraResponse(q, paymentSettings);
       setChatMessages(prev => [
         ...prev,
-        { sender: 'nora', text: completeText.trim() || 'Respuesta generada por Nora Itu Core.', timestamp: 'Ahora' }
+        { sender: 'nora', text: responseText, timestamp: 'Ahora' }
       ]);
     } catch {
       setChatMessages(prev => [
         ...prev,
-        { sender: 'nora', text: 'Nora Itu [Modo Local]: Operando en contingencia soberana.', timestamp: 'Ahora' }
+        {
+          sender: 'nora',
+          text: 'Estimado visitante, en este momento opero en modo perimetral directo. ¿En qué solución del catálogo le puedo asesorar?',
+          timestamp: 'Ahora'
+        }
       ]);
     } finally {
       setIsSendingChat(false);
@@ -864,31 +910,52 @@ export default function App() {
     }
   };
 
-  // --- 2. EMISIÓN Y PERSISTENCIA DE LICENCIAS ---
+  // --- 2. EMISIÓN Y RENOVACIÓN DE LICENCIAS (30 DÍAS + 5 DE GRACIA) ---
   const handleCreateLicense = async (e: FormEvent) => {
     e.preventDefault();
     if (!newLicClient.trim()) return;
+
+    const today = new Date();
+    const startDate = today.toISOString().split('T')[0];
+    const expObj = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const expires = expObj.toISOString().split('T')[0];
+    const graceObj = new Date(today.getTime() + 35 * 24 * 60 * 60 * 1000);
+    const graceLimit = graceObj.toISOString().split('T')[0];
     const hex = Math.random().toString(16).substring(2, 6).toUpperCase();
+
     const newLic: CorporateLicense = {
       id: `lic_${Date.now()}`,
       key: `NX-${hex}-${newLicSystem.toUpperCase()}-SOV`,
       client: newLicClient,
+      whatsapp: newLicWhatsapp,
+      email: newLicEmail,
       systemId: newLicSystem,
       status: 'active',
-      expires: '2027-10-31'
+      startDate,
+      expires,
+      graceLimit
     };
 
-    setLicenses(prev => [newLic, ...prev]);
+    const updated = [newLic, ...licenses];
+    setLicenses(updated);
+    localStorage.setItem('nexora_licenses', JSON.stringify(updated));
+
     setNewLicClient('');
+    setNewLicWhatsapp('');
+    setNewLicEmail('');
 
     if (supabase && isSupabaseConfigured) {
       try {
         await supabase.from('licenses').insert([{
           key: newLic.key,
           client: newLic.client,
+          whatsapp: newLic.whatsapp,
+          email: newLic.email,
           system_id: newLic.systemId,
           status: newLic.status,
-          expires: newLic.expires
+          start_date: newLic.startDate,
+          expires: newLic.expires,
+          grace_limit: newLic.graceLimit
         }]);
       } catch (err) {
         console.warn('Error al persistir licencia en Supabase (offline):', err);
@@ -896,9 +963,58 @@ export default function App() {
     }
   };
 
-  // --- 3. ACTUALIZACIÓN REACTIVA Y PERSISTENCIA DE PRECIOS DUALES ---
+  const handleRenewLicense = async (licId: string) => {
+    const today = new Date();
+    const startDate = today.toISOString().split('T')[0];
+    const expObj = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const expires = expObj.toISOString().split('T')[0];
+    const graceObj = new Date(today.getTime() + 35 * 24 * 60 * 60 * 1000);
+    const graceLimit = graceObj.toISOString().split('T')[0];
+
+    const updated = licenses.map(l => {
+      if (l.id === licId) {
+        return {
+          ...l,
+          status: 'active' as const,
+          startDate,
+          expires,
+          graceLimit,
+        };
+      }
+      return l;
+    });
+
+    setLicenses(updated);
+    localStorage.setItem('nexora_licenses', JSON.stringify(updated));
+
+    if (supabase && isSupabaseConfigured) {
+      try {
+        await supabase.from('licenses').update({
+          status: 'active',
+          start_date: startDate,
+          expires,
+          grace_limit: graceLimit,
+          payment_status: 'paid'
+        }).eq('id', licId);
+      } catch (err) {
+        console.warn('Persistencia de renovación en Supabase:', err);
+      }
+    }
+  };
+
+  // --- 3. GUARDAR FORMAS DE PAGO (CBU / MERCADO PAGO / USDT) ---
+  const handleSavePayments = (e: FormEvent) => {
+    e.preventDefault();
+    localStorage.setItem('nexora_payment_settings', JSON.stringify(paymentSettings));
+    setPaymentSavedToast(true);
+    setTimeout(() => setPaymentSavedToast(false), 3000);
+  };
+
+  // --- 4. ACTUALIZACIÓN REACTIVA Y PERSISTENCIA DE PRECIOS DUALES ---
   const handleUpdatePrice = async (id: string, field: 'priceUsd' | 'priceArs', val: number) => {
-    setSystems(prev => prev.map(s => s.id === id ? { ...s, [field]: val } : s));
+    const updated = systems.map(s => s.id === id ? { ...s, [field]: val } : s);
+    setSystems(updated);
+    localStorage.setItem('nexora_systems', JSON.stringify(updated));
 
     if (supabase && isSupabaseConfigured) {
       try {
@@ -950,20 +1066,45 @@ export default function App() {
     if (!leadName.trim() || !leadWhatsapp.trim() || !selectedTrialSystem) return;
     setIsSubmittingTrial(true);
 
+    const today = new Date();
+    const startDate = today.toISOString().split('T')[0];
+    const expObj = new Date(today.getTime() + 15 * 24 * 60 * 60 * 1000);
+    const expDate = expObj.toISOString().split('T')[0];
+    const graceObj = new Date(today.getTime() + 20 * 24 * 60 * 60 * 1000);
+    const graceDate = graceObj.toISOString().split('T')[0];
     const hex = Math.random().toString(16).substring(2, 6).toUpperCase();
     const trialKey = `NX-TRIAL-${hex}-${selectedTrialSystem.id.toUpperCase()}-15D`;
-    const expDate = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    const downloadUrl = 'https://github.com/palaciomariaitati-byte/nexora-store-app';
+
+    const newLic: CorporateLicense = {
+      id: `lic_trial_${Date.now()}`,
+      key: trialKey,
+      client: leadName,
+      whatsapp: leadWhatsapp,
+      email: leadEmail,
+      systemId: selectedTrialSystem.id,
+      status: 'trial',
+      startDate,
+      expires: expDate,
+      graceLimit: graceDate
+    };
+
+    const updatedLics = [newLic, ...licenses];
+    setLicenses(updatedLics);
+    localStorage.setItem('nexora_licenses', JSON.stringify(updatedLics));
 
     if (supabase && isSupabaseConfigured) {
       try {
         await supabase.from('licenses').insert([{
           key: trialKey,
-          client: `${leadName} (WhatsApp: ${leadWhatsapp})`,
+          client: leadName,
+          whatsapp: leadWhatsapp,
+          email: leadEmail,
           system_id: selectedTrialSystem.id,
           status: 'trial',
           payment_status: 'trial',
-          expires: expDate
+          start_date: startDate,
+          expires: expDate,
+          grace_limit: graceDate
         }]);
       } catch (err) {
         console.warn('Persistencia de prueba en Supabase:', err);
@@ -982,24 +1123,47 @@ export default function App() {
       }
     }
 
-    setLicenses(prev => [
-      {
-        id: `lic_trial_${Date.now()}`,
-        key: trialKey,
-        client: `${leadName} (WhatsApp: ${leadWhatsapp})`,
-        systemId: selectedTrialSystem.id,
-        status: 'trial',
-        expires: expDate
-      },
-      ...prev
-    ]);
-
     setIsSubmittingTrial(false);
     setTrialResult({
       key: trialKey,
-      downloadUrl,
       expires: expDate
     });
+  };
+
+  // --- DESCARGA DIRECTA DE PAQUETE DE INDUCCIÓN (SIN 404) ---
+  const handleDownloadTrialKit = () => {
+    if (!selectedTrialSystem || !trialResult) return;
+    const kitData = {
+      empresa_emisora: 'Nexora One Engine',
+      suite: selectedTrialSystem.name,
+      sistema_id: selectedTrialSystem.id,
+      credencial_soberana: trialResult.key,
+      titular: leadName,
+      whatsapp_vinculado: leadWhatsapp,
+      email_vinculado: leadEmail || 'No informado',
+      validez_dias: 15,
+      fecha_emision: new Date().toISOString().split('T')[0],
+      fecha_vencimiento: trialResult.expires,
+      limite_gracia: new Date(Date.now() + 20 * 86400000).toISOString().split('T')[0],
+      arquitectura: 'Sovereign Offline-First Runtime',
+      soporte_ejecutivo_nora: '+54 9 3786 414533',
+      instrucciones_despliegue: [
+        '1. Conserve esta credencial digital en la terminal o servidor local.',
+        '2. Ingrese la clave criptográfica al iniciar el software para validar la base de datos local.',
+        '3. La base de datos SQLite opera con total independencia y cero caídas de internet.',
+        '4. Para adquirir la licencia permanente mensual (30 días de ciclo + 5 de gracia), comuníquese por WhatsApp o abone vía CBU/USDT.'
+      ]
+    };
+
+    const blob = new Blob([JSON.stringify(kitData, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `NexoraOne-${selectedTrialSystem.id.toUpperCase()}-Induction-Kit.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const filteredSystems = systems.filter(sys => {
@@ -1093,22 +1257,22 @@ export default function App() {
             <div className="flex flex-wrap items-center gap-2">
               <div className="flex items-center gap-2 bg-[#141822] p-1 rounded-xl border border-white/10 text-xs font-mono">
                 <button
-                  onClick={() => setPortalTab('catalog')}
-                  className={`px-3 py-1.5 rounded-lg transition ${portalTab === 'catalog' ? 'bg-[#00f2fe] text-slate-950 font-bold' : 'text-slate-400 hover:text-white'}`}
+                  onClick={() => setPortalTab('licenses')}
+                  className={`px-3 py-1.5 rounded-lg transition ${portalTab === 'licenses' ? 'bg-[#00f2fe] text-slate-950 font-bold shadow-[0_0_15px_-3px_rgba(0,242,254,0.4)]' : 'text-slate-400 hover:text-white'}`}
                 >
-                  Catálogo & Precios
+                  Descargas & Licencias de Clientes
                 </button>
                 <button
                   onClick={() => setPortalTab('payments')}
-                  className={`px-3 py-1.5 rounded-lg transition ${portalTab === 'payments' ? 'bg-[#00f2fe] text-slate-950 font-bold' : 'text-slate-400 hover:text-white'}`}
+                  className={`px-3 py-1.5 rounded-lg transition ${portalTab === 'payments' ? 'bg-[#00f2fe] text-slate-950 font-bold shadow-[0_0_15px_-3px_rgba(0,242,254,0.4)]' : 'text-slate-400 hover:text-white'}`}
                 >
                   Formas de Pago
                 </button>
                 <button
-                  onClick={() => setPortalTab('licenses')}
-                  className={`px-3 py-1.5 rounded-lg transition ${portalTab === 'licenses' ? 'bg-[#00f2fe] text-slate-950 font-bold' : 'text-slate-400 hover:text-white'}`}
+                  onClick={() => setPortalTab('catalog')}
+                  className={`px-3 py-1.5 rounded-lg transition ${portalTab === 'catalog' ? 'bg-[#00f2fe] text-slate-950 font-bold shadow-[0_0_15px_-3px_rgba(0,242,254,0.4)]' : 'text-slate-400 hover:text-white'}`}
                 >
-                  Licencias
+                  Catálogo & Precios
                 </button>
               </div>
               <button
@@ -1120,7 +1284,292 @@ export default function App() {
             </div>
           </div>
 
-          {/* TAB 1: GESTIÓN DE CATÁLOGO Y PRECIOS DUALES */}
+          {/* TAB 1: DESCARGAS Y LICENCIAS DE CLIENTES (30 DÍAS + 5 DE GRACIA) */}
+          {portalTab === 'licenses' && (
+            <div className="space-y-6">
+              {/* FORMULARIO DE EMISIÓN MANUAL */}
+              <form onSubmit={handleCreateLicense} className="p-5 rounded-2xl bg-[#141822] border border-white/10 space-y-4 shadow-xl">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-3">
+                  <div>
+                    <h3 className="text-sm font-bold text-white font-mono uppercase tracking-wider text-[#00f2fe]">
+                      EMISIÓN SOBERANA DE LICENCIA CORPORATIVA (CICLO 30 DÍAS + 5 DE GRACIA)
+                    </h3>
+                    <p className="text-[11px] text-slate-400 font-mono mt-0.5">
+                      Asigna credenciales criptográficas locales con base de datos perimetral offline.
+                    </p>
+                  </div>
+                  <span className="text-[11px] font-mono text-emerald-400 self-start sm:self-auto">
+                    ● Total Registros: {licenses.length}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div>
+                    <label className="text-[10px] font-mono text-slate-400 block mb-1">CLIENTE / RAZÓN SOCIAL *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ej: Bistró Central"
+                      value={newLicClient}
+                      onChange={(e) => setNewLicClient(e.target.value)}
+                      className="w-full bg-[#090b0e] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#00f2fe]"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-mono text-slate-400 block mb-1">WHATSAPP DE ACTIVACIÓN</label>
+                    <input
+                      type="tel"
+                      placeholder="Ej: +54 9 11 4522-8901"
+                      value={newLicWhatsapp}
+                      onChange={(e) => setNewLicWhatsapp(e.target.value)}
+                      className="w-full bg-[#090b0e] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#00f2fe]"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-mono text-slate-400 block mb-1">CORREO ELECTRÓNICO</label>
+                    <input
+                      type="email"
+                      placeholder="contacto@empresa.com"
+                      value={newLicEmail}
+                      onChange={(e) => setNewLicEmail(e.target.value)}
+                      className="w-full bg-[#090b0e] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#00f2fe]"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-mono text-slate-400 block mb-1">SISTEMA A VINCULAR</label>
+                    <select
+                      value={newLicSystem}
+                      onChange={(e) => setNewLicSystem(e.target.value)}
+                      className="w-full bg-[#090b0e] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#00f2fe]"
+                    >
+                      {systems.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-1">
+                  <button
+                    type="submit"
+                    className="py-2 px-5 rounded-xl bg-gradient-to-r from-[#00f2fe] to-[#00b4d8] text-slate-950 font-bold text-xs hover:brightness-110 shadow-[0_0_15px_-3px_rgba(0,242,254,0.3)] transition flex items-center gap-2"
+                  >
+                    <span>+ Emitir y Firmar Licencia Soberana</span>
+                  </button>
+                </div>
+              </form>
+
+              {/* TABLA DE LEADS Y LICENCIAS EMITIDAS */}
+              <div className="rounded-2xl bg-[#141822] border border-white/10 overflow-hidden shadow-2xl">
+                <div className="p-4 bg-[#0e1117] border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <h4 className="text-xs font-mono font-bold text-white uppercase tracking-wider">
+                      Descargas, Evaluaciones & Licencias de Clientes
+                    </h4>
+                    <span className="text-[11px] text-slate-400 font-mono">
+                      Ciclo Soberano: 30 días continuos + 5 días perimetrales de gracia antes de suspensión
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-mono text-emerald-400">
+                    ● {licenses.filter(l => getLicenseDynamicStatus(l).label === 'Activo').length} Activas
+                  </span>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs font-mono whitespace-nowrap">
+                    <thead className="bg-[#090b0e] text-slate-400 border-b border-white/10">
+                      <tr>
+                        <th className="p-3.5">Cliente / Empresa</th>
+                        <th className="p-3.5">Contacto (WhatsApp / Email)</th>
+                        <th className="p-3.5">Sistema</th>
+                        <th className="p-3.5">Clave Emitida</th>
+                        <th className="p-3.5">Fecha Inicio</th>
+                        <th className="p-3.5">Vencimiento (30d)</th>
+                        <th className="p-3.5">Límite Gracia (35d)</th>
+                        <th className="p-3.5">Estado</th>
+                        <th className="p-3.5 text-center">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {licenses.map(lic => {
+                        const statusInfo = getLicenseDynamicStatus(lic);
+                        const systemName = systems.find(s => s.id === lic.systemId)?.name || lic.systemId;
+                        return (
+                          <tr key={lic.id} className="hover:bg-white/5 transition-colors">
+                            <td className="p-3.5 font-bold text-white">{lic.client}</td>
+                            <td className="p-3.5 text-slate-300">
+                              <div>{lic.whatsapp || '—'}</div>
+                              {lic.email && <div className="text-[10px] text-slate-500">{lic.email}</div>}
+                            </td>
+                            <td className="p-3.5 text-slate-300">
+                              <span className="px-2 py-0.5 rounded bg-white/5 text-slate-200 border border-white/10 text-[10px]">
+                                {systemName}
+                              </span>
+                            </td>
+                            <td className="p-3.5 text-[#00f2fe] select-all font-mono font-semibold">{lic.key}</td>
+                            <td className="p-3.5 text-slate-400">{lic.startDate}</td>
+                            <td className="p-3.5 text-slate-300 font-semibold">{lic.expires}</td>
+                            <td className="p-3.5 text-amber-300/80">{lic.graceLimit}</td>
+                            <td className="p-3.5">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${statusInfo.color}`}>
+                                ● {statusInfo.label}
+                              </span>
+                            </td>
+                            <td className="p-3.5 text-center">
+                              <button
+                                type="button"
+                                onClick={() => void handleRenewLicense(lic.id)}
+                                title="Registrar Pago y Renovar (+30 días)"
+                                className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 font-mono text-[10px] font-bold transition flex items-center gap-1.5 mx-auto cursor-pointer"
+                              >
+                                <span>💳</span>
+                                <span>Registrar Pago / Renovar (+30d)</span>
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: FORMAS DE PAGO (CBU / MERCADO PAGO / USDT) */}
+          {portalTab === 'payments' && (
+            <form onSubmit={handleSavePayments} className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
+                <div>
+                  <h2 className="text-sm font-mono text-[#00f2fe] font-bold uppercase tracking-wider">
+                    CONFIGURACIÓN DIRECTA DE MÉTODOS DE COBRO
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Coordenadas financieras administrables consultadas en tiempo real por el motor autónomo de Nora Itu.
+                  </p>
+                </div>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#00f2fe] to-[#00b4d8] text-slate-950 font-bold text-xs hover:brightness-110 shadow-[0_0_20px_-3px_rgba(0,242,254,0.4)] transition flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
+                >
+                  <span>💾</span>
+                  <span>Guardar Métodos de Cobro</span>
+                </button>
+              </div>
+
+              {paymentSavedToast && (
+                <div className="p-3.5 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-mono flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                  <span>✓ Métodos de cobro guardados en almacenamiento soberano y sincronizados con Nora Itu.</span>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {/* Transferencia Bancaria */}
+                <div className="p-5 rounded-2xl bg-[#141822] border border-white/10 space-y-3.5">
+                  <div className="flex justify-between items-center border-b border-white/10 pb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">🏦</span>
+                      <span className="font-bold text-white text-sm">Transferencia CBU / CVU</span>
+                    </div>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                      ARS Pesos
+                    </span>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-mono text-slate-400 block mb-1">CBU O CVU BANCARIO</label>
+                    <input
+                      type="text"
+                      value={paymentSettings.cbu}
+                      onChange={(e) => setPaymentSettings(prev => ({ ...prev, cbu: e.target.value }))}
+                      className="w-full bg-[#090b0e] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-[#00f2fe]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-mono text-slate-400 block mb-1">ALIAS BANCARIO</label>
+                    <input
+                      type="text"
+                      value={paymentSettings.alias}
+                      onChange={(e) => setPaymentSettings(prev => ({ ...prev, alias: e.target.value }))}
+                      className="w-full bg-[#090b0e] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-[#00f2fe]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-mono text-slate-400 block mb-1">TITULAR DE LA CUENTA</label>
+                    <input
+                      type="text"
+                      value={paymentSettings.titular}
+                      onChange={(e) => setPaymentSettings(prev => ({ ...prev, titular: e.target.value }))}
+                      className="w-full bg-[#090b0e] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#00f2fe]"
+                    />
+                  </div>
+                </div>
+
+                {/* Mercado Pago */}
+                <div className="p-5 rounded-2xl bg-[#141822] border border-white/10 space-y-3.5">
+                  <div className="flex justify-between items-center border-b border-white/10 pb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">💳</span>
+                      <span className="font-bold text-white text-sm">Mercado Pago</span>
+                    </div>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/15 text-cyan-400 border border-cyan-500/30">
+                      Link / QR
+                    </span>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-mono text-slate-400 block mb-1">ENLACE DE COBRO / CHECKOUT</label>
+                    <input
+                      type="text"
+                      value={paymentSettings.mercadopago}
+                      onChange={(e) => setPaymentSettings(prev => ({ ...prev, mercadopago: e.target.value }))}
+                      className="w-full bg-[#090b0e] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#00f2fe]"
+                    />
+                  </div>
+
+                  <p className="text-[11px] text-slate-500 leading-relaxed pt-2">
+                    Permite a los clientes abonar mediante tarjetas de crédito, débito o dinero en cuenta al instante.
+                  </p>
+                </div>
+
+                {/* Cripto USDT */}
+                <div className="p-5 rounded-2xl bg-[#141822] border border-white/10 space-y-3.5">
+                  <div className="flex justify-between items-center border-b border-white/10 pb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">🪙</span>
+                      <span className="font-bold text-white text-sm">Criptoactivos / USDT</span>
+                    </div>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                      USDT Global
+                    </span>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-mono text-slate-400 block mb-1">BILLETERA TRON (TRC-20)</label>
+                    <input
+                      type="text"
+                      value={paymentSettings.usdtTron}
+                      onChange={(e) => setPaymentSettings(prev => ({ ...prev, usdtTron: e.target.value }))}
+                      className="w-full bg-[#090b0e] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-[#00f2fe]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-mono text-slate-400 block mb-1">BILLETERA POLYGON (ERC-20)</label>
+                    <input
+                      type="text"
+                      value={paymentSettings.usdtPolygon}
+                      onChange={(e) => setPaymentSettings(prev => ({ ...prev, usdtPolygon: e.target.value }))}
+                      className="w-full bg-[#090b0e] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-[#00f2fe]"
+                    />
+                  </div>
+                </div>
+              </div>
+            </form>
+          )}
+
+          {/* TAB 3: GESTIÓN DE CATÁLOGO Y PRECIOS DUALES */}
           {portalTab === 'catalog' && (
             <div className="space-y-4">
               <div className="flex justify-between items-center">
@@ -1165,77 +1614,6 @@ export default function App() {
                     </div>
                   </div>
                 ))}
-              </div>
-            </div>
-          )}
-
-          {/* TAB 2: FORMAS DE PAGO */}
-          {portalTab === 'payments' && (
-            <div className="space-y-4">
-              <h2 className="text-sm font-mono text-[#00f2fe] font-bold">MÉTODOS DE COBRO HABILITADOS</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {payments.map((p) => (
-                  <div key={p.id} className="p-5 rounded-2xl bg-[#141822] border border-white/10 space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="font-bold text-white text-sm">{p.name}</span>
-                      <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                    </div>
-                    <p className="text-xs text-slate-400">{p.details}</p>
-                    <span className="text-[10px] font-mono text-emerald-400 block pt-2">● Conexión Directa Activa</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* TAB 3: LICENCIAS CORPORATIVAS */}
-          {portalTab === 'licenses' && (
-            <div className="space-y-6">
-              <form onSubmit={handleCreateLicense} className="p-5 rounded-2xl bg-[#141822] border border-white/10 space-y-4">
-                <h3 className="text-sm font-bold text-white font-mono">EMITIR NUEVA LICENCIA CORPORATIVA</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <input
-                    type="text"
-                    required
-                    placeholder="Nombre del Cliente o Empresa"
-                    value={newLicClient}
-                    onChange={(e) => setNewLicClient(e.target.value)}
-                    className="bg-[#090b0e] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#00f2fe]"
-                  />
-                  <select
-                    value={newLicSystem}
-                    onChange={(e) => setNewLicSystem(e.target.value)}
-                    className="bg-[#090b0e] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#00f2fe]"
-                  >
-                    {systems.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                  </select>
-                  <button type="submit" className="py-2 px-4 rounded-xl bg-[#00f2fe] text-slate-950 font-bold text-xs hover:bg-[#00f2fe]/90 transition">
-                    Generar y Firmar Clave
-                  </button>
-                </div>
-              </form>
-
-              <div className="rounded-2xl bg-[#141822] border border-white/10 overflow-hidden">
-                <table className="w-full text-left text-xs font-mono">
-                  <thead className="bg-[#0e1117] text-slate-400 border-b border-white/10">
-                    <tr>
-                      <th className="p-3">Cliente</th>
-                      <th className="p-3">Clave Criptográfica</th>
-                      <th className="p-3">Sistema</th>
-                      <th className="p-3">Estado</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/5">
-                    {licenses.map(lic => (
-                      <tr key={lic.id} className="hover:bg-white/5">
-                        <td className="p-3 font-semibold text-white">{lic.client}</td>
-                        <td className="p-3 text-[#00f2fe]">{lic.key}</td>
-                        <td className="p-3 text-slate-400">{lic.systemId}</td>
-                        <td className="p-3"><span className="text-emerald-400">● {lic.status}</span></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
               </div>
             </div>
           )}
@@ -1644,24 +2022,22 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="space-y-2 pt-2">
-                  <a
-                    href={trialResult.downloadUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#00f2fe] to-[#00b4d8] text-slate-950 text-xs font-bold font-mono hover:brightness-110 transition flex items-center justify-center gap-2"
+                <div className="space-y-2.5 pt-2">
+                  <button
+                    type="button"
+                    onClick={handleDownloadTrialKit}
+                    className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#00f2fe] to-[#00b4d8] text-slate-950 text-xs font-bold font-mono hover:brightness-110 shadow-[0_0_20px_-3px_rgba(0,242,254,0.4)] transition flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    <span>Descargar Suite / Acceso de Evaluación</span>
-                    <span>↗</span>
-                  </a>
+                    <span>⬇ Descargar Credencial e Instalador Soberano (.json)</span>
+                  </button>
 
                   <a
-                    href={`https://wa.me/5493786414533?text=${encodeURIComponent(`Hola Nexora One, activé la prueba de 15 días de ${selectedTrialSystem.name} con la clave ${trialResult.key}`)}`}
+                    href={`https://wa.me/5493786414533?text=${encodeURIComponent(`Estimado equipo de Nexora One, he activado el período de evaluación de 15 días para ${selectedTrialSystem.name} con la credencial ${trialResult.key}. Solicito asistencia para el despliegue local.`)}`}
                     target="_blank"
                     rel="noreferrer"
                     className="w-full py-2 px-4 rounded-xl bg-[#25D366]/20 border border-[#25D366]/40 text-[#25D366] text-xs font-bold font-mono hover:bg-[#25D366]/30 transition flex items-center justify-center gap-2"
                   >
-                    <span>Confirmar con Soporte por WhatsApp</span>
+                    <span>Confirmar con Nora Itu / Soporte por WhatsApp</span>
                     <span>💬</span>
                   </a>
                 </div>
