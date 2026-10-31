@@ -1262,7 +1262,7 @@ export default function App() {
             <img
               src="/brand/logo-full.png"
               alt="Nexora One Engine"
-              className="h-9 w-auto object-contain hover:opacity-90 transition"
+              className="h-10 w-auto object-contain mix-blend-screen hover:opacity-90 transition"
             />
           </div>
 
@@ -1750,32 +1750,32 @@ export default function App() {
                 <div className="absolute inset-0 bg-gradient-to-br from-[#00f2fe]/10 via-transparent to-transparent opacity-60 pointer-events-none"></div>
 
                 {/* LOGO OFICIAL CON RESPLANDOR DIFUSO */}
-                <div className="relative py-2 px-4 flex items-center justify-center">
+                <div className="relative py-2 px-4 flex items-center justify-center w-full">
                   <img
                     src="/brand/logo-full.png"
                     alt="Nexora One Engine Sovereign Architecture"
-                    className="w-56 sm:w-64 h-auto object-contain transition-transform duration-500 group-hover:scale-105"
-                    style={{ filter: 'drop-shadow(0 0 20px rgba(0,242,254,0.25))' }}
+                    className="w-full max-w-[280px] h-auto object-contain mix-blend-screen transition-transform duration-500 group-hover:scale-105"
+                    style={{ filter: 'drop-shadow(0 0 25px rgba(0, 242, 254, 0.35))' }}
                   />
                 </div>
 
                 {/* FICHA TÉCNICA EJECUTIVA */}
                 <div className="w-full mt-5 pt-4 border-t border-white/10 space-y-2 font-mono">
                   <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-slate-400">NÚCLEO</span>
+                    <span className="text-[#00f2fe] font-semibold tracking-wider">NEXORA ONE ENGINE</span>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px]">
                     <span className="text-slate-400">ARQUITECTURA</span>
-                    <span className="text-[#00f2fe] font-semibold tracking-wider">SOVEREIGN MESH 2026</span>
+                    <span className="text-emerald-400 font-semibold tracking-wider">SOBERANA 2026</span>
                   </div>
                   <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-slate-400">NÚCLEO RUNTIME</span>
-                    <span className="text-emerald-400 font-semibold tracking-wider">OFFLINE-FIRST HYBRID</span>
-                  </div>
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-slate-400">AGENTE INSIGNIA</span>
-                    <span className="text-cyan-400 font-semibold tracking-wider">NORA ITU CONCIERGE</span>
+                    <span className="text-slate-400">AGENTE</span>
+                    <span className="text-cyan-400 font-semibold tracking-wider">NORA ITU</span>
                   </div>
                   <div className="pt-2">
-                    <span className="font-mono text-xs tracking-widest text-cyan-400 uppercase block text-center">
-                      DESPLIEGUE INDEPENDIENTE · CERO CAÍDAS DE RED
+                    <span className="font-mono text-[10px] sm:text-[11px] tracking-wider text-cyan-400 uppercase block text-center">
+                      NÚCLEO: NEXORA ONE ENGINE | ARQUITECTURA: SOBERANA 2026 | AGENTE: NORA ITU
                     </span>
                   </div>
                 </div>
