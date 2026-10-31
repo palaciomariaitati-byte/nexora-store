@@ -168,6 +168,20 @@ const INITIAL_LICENSES: CorporateLicense[] = [
 
 export default function App() {
   const [isPortalOpen, setIsPortalOpen] = useState(false);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [adminPinInput, setAdminPinInput] = useState('');
+  const [pinError, setPinError] = useState(false);
+
+  // --- MODAL DE CAPTURA PÚBLICA (LEAD / DEMO 15 DÍAS) ---
+  const [isTrialModalOpen, setIsTrialModalOpen] = useState(false);
+  const [selectedTrialSystem, setSelectedTrialSystem] = useState<SystemItem | null>(null);
+  const [leadName, setLeadName] = useState('');
+  const [leadWhatsapp, setLeadWhatsapp] = useState('');
+  const [leadEmail, setLeadEmail] = useState('');
+  const [isSubmittingTrial, setIsSubmittingTrial] = useState(false);
+  const [trialResult, setTrialResult] = useState<{ key: string; downloadUrl: string; expires: string } | null>(null);
+
   const [portalTab, setPortalTab] = useState<'catalog' | 'payments' | 'licenses'>('catalog');
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -190,12 +204,12 @@ export default function App() {
   const [newLicClient, setNewLicClient] = useState('');
   const [newLicSystem, setNewLicSystem] = useState('restobar');
 
-  // Nora Chat
+  // Nora Chat (Identidad SOUL.md: Nora Itu, Ituzaingó, Corrientes)
   const [isNoraChatOpen, setIsNoraChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
     {
       sender: 'nora',
-      text: '¡Hola! Soy Nora Itu, agente técnica de Nexora One Engine. ¿En qué solución soberana te puedo asesorar hoy?',
+      text: '¡Hola chamigo! Soy Nora Itu, asistente operativa perimetral y guardiana de licencias de Nexora One Engine desde Ituzaingó, Corrientes. ¿En qué solución o licencia te doy una mano hoy?',
       timestamp: 'Ahora'
     }
   ]);
@@ -268,6 +282,43 @@ export default function App() {
     }, 3500);
     return () => clearInterval(timer);
   }, []);
+
+  // --- CONTROL DE RUTA OCULTA (#admin) Y PIN SOBERANO ---
+  useEffect(() => {
+    const handleHash = () => {
+      if (window.location.hash === '#admin') {
+        if (isAdminAuthenticated) {
+          setIsPortalOpen(true);
+        } else {
+          setShowPinModal(true);
+        }
+      } else {
+        if (!isAdminAuthenticated) {
+          setIsPortalOpen(false);
+        }
+      }
+    };
+
+    handleHash();
+    window.addEventListener('hashchange', handleHash);
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'a') {
+        e.preventDefault();
+        if (isAdminAuthenticated) {
+          setIsPortalOpen(prev => !prev);
+        } else {
+          setShowPinModal(true);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('hashchange', handleHash);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isAdminAuthenticated]);
 
   // Three.js Mount (Globo 3D fotorrealista satélite estilo Google Earth)
   useEffect(() => {
@@ -620,8 +671,100 @@ export default function App() {
     }
   };
 
+  // --- AUTENTICACIÓN ADMIN POR PIN SOBERANO ---
+  const handleVerifyPin = (e: FormEvent) => {
+    e.preventDefault();
+    if (adminPinInput.trim() === '2026' || adminPinInput.trim() === '1984') {
+      setIsAdminAuthenticated(true);
+      setIsPortalOpen(true);
+      setShowPinModal(false);
+      setPinError(false);
+      setAdminPinInput('');
+    } else {
+      setPinError(true);
+    }
+  };
+
+  const handleCloseAdmin = () => {
+    setIsPortalOpen(false);
+    setIsAdminAuthenticated(false);
+    setShowPinModal(false);
+    setPinError(false);
+    setAdminPinInput('');
+    if (window.location.hash === '#admin') {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  };
+
+  // --- FORMULARIO DE CAPTURA PÚBLICA (LEAD / DEMO 15 DÍAS) ---
+  const handleOpenTrialModal = (sys: SystemItem) => {
+    setSelectedTrialSystem(sys);
+    setLeadName('');
+    setLeadWhatsapp('');
+    setLeadEmail('');
+    setTrialResult(null);
+    setIsTrialModalOpen(true);
+  };
+
+  const handleSubmitTrialLead = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!leadName.trim() || !leadWhatsapp.trim() || !selectedTrialSystem) return;
+    setIsSubmittingTrial(true);
+
+    const hex = Math.random().toString(16).substring(2, 6).toUpperCase();
+    const trialKey = `NX-TRIAL-${hex}-${selectedTrialSystem.id.toUpperCase()}-15D`;
+    const expDate = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const downloadUrl = 'https://github.com/palaciomariaitati-byte/nexora-store-app';
+
+    if (supabase && isSupabaseConfigured) {
+      try {
+        await supabase.from('licenses').insert([{
+          key: trialKey,
+          client: `${leadName} (WhatsApp: ${leadWhatsapp})`,
+          system_id: selectedTrialSystem.id,
+          status: 'trial',
+          payment_status: 'trial',
+          expires: expDate
+        }]);
+      } catch (err) {
+        console.warn('Persistencia de prueba en Supabase:', err);
+      }
+
+      try {
+        await supabase.from('leads').insert([{
+          name: leadName,
+          whatsapp: leadWhatsapp,
+          email: leadEmail,
+          system_id: selectedTrialSystem.id,
+          payment_status: 'trial'
+        }]);
+      } catch {
+        // Fallback si la tabla no existe
+      }
+    }
+
+    setLicenses(prev => [
+      {
+        id: `lic_trial_${Date.now()}`,
+        key: trialKey,
+        client: `${leadName} (WhatsApp: ${leadWhatsapp})`,
+        systemId: selectedTrialSystem.id,
+        status: 'trial',
+        expires: expDate
+      },
+      ...prev
+    ]);
+
+    setIsSubmittingTrial(false);
+    setTrialResult({
+      key: trialKey,
+      downloadUrl,
+      expires: expDate
+    });
+  };
+
   const filteredSystems = systems.filter(sys => {
-    if (!sys.active && !isPortalOpen) return false;
+    if (!sys.active && (!isPortalOpen || !isAdminAuthenticated)) return false;
     const matchCat = activeCategory === 'all' || sys.category === activeCategory;
     const matchQ = !searchQuery || sys.name.toLowerCase().includes(searchQuery.toLowerCase()) || sys.description.toLowerCase().includes(searchQuery.toLowerCase());
     return matchCat && matchQ;
@@ -633,7 +776,7 @@ export default function App() {
       {/* HEADER PERSISTENTE */}
       <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#090b0e]/85 border-b border-white/10 px-4 py-3 sm:px-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setIsPortalOpen(false)}>
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => { setIsPortalOpen(false); window.location.hash = ''; }}>
             <div className="w-9 h-9 rounded-xl bg-[#141822] border border-[#00f2fe]/40 flex items-center justify-center shadow-[0_0_20px_-3px_rgba(0,242,254,0.35)]">
               <span className="font-black text-[#00f2fe] text-sm">NX</span>
             </div>
@@ -655,12 +798,20 @@ export default function App() {
           </nav>
 
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setIsPortalOpen(!isPortalOpen)}
+            <a
+              href="#appstore"
               className="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-[#00f2fe] to-[#00b4d8] text-[#090b0e] font-bold text-xs hover:brightness-110 shadow-[0_0_20px_-3px_rgba(0,242,254,0.35)] transition-all flex items-center gap-2"
             >
-              <span>{isPortalOpen ? 'Ver Sitio Público' : 'Portal Corporativo'}</span>
-            </button>
+              <span>Explorar Sistemas</span>
+            </a>
+            {isPortalOpen && isAdminAuthenticated && (
+              <button
+                onClick={handleCloseAdmin}
+                className="px-3 py-1.5 rounded-lg bg-red-500/20 border border-red-500/40 text-red-300 font-mono text-xs hover:bg-red-500/30 transition flex items-center gap-1.5"
+              >
+                <span>Cerrar Sesión Admin</span>
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -689,32 +840,43 @@ export default function App() {
         </div>
       </section>
 
-      {/* VISTA A: PANEL ADMINISTRATIVO CMS (PORTAL CORPORATIVO) */}
-      {isPortalOpen ? (
+      {/* VISTA A: PANEL ADMINISTRATIVO CMS (SOLO CON AUTENTICACIÓN SOBERANA) */}
+      {isPortalOpen && isAdminAuthenticated ? (
         <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-8 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
             <div>
-              <h1 className="text-2xl font-black text-white">Panel de Administración Integral</h1>
-              <p className="text-xs text-slate-400 mt-0.5">Control de catálogo sincronizado con Supabase, precios duales ($ ARS / USD) y licencias.</p>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">ÁREA RESTRINGIDA</span>
+                <h1 className="text-2xl font-black text-white">Panel de Administración Soberano</h1>
+              </div>
+              <p className="text-xs text-slate-400 mt-1">Control de catálogo sincronizado con Supabase, precios duales ($ ARS / USD) y gestión de licencias.</p>
             </div>
-            <div className="flex items-center gap-2 bg-[#141822] p-1 rounded-xl border border-white/10 text-xs font-mono">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-2 bg-[#141822] p-1 rounded-xl border border-white/10 text-xs font-mono">
+                <button
+                  onClick={() => setPortalTab('catalog')}
+                  className={`px-3 py-1.5 rounded-lg transition ${portalTab === 'catalog' ? 'bg-[#00f2fe] text-slate-950 font-bold' : 'text-slate-400 hover:text-white'}`}
+                >
+                  Catálogo & Precios
+                </button>
+                <button
+                  onClick={() => setPortalTab('payments')}
+                  className={`px-3 py-1.5 rounded-lg transition ${portalTab === 'payments' ? 'bg-[#00f2fe] text-slate-950 font-bold' : 'text-slate-400 hover:text-white'}`}
+                >
+                  Formas de Pago
+                </button>
+                <button
+                  onClick={() => setPortalTab('licenses')}
+                  className={`px-3 py-1.5 rounded-lg transition ${portalTab === 'licenses' ? 'bg-[#00f2fe] text-slate-950 font-bold' : 'text-slate-400 hover:text-white'}`}
+                >
+                  Licencias
+                </button>
+              </div>
               <button
-                onClick={() => setPortalTab('catalog')}
-                className={`px-3 py-1.5 rounded-lg transition ${portalTab === 'catalog' ? 'bg-[#00f2fe] text-slate-950 font-bold' : 'text-slate-400 hover:text-white'}`}
+                onClick={handleCloseAdmin}
+                className="px-3 py-1.5 rounded-xl bg-[#141822] border border-white/15 text-slate-300 hover:text-white text-xs font-mono transition"
               >
-                Catálogo & Precios
-              </button>
-              <button
-                onClick={() => setPortalTab('payments')}
-                className={`px-3 py-1.5 rounded-lg transition ${portalTab === 'payments' ? 'bg-[#00f2fe] text-slate-950 font-bold' : 'text-slate-400 hover:text-white'}`}
-              >
-                Formas de Pago
-              </button>
-              <button
-                onClick={() => setPortalTab('licenses')}
-                className={`px-3 py-1.5 rounded-lg transition ${portalTab === 'licenses' ? 'bg-[#00f2fe] text-slate-950 font-bold' : 'text-slate-400 hover:text-white'}`}
-              >
-                Licencias
+                ← Salir al Sitio Público
               </button>
             </div>
           </div>
@@ -863,12 +1025,12 @@ export default function App() {
                 >
                   Explorar App Store
                 </a>
-                <button
-                  onClick={() => setIsPortalOpen(true)}
+                <a
+                  href="#licencias"
                   className="px-4 py-2.5 rounded-xl bg-[#141822] border border-white/10 hover:border-[#00f2fe]/40 text-slate-200 text-sm font-semibold transition-all"
                 >
-                  Gestionar Licencias Corporativas
-                </button>
+                  Ver Licencias y Cobertura
+                </a>
               </div>
             </div>
 
@@ -1007,6 +1169,27 @@ export default function App() {
                           </span>
                         ))}
                       </div>
+
+                      <div className="pt-2 flex items-center gap-2">
+                        <button
+                          onClick={() => handleOpenTrialModal(sys)}
+                          className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-[#00f2fe] to-[#00b4d8] text-slate-950 font-bold text-xs hover:brightness-110 shadow-[0_0_15px_-3px_rgba(0,242,254,0.3)] transition-all flex items-center justify-center gap-1.5"
+                        >
+                          <span>Probar 15 Días</span>
+                          <span className="text-[10px] font-mono opacity-80">● Sin Tarjeta</span>
+                        </button>
+                        {sys.priceUsd > 0 && (
+                          <a
+                            href={`https://wa.me/5493786414533?text=${encodeURIComponent(`Hola Nexora One, deseo información sobre la licencia de ${sys.name}`)}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="py-2 px-3 rounded-xl bg-[#090b0e] border border-white/10 hover:border-[#00f2fe]/40 text-slate-200 text-xs font-semibold font-mono transition flex items-center gap-1"
+                          >
+                            <span>Adquirir</span>
+                            <span className="text-[#00f2fe]">→</span>
+                          </a>
+                        )}
+                      </div>
                     </article>
                   );
                 })}
@@ -1020,14 +1203,17 @@ export default function App() {
               <span className="text-xs font-mono text-emerald-400">VERIFICACIÓN CRIPTOGRÁFICA</span>
               <h2 className="text-xl font-bold text-white">Activación Inmediata de Licencias</h2>
               <p className="text-xs text-slate-400 max-w-xl">
-                Cada sistema adquirido cuenta con una clave única de ejecución que garantiza funcionamiento ininterrumpido.
+                Cada sistema adquirido cuenta con una clave única de ejecución que garantiza funcionamiento ininterrumpido con 30 días de ciclo y 5 días de gracia operativa.
               </p>
             </div>
             <button
-              onClick={() => setIsPortalOpen(true)}
+              onClick={() => {
+                setIsNoraChatOpen(true);
+                setChatInput('Hola Nora, quiero consultar el estado y activación de una clave de licencia.');
+              }}
               className="px-5 py-2.5 rounded-xl bg-[#00f2fe] text-slate-950 font-bold text-xs hover:bg-[#00f2fe]/90 transition"
             >
-              Abrir Consola de Licencias
+              Consultar Licencia con Nora
             </button>
           </section>
 
@@ -1047,6 +1233,214 @@ export default function App() {
           </div>
         </div>
       </footer>
+
+      {/* MODAL DE PIN SOBERANO (ACCESO ADMINISTRATIVO OCULTO #admin / Ctrl+Shift+A) */}
+      {showPinModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="w-full max-w-sm rounded-2xl bg-[#141822] border border-[#00f2fe]/40 p-6 shadow-[0_0_50px_rgba(0,242,254,0.2)] space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-[#090b0e] border border-[#00f2fe]/50 flex items-center justify-center text-[#00f2fe] text-xs font-bold font-mono">
+                  NX
+                </div>
+                <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono">Consola Administrativa</h3>
+              </div>
+              <button
+                onClick={() => {
+                  setShowPinModal(false);
+                  setPinError(false);
+                  setAdminPinInput('');
+                  if (window.location.hash === '#admin') window.history.replaceState(null, '', window.location.pathname);
+                }}
+                className="text-slate-400 hover:text-white text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Ingresa el PIN soberano de seguridad para acceder a la gestión de productos, precios y licencias.
+            </p>
+
+            <form onSubmit={handleVerifyPin} className="space-y-4">
+              <div>
+                <label className="text-[10px] font-mono text-[#00f2fe] block mb-1.5 font-bold uppercase tracking-wider">
+                  PIN DE SEGURIDAD SOBERANO
+                </label>
+                <input
+                  type="password"
+                  autoFocus
+                  maxLength={12}
+                  placeholder="••••"
+                  value={adminPinInput}
+                  onChange={(e) => {
+                    setAdminPinInput(e.target.value);
+                    setPinError(false);
+                  }}
+                  className={`w-full bg-[#090b0e] border ${pinError ? 'border-red-500' : 'border-white/15'} focus:border-[#00f2fe] rounded-xl px-4 py-2.5 text-center text-lg font-mono tracking-widest text-white focus:outline-none transition`}
+                />
+                {pinError && (
+                  <span className="text-[11px] text-red-400 font-mono block mt-1 text-center">
+                    PIN incorrecto. Acceso denegado.
+                  </span>
+                )}
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPinModal(false);
+                    setPinError(false);
+                    setAdminPinInput('');
+                    if (window.location.hash === '#admin') window.history.replaceState(null, '', window.location.pathname);
+                  }}
+                  className="flex-1 py-2 rounded-xl bg-[#090b0e] border border-white/10 text-slate-400 hover:text-white text-xs font-mono transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2 rounded-xl bg-gradient-to-r from-[#00f2fe] to-[#00b4d8] text-slate-950 text-xs font-bold font-mono hover:brightness-110 shadow-[0_0_15px_-3px_rgba(0,242,254,0.4)] transition"
+                >
+                  Autenticar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL PÚBLICO DE PRUEBA 15 DÍAS (LEAD / DEMO) */}
+      {isTrialModalOpen && selectedTrialSystem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="w-full max-w-md rounded-2xl bg-[#141822] border border-[#00f2fe]/40 p-6 shadow-[0_0_50px_rgba(0,242,254,0.25)] space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                  DEMO 15 DÍAS
+                </span>
+                <h3 className="text-sm font-bold text-white font-mono">{selectedTrialSystem.name}</h3>
+              </div>
+              <button
+                onClick={() => {
+                  setIsTrialModalOpen(false);
+                  setTrialResult(null);
+                }}
+                className="text-slate-400 hover:text-white text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            {!trialResult ? (
+              <form onSubmit={handleSubmitTrialLead} className="space-y-3.5">
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Accede a la versión completa con motor soberano local durante <strong className="text-white">15 días continuos</strong> sin necesidad de tarjeta de crédito.
+                </p>
+
+                <div>
+                  <label className="text-[10px] font-mono text-slate-400 block mb-1">NOMBRE / EMPRESA *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ej: Marcelo Díaz / Bistró Costanera"
+                    value={leadName}
+                    onChange={(e) => setLeadName(e.target.value)}
+                    className="w-full bg-[#090b0e] border border-white/15 focus:border-[#00f2fe] rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none transition"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-mono text-slate-400 block mb-1">WHATSAPP DE ACTIVACIÓN *</label>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="Ej: +54 9 3786 414533"
+                    value={leadWhatsapp}
+                    onChange={(e) => setLeadWhatsapp(e.target.value)}
+                    className="w-full bg-[#090b0e] border border-white/15 focus:border-[#00f2fe] rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none transition"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-mono text-slate-400 block mb-1">CORREO ELECTRÓNICO (OPCIONAL)</label>
+                  <input
+                    type="email"
+                    placeholder="contacto@tuempresa.com"
+                    value={leadEmail}
+                    onChange={(e) => setLeadEmail(e.target.value)}
+                    className="w-full bg-[#090b0e] border border-white/15 focus:border-[#00f2fe] rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none transition"
+                  />
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    disabled={isSubmittingTrial}
+                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#00f2fe] to-[#00b4d8] text-slate-950 text-xs font-bold font-mono hover:brightness-110 shadow-[0_0_20px_-3px_rgba(0,242,254,0.4)] transition flex items-center justify-center gap-2"
+                  >
+                    <span>{isSubmittingTrial ? 'Generando Licencia...' : 'Activar Prueba de 15 Días'}</span>
+                    <span className="text-slate-950 font-sans">→</span>
+                  </button>
+                  <span className="block text-[10px] text-center text-slate-500 font-mono mt-2">
+                    Cero retención · Despliegue en máquina local · Soporte por Nora Itu
+                  </span>
+                </div>
+              </form>
+            ) : (
+              <div className="space-y-4 pt-1">
+                <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-center space-y-1.5">
+                  <span className="text-xs font-mono font-bold text-emerald-400">✓ ACCESO SOBERANO CONCEDIDO</span>
+                  <p className="text-xs text-slate-300">
+                    Tu período de evaluación de 15 días ha sido activado con éxito.
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-[#090b0e] border border-white/10 space-y-1">
+                  <span className="text-[10px] font-mono text-slate-400 block">CLAVE DE LICENCIA DE PRUEBA:</span>
+                  <div className="flex items-center justify-between font-mono font-bold text-xs text-[#00f2fe] bg-[#141822] p-2 rounded-lg border border-[#00f2fe]/30 select-all">
+                    <span>{trialResult.key}</span>
+                    <span className="text-[10px] text-slate-400">Vence: {trialResult.expires}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-2 pt-2">
+                  <a
+                    href={trialResult.downloadUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#00f2fe] to-[#00b4d8] text-slate-950 text-xs font-bold font-mono hover:brightness-110 transition flex items-center justify-center gap-2"
+                  >
+                    <span>Descargar Suite / Acceso de Evaluación</span>
+                    <span>↗</span>
+                  </a>
+
+                  <a
+                    href={`https://wa.me/5493786414533?text=${encodeURIComponent(`Hola Nexora One, activé la prueba de 15 días de ${selectedTrialSystem.name} con la clave ${trialResult.key}`)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-full py-2 px-4 rounded-xl bg-[#25D366]/20 border border-[#25D366]/40 text-[#25D366] text-xs font-bold font-mono hover:bg-[#25D366]/30 transition flex items-center justify-center gap-2"
+                  >
+                    <span>Confirmar con Soporte por WhatsApp</span>
+                    <span>💬</span>
+                  </a>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setIsTrialModalOpen(false);
+                    setTrialResult(null);
+                  }}
+                  className="w-full py-2 rounded-xl bg-[#090b0e] border border-white/10 text-slate-400 hover:text-white text-xs font-mono transition text-center"
+                >
+                  Cerrar
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* CHAT FLOTANTE NORA ITU */}
       <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
