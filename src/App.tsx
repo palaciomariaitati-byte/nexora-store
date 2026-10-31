@@ -204,12 +204,12 @@ export default function App() {
   const [newLicClient, setNewLicClient] = useState('');
   const [newLicSystem, setNewLicSystem] = useState('restobar');
 
-  // Nora Chat (Identidad SOUL.md: Nora Itu, Ituzaingó, Corrientes)
+  // Nora Chat (Protocolo Concierge Ejecutivo Internacional - SOUL.md)
   const [isNoraChatOpen, setIsNoraChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
     {
       sender: 'nora',
-      text: '¡Hola chamigo! Soy Nora Itu, asistente operativa perimetral y guardiana de licencias de Nexora One Engine desde Ituzaingó, Corrientes. ¿En qué solución o licencia te doy una mano hoy?',
+      text: 'Estimado visitante, sea bienvenido a Nexora One Engine. Soy Nora Itu, su consultora ejecutiva. ¿En qué solución o requerimiento tecnológico puedo asistirle el día de hoy?',
       timestamp: 'Ahora'
     }
   ]);
@@ -485,7 +485,51 @@ export default function App() {
     const satellite = new THREE.Mesh(satGeom, satMat);
     masterRig.add(satellite);
 
-    // 6. Placa / Emblema Holográfico Orbital NEXORA ONE ENGINE
+    // 6. Faro Soberano Volumétrico sobre Argentina (Lat -34.6°, Lon -58.4°)
+    const argLat = -34.6037;
+    const argLon = -58.3816;
+    const argLocalPos = latLonToVector3(argLat, argLon, radius * 1.001);
+    const argNormal = argLocalPos.clone().normalize();
+
+    // Rig de anclaje geográfico de Argentina (rota sincronizado con earthMesh)
+    const argBeaconRig = new THREE.Group();
+    argBeaconRig.position.copy(argLocalPos);
+    argBeaconRig.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), argNormal);
+    earthMesh.add(argBeaconRig);
+
+    // Haz volumétrico cian proyectado al espacio (cilindro/cono invertido)
+    const beamHeight = 1.35;
+    const beamGeom = new THREE.CylinderGeometry(0.38, 0.05, beamHeight, 32, 1, true);
+    beamGeom.translate(0, beamHeight / 2, 0); // Base en la superficie, cúspide hacia el espacio
+
+    const beamMat = new THREE.MeshBasicMaterial({
+      color: 0x00f2fe,
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    const beamMesh = new THREE.Mesh(beamGeom, beamMat);
+    beamMesh.visible = false;
+    argBeaconRig.add(beamMesh);
+
+    // Anillo focal luminoso en la superficie
+    const baseGlowGeom = new THREE.RingGeometry(0.04, 0.16, 32);
+    const baseGlowMat = new THREE.MeshBasicMaterial({
+      color: 0x00f2fe,
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    const baseGlowMesh = new THREE.Mesh(baseGlowGeom, baseGlowMat);
+    baseGlowMesh.rotation.x = Math.PI / 2;
+    baseGlowMesh.visible = false;
+    argBeaconRig.add(baseGlowMesh);
+
+    // Generador de textura holográfica de alta resolución para el Logo
     const createHolographicLogoTexture = () => {
       const canvas = document.createElement('canvas');
       canvas.width = 1024;
@@ -594,32 +638,33 @@ export default function App() {
     const logoTexture = createHolographicLogoTexture();
     logoTexture.colorSpace = THREE.SRGBColorSpace;
 
-    const logoGeom = new THREE.PlaneGeometry(1.65, 0.825);
+    // Placa del Logo Holográfico en la cúspide (en scene para Billboard puro sin espejo)
+    const logoGeom = new THREE.PlaneGeometry(1.6, 0.8);
     const logoMat = new THREE.MeshBasicMaterial({
       map: logoTexture,
       transparent: true,
-      opacity: 0.92,
-      side: THREE.DoubleSide,
+      opacity: 0,
       blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
       depthWrite: false,
     });
     const logoMesh = new THREE.Mesh(logoGeom, logoMat);
-    logoMesh.position.set(0, 1.48, 0.35);
-    masterRig.add(logoMesh);
+    logoMesh.visible = false;
+    scene.add(logoMesh);
 
-    // Resplandor de soporte
-    const haloGeom = new THREE.PlaneGeometry(1.9, 1.05);
+    // Halo difuso de respaldo para el logo
+    const haloGeom = new THREE.PlaneGeometry(1.85, 0.95);
     const haloMat = new THREE.MeshBasicMaterial({
       color: 0x00f2fe,
       transparent: true,
-      opacity: 0.16,
-      side: THREE.DoubleSide,
+      opacity: 0,
       blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
       depthWrite: false,
     });
     const haloMesh = new THREE.Mesh(haloGeom, haloMat);
-    haloMesh.position.set(0, 1.48, 0.33);
-    masterRig.add(haloMesh);
+    haloMesh.visible = false;
+    scene.add(haloMesh);
 
     // 7. Interactividad 360° con Puntero / Touch
     let targetRotX = 0.15;
@@ -680,12 +725,61 @@ export default function App() {
       satellite.position.z = Math.sin(time * 1.35) * 1.65;
       orbitRing.rotation.z = time * 0.12;
 
-      // Dinámica holográfica orbital: flotación vertical y pulso lumínico
-      const logoFloat = Math.sin(time * 1.8) * 0.04;
-      logoMesh.position.y = 1.48 + logoFloat;
-      haloMesh.position.y = 1.48 + logoFloat;
-      logoMat.opacity = 0.84 + Math.sin(time * 3.2) * 0.12;
-      haloMat.opacity = 0.12 + Math.sin(time * 3.2) * 0.05;
+      // ── Detección Angular de Argentina & Faro Soberano ─────────────
+      const argWorldPos = new THREE.Vector3();
+      argBeaconRig.getWorldPosition(argWorldPos);
+
+      const earthWorldPos = new THREE.Vector3();
+      earthMesh.getWorldPosition(earthWorldPos);
+
+      const normalWorld = argWorldPos.clone().sub(earthWorldPos).normalize();
+      const viewDir = camera.position.clone().sub(argWorldPos).normalize();
+      const dot = normalWorld.dot(viewDir);
+
+      if (dot > 0.60) {
+        // Mapeo suave entre 0.60 y 0.95
+        const rawVis = Math.min(1, Math.max(0, (dot - 0.60) / 0.35));
+        const smoothVis = rawVis * rawVis * (3 - 2 * rawVis);
+        const pulse = Math.sin(time * 5.0) * 0.08;
+
+        // Activar haz volumétrico
+        beamMesh.visible = true;
+        baseGlowMesh.visible = true;
+        beamMat.opacity = Math.min(0.85, smoothVis * 0.72 + pulse * smoothVis);
+        baseGlowMat.opacity = smoothVis * 0.85;
+
+        // Altura y escala dinámica del haz hacia el espacio
+        const dynamicHeight = beamHeight * (0.85 + 0.35 * smoothVis);
+        beamMesh.scale.set(1 + smoothVis * 0.25, 0.85 + 0.35 * smoothVis, 1 + smoothVis * 0.25);
+
+        // Posición de la cúspide del haz
+        const apexWorldPos = argWorldPos.clone().add(normalWorld.clone().multiplyScalar(dynamicHeight + 0.12));
+        logoMesh.position.copy(apexWorldPos);
+        haloMesh.position.copy(apexWorldPos);
+
+        // Billboard puro: garantiza lectura al derecho y nítida
+        logoMesh.quaternion.copy(camera.quaternion);
+        haloMesh.quaternion.copy(camera.quaternion);
+
+        // Magnificación suave de escala 1.0 -> 1.75
+        const currentScale = 1.0 + 0.75 * smoothVis;
+        logoMesh.scale.set(currentScale, currentScale, currentScale);
+        haloMesh.scale.set(currentScale * 1.12, currentScale * 1.12, currentScale * 1.12);
+
+        logoMesh.visible = true;
+        haloMesh.visible = true;
+        logoMat.opacity = smoothVis * 0.95;
+        haloMat.opacity = smoothVis * 0.18;
+      } else {
+        beamMesh.visible = false;
+        baseGlowMesh.visible = false;
+        logoMesh.visible = false;
+        haloMesh.visible = false;
+        beamMat.opacity = 0;
+        baseGlowMat.opacity = 0;
+        logoMat.opacity = 0;
+        haloMat.opacity = 0;
+      }
 
       // Amortiguación inercial del arrastre 360°
       masterRig.rotation.y += (targetRotY - masterRig.rotation.y) * 0.08;
@@ -701,6 +795,8 @@ export default function App() {
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
       window.removeEventListener('resize', handleResize);
+      scene.remove(logoMesh);
+      scene.remove(haloMesh);
       renderer.dispose();
       if (container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);
