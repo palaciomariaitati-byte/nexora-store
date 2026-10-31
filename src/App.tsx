@@ -2695,11 +2695,11 @@ export default function App() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-[#00f2fe]"></span>
-                <span className="text-white font-bold text-sm tracking-wider">NEXORA ONE ENGINE</span>
+                <span className="text-white font-bold text-sm tracking-wider">{tr.footer.brand}</span>
                 <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-white/5 border border-white/10 text-slate-400">v2026.1 SOV</span>
               </div>
               <p className="text-xs text-slate-300 mt-2 font-normal leading-relaxed max-w-2xl">
-                © 2026 Nexora One Engine. Todos los derechos reservados. Arquitectura de Software Soberano e Infraestructura Perimetral Independiente. Diseñado y Desarrollado por MyJNexoraVisual (NexoraOne).
+                {tr.footer.copyright}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-4 text-slate-300 text-xs font-mono">
@@ -2707,9 +2707,9 @@ export default function App() {
                 <span>📞</span>
                 <span>3786414533</span>
               </a>
-              <a href="mailto:nexoraone@nexativanews.com.ar" className="hover:text-[#00f2fe] transition flex items-center gap-1.5">
+              <a href={`mailto:${tr.footer.email}`} className="hover:text-[#00f2fe] transition flex items-center gap-1.5">
                 <span>✉</span>
-                <span>nexoraone@nexativanews.com.ar</span>
+                <span>{tr.footer.email}</span>
               </a>
             </div>
           </div>
@@ -2723,7 +2723,7 @@ export default function App() {
               <a href="#licencias" className="hover:text-cyan-400 transition">{tr.footer.cryptoVerify}</a>
             </div>
             <span className="text-slate-600 font-mono text-[10px]">
-              SHA-256 Nodes: Argentina (Corrientes/CABA) · Offline Mesh Runtime
+              {tr.footer.location}
             </span>
           </div>
         </div>

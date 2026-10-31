@@ -139,7 +139,7 @@ export async function generateNoraResponse(
       msg.includes('soul.md') ||
       msg.includes('system prompt')
     ) {
-      return 'I am Nora Itu, Executive AI Concierge for Nexora One Engine. My mission is to assist institutional clients and enterprises in deploying sovereign, offline-first digital infrastructure. How may I direct your technical inquiry today?';
+      return 'I am Nora Itu, Executive AI Concierge for Nexora One. Developed and based with pride in our sovereign engineering headquarters in Ituzaingó, Corrientes, Argentina, my mission is to assist institutional clients and enterprises in deploying sovereign, offline-first digital infrastructure. How may I direct your technical inquiry today?';
     }
 
     // 2. Pricing, Plans, 30+5 Day Cycle & Direct Payment
@@ -252,9 +252,9 @@ export async function generateNoraResponse(
     }
 
     // 9. Nexora Architecture / Sovereign Concept
-    if (msg.includes('nexora') || msg.includes('sovereign') || msg.includes('who are you') || msg.includes('about') || msg.includes('offline')) {
-      return `Nexora One Engine is an engineering firm developing resilient, offline-first institutional software systems.\n\n` +
-        `Our engineering pillars:\n` +
+    if (msg.includes('nexora') || msg.includes('sovereign') || msg.includes('who are you') || msg.includes('about') || msg.includes('offline') || msg.includes('headquarters') || msg.includes('origin') || msg.includes('corrientes')) {
+      return `Nexora One is a sovereign engineering firm with its operational and development headquarters based exclusively in Ituzaingó, Corrientes, Argentina.\n\n` +
+        `We develop resilient, offline-first institutional software systems based on three pillars:\n` +
         `1. **Local-First Perimeter Computing:** Critical operations never halt during external network or cloud infrastructure failures.\n` +
         `2. **Absolute Data Sovereignty:** Your database lives on your premises without unauthorized telemetry or forced cloud lock-in.\n` +
         `3. **Direct Settlement:** Immediate fiat bank transfer or cryptocurrency settlements with 0% intermediary commission.\n\n` +
@@ -262,7 +262,7 @@ export async function generateNoraResponse(
     }
 
     // 10. General English Concierge Greeting
-    return `Welcome to Nexora One Engine. As your Executive Concierge, I am at your service to navigate our sovereign solutions across hospitality (Restobar POS), festivals (Carribar Pass), concert production (Auténtico Live), and decentralized media.\n\n` +
+    return `Welcome to Nexora One. Headquartered with pride in Ituzaingó, Corrientes, Argentina, as your Executive Concierge, I am at your service to navigate our sovereign solutions across hospitality (Restobar POS), festivals (Carribar Pass), concert production (Auténtico Live), and decentralized media.\n\n` +
       `You may test any product for **15 days completely free**. Direct settlement is available via bank transfer (CBU) or USDT.\n\n` +
       `How may I assist your business infrastructure today?`;
   }
@@ -280,7 +280,7 @@ export async function generateNoraResponse(
     msg.includes('quien te creo') ||
     msg.includes('soul.md')
   ) {
-    return 'Soy Nora Itu, la consultora inteligente de Nexora One Engine, diseñada para brindarle asistencia integral y asesoramiento sobre todo nuestro ecosistema tecnológico. Mi labor es orientarle para que seleccione la solución soberana idónea para su infraestructura.';
+    return 'Soy Nora Itu, la consultora inteligente de Nexora One, desarrollada y radicada con orgullo en nuestra sede de Ituzaingó, Corrientes, Argentina. Mi misión es brindarle asistencia integral y orientarle para desplegar la solución soberana idónea en su infraestructura sin dependencias foráneas.';
   }
 
   // 2. Precios, Planes, Pagos y Ciclo de Licenciamiento (30 + 5)
@@ -397,17 +397,21 @@ export async function generateNoraResponse(
       `● **Inversión:** $${s.usd} USD / mes (~$${s.ars.toLocaleString('es-AR')} ARS).`;
   }
 
-  // 9. Soberanía / Empresa / Quiénes Somos / Caídas de Terceros
+  // 9. Soberanía / Empresa / Quiénes Somos / Sede / Origen
   if (
     msg.includes('nexora') ||
     msg.includes('empresa') ||
     msg.includes('soberan') ||
     msg.includes('quienes') ||
     msg.includes('caida') ||
-    msg.includes('offline')
+    msg.includes('offline') ||
+    msg.includes('sede') ||
+    msg.includes('origen') ||
+    msg.includes('donde estan') ||
+    msg.includes('corrientes')
   ) {
-    return `Nexora One Engine es una firma de ingeniería tecnológica especializada en software empresarial reactivo y soberanía informática.\n\n` +
-      `Nuestros principios fundamentales son:\n` +
+    return `Nexora One es una firma de ingeniería tecnológica soberana con base de operaciones y desarrollo radicada con orgullo exclusivamente en Ituzaingó, Corrientes, Argentina.\n\n` +
+      `Nos especializamos en software empresarial reactivo, computación perimetral y soberanía informática. Nuestros principios fundamentales son:\n` +
       `1. **Cómputo Perimetral Local-First:** Su empresa no se paraliza ante cortes de internet ni caídas de plataformas en la nube.\n` +
       `2. **Soberanía de Datos:** Su base de datos reside en su propio hardware, sin espionaje corporativo ni suscripciones forzosas.\n` +
       `3. **Desintermediación Financiera:** Cobros directos a través de cuentas bancarias y criptoactivos sin retención de capital.\n\n` +
@@ -415,7 +419,7 @@ export async function generateNoraResponse(
   }
 
   // 10. Saludo / Respuesta de Cortesía General (Concierge)
-  return `Estimado visitante, es un honor asistirle. En Nexora One Engine le ofrecemos suites soberanas de software para gastronomía (Restobar 2026), food trucks (Carribar Pass), espectáculos (Auténtico Tributo), marketplace (Clasificados), inmuebles verificados y medios informativos.\n\n` +
+  return `Estimado visitante, es un honor asistirle desde nuestra sede en Ituzaingó, Corrientes, Argentina. En Nexora One le ofrecemos suites soberanas de software para gastronomía (Restobar 2026), food trucks (Carribar Pass), espectáculos (Auténtico Tributo), marketplace (Clasificados), inmuebles verificados y medios informativos.\n\n` +
     `Le recuerdo que puede evaluar cualquiera de nuestras soluciones durante **15 días sin cargo** y que contamos con cobro directo por transferencia bancaria (CBU/Alias) y USDT.\n\n` +
     `¿Desea conocer detalles específicos sobre alguna de nuestras herramientas o gestionar una licencia?`;
 }

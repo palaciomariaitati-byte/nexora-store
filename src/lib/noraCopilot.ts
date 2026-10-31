@@ -139,6 +139,13 @@ export async function generateCopilotResponse(
 
   const q = userQuery.toLowerCase().trim();
 
+  // 0. Identidad, origen y sede soberana de Nexora One
+  if (q.includes('quien') || q.includes('quién') || q.includes('origen') || q.includes('sede') || q.includes('empresa') || q.includes('donde') || q.includes('dónde') || q.includes('corrientes')) {
+    return `### Nora Copilot — Identidad y Sede Soberana\n\n` +
+      `Pertenezco con orgullo a **Nexora One**, firma de ingeniería tecnológica soberana con base de operaciones y desarrollo radicada con exclusividad en **Ituzaingó, Corrientes, Argentina**.\n\n` +
+      `Como su copiloto técnico de backoffice, mi función es asistirle en la administración del ecosistema de software perimetral, la emisión presencial de licencias y el resguardo de la infraestructura sin dependencias externas.`;
+  }
+
   // 1. Offline / PCs de la empresa / Paquete local
   if (q.includes('offline') || q.includes('pc') || q.includes('oficina') || q.includes('local') || q.includes('bat') || q.includes('instalar') || q.includes('descargar') || q.includes('sin internet')) {
     const topic = COPILOT_KNOWLEDGE_BASE.offline_distribucion;
@@ -195,7 +202,7 @@ export async function generateCopilotResponse(
 
   // 7. Respuesta de bienvenida y guía operativa general
   return `### Nora Copilot — Centro de Control Operativo\n\n` +
-    `Hola, soy su copiloto técnico interno para la administración de Nexora One Engine. Estoy configurada para asistirle en las siguientes tareas clave:\n\n` +
+    `Hola, soy su copiloto técnico interno de **Nexora One**, con base de operaciones y desarrollo en **Ituzaingó, Corrientes, Argentina**. Estoy configurada para asistirle en las siguientes tareas clave:\n\n` +
     `1. 📦 **Alta y Estructura de Sistemas:** Cómo dar de alta nuevos programas en el catálogo.\n` +
     `2. 🏪 **Emisión Presencial en Mostrador:** Procedimiento para cobros físicos y entrega de recibos.\n` +
     `3. ⏳ **Regla 30 + 5 de Gracia:** Qué hacer ante clientes en gracia, corte preventivo o renovación.\n` +

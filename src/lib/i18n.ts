@@ -138,6 +138,7 @@ export interface Translations {
     cryptoVerify: string;
     phone: string;
     email: string;
+    location: string;
   };
   admin: {
     restricted: string;
@@ -306,13 +307,14 @@ export const TRANSLATIONS: Record<Language, Translations> = {
       close: 'Cerrar',
     },
     footer: {
-      brand: 'Nexora One Engine',
-      copyright: '© 2026 Nexora One Engine. Todos los derechos reservados. Arquitectura de Software Soberano e Infraestructura Perimetral Independiente. Diseñado y Desarrollado por MyJNexoraVisual (NexoraOne).',
+      brand: 'Nexora One',
+      copyright: '© 2026 Nexora One. Todos los derechos reservados. Arquitectura de Software Soberano e Infraestructura Perimetral Independiente. Diseñado y Desarrollado por Nexora One.',
       terms: 'Términos de Servicio',
       privacy: 'Política de Privacidad',
       cryptoVerify: 'Verificación Criptográfica SHA-256',
       phone: 'Tel: 3786414533',
-      email: 'nexoraone@nexativanews.com.ar',
+      email: 'contacto@nexoraone.com',
+      location: 'Sede Soberana: Ituzaingó, Corrientes, Argentina · Offline Mesh Runtime',
     },
     admin: {
       restricted: 'ÁREA RESTRINGIDA',
@@ -479,13 +481,14 @@ export const TRANSLATIONS: Record<Language, Translations> = {
       close: 'Close',
     },
     footer: {
-      brand: 'Nexora One Engine',
-      copyright: '© 2026 Nexora One Engine. Todos los derechos reservados. Arquitectura de Software Soberano e Infraestructura Perimetral Independiente. Diseñado y Desarrollado por MyJNexoraVisual (NexoraOne).',
+      brand: 'Nexora One',
+      copyright: '© 2026 Nexora One. Todos los derechos reservados. Arquitectura de Software Soberano e Infraestructura Perimetral Independiente. Diseñado y Desarrollado por Nexora One.',
       terms: 'Terms of Service',
       privacy: 'Privacy Policy',
       cryptoVerify: 'Cryptographic Verification (SHA-256)',
       phone: 'Phone: +54 9 3786 414533',
-      email: 'nexoraone@nexativanews.com.ar',
+      email: 'contacto@nexoraone.com',
+      location: 'Sovereign Headquarters: Ituzaingó, Corrientes, Argentina · Offline Mesh Runtime',
     },
     admin: {
       restricted: 'RESTRICTED AREA',
