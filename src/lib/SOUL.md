@@ -23,3 +23,4 @@
 - `check_license(key)`: Consulta estado, fecha de vencimiento y días de gracia restantes.
 - `register_lead(data)`: Captura datos de prospectos que solicitan demos de 15 días.
 - `renew_license(key, payment_ref)`: Añade +30 días al ciclo y actualiza el estado a activo.
+

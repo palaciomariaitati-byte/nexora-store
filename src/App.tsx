@@ -485,7 +485,143 @@ export default function App() {
     const satellite = new THREE.Mesh(satGeom, satMat);
     masterRig.add(satellite);
 
-    // 6. Interactividad 360° con Puntero / Touch
+    // 6. Placa / Emblema Holográfico Orbital NEXORA ONE ENGINE
+    const createHolographicLogoTexture = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return new THREE.Texture();
+
+      ctx.clearRect(0, 0, 1024, 512);
+
+      // Marco exterior holográfico con gradiente cian (#00f2fe) a azul (#0070f3)
+      const gradBorder = ctx.createLinearGradient(80, 40, 944, 472);
+      gradBorder.addColorStop(0, '#00f2fe');
+      gradBorder.addColorStop(0.5, '#0070f3');
+      gradBorder.addColorStop(1, '#00f2fe');
+
+      ctx.save();
+      ctx.strokeStyle = gradBorder;
+      ctx.lineWidth = 5;
+      ctx.shadowColor = '#00f2fe';
+      ctx.shadowBlur = 24;
+
+      // Caja redondeada holográfica
+      const bx = 90, by = 50, bw = 844, bh = 412, br = 32;
+      ctx.beginPath();
+      ctx.moveTo(bx + br, by);
+      ctx.lineTo(bx + bw - br, by);
+      ctx.quadraticCurveTo(bx + bw, by, bx + bw, by + br);
+      ctx.lineTo(bx + bw, by + bh - br);
+      ctx.quadraticCurveTo(bx + bw, by + bh, bx + bw - br, by + bh);
+      ctx.lineTo(bx + br, by + bh);
+      ctx.quadraticCurveTo(bx, by + bh, bx, by + bh - br);
+      ctx.lineTo(bx, by + br);
+      ctx.quadraticCurveTo(bx, by, bx + br, by);
+      ctx.closePath();
+      ctx.stroke();
+
+      // Relleno translúcido cibernético
+      const bgGrad = ctx.createRadialGradient(512, 256, 40, 512, 256, 440);
+      bgGrad.addColorStop(0, 'rgba(0, 112, 243, 0.28)');
+      bgGrad.addColorStop(0.6, 'rgba(0, 242, 254, 0.08)');
+      bgGrad.addColorStop(1, 'rgba(3, 10, 20, 0)');
+      ctx.fillStyle = bgGrad;
+      ctx.fill();
+      ctx.restore();
+
+      // Líneas de escaneo holográficas
+      ctx.save();
+      ctx.strokeStyle = 'rgba(0, 242, 254, 0.12)';
+      ctx.lineWidth = 1.5;
+      for (let y = by + 16; y < by + bh; y += 14) {
+        ctx.beginPath();
+        ctx.moveTo(bx + 18, y);
+        ctx.lineTo(bx + bw - 18, y);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // Insignia NX central
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      const isoY = 150;
+      ctx.shadowColor = '#00f2fe';
+      ctx.shadowBlur = 26;
+      ctx.fillStyle = '#0e1117';
+      ctx.strokeStyle = '#00f2fe';
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.arc(512, isoY, 44, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.font = '900 36px monospace';
+      ctx.fillStyle = '#00f2fe';
+      ctx.shadowBlur = 18;
+      ctx.fillText('NX', 512, isoY + 2);
+
+      // Tipografía principal "NEXORA ONE"
+      ctx.shadowColor = '#00f2fe';
+      ctx.shadowBlur = 32;
+      ctx.font = '900 64px system-ui, -apple-system, sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText('NEXORA ONE', 512, 260);
+
+      // Subtítulo "— ENGINE —"
+      ctx.shadowColor = '#00f2fe';
+      ctx.shadowBlur = 16;
+      ctx.font = '700 24px monospace';
+      ctx.fillStyle = '#00f2fe';
+      ctx.fillText('— ENGINE —', 512, 320);
+
+      // Tagline perimetral
+      ctx.shadowBlur = 8;
+      ctx.font = '600 15px monospace';
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillText('SOVEREIGN RUNTIME ARCHITECTURE', 512, 370);
+      ctx.restore();
+
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.needsUpdate = true;
+      return tex;
+    };
+
+    const logoTexture = createHolographicLogoTexture();
+    logoTexture.colorSpace = THREE.SRGBColorSpace;
+
+    const logoGeom = new THREE.PlaneGeometry(1.65, 0.825);
+    const logoMat = new THREE.MeshBasicMaterial({
+      map: logoTexture,
+      transparent: true,
+      opacity: 0.92,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    const logoMesh = new THREE.Mesh(logoGeom, logoMat);
+    logoMesh.position.set(0, 1.48, 0.35);
+    masterRig.add(logoMesh);
+
+    // Resplandor de soporte
+    const haloGeom = new THREE.PlaneGeometry(1.9, 1.05);
+    const haloMat = new THREE.MeshBasicMaterial({
+      color: 0x00f2fe,
+      transparent: true,
+      opacity: 0.16,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    const haloMesh = new THREE.Mesh(haloGeom, haloMat);
+    haloMesh.position.set(0, 1.48, 0.33);
+    masterRig.add(haloMesh);
+
+    // 7. Interactividad 360° con Puntero / Touch
     let targetRotX = 0.15;
     let targetRotY = 0;
     let isDragging = false;
@@ -543,6 +679,13 @@ export default function App() {
       satellite.position.y = Math.sin(time * 1.35) * 0.55;
       satellite.position.z = Math.sin(time * 1.35) * 1.65;
       orbitRing.rotation.z = time * 0.12;
+
+      // Dinámica holográfica orbital: flotación vertical y pulso lumínico
+      const logoFloat = Math.sin(time * 1.8) * 0.04;
+      logoMesh.position.y = 1.48 + logoFloat;
+      haloMesh.position.y = 1.48 + logoFloat;
+      logoMat.opacity = 0.84 + Math.sin(time * 3.2) * 0.12;
+      haloMat.opacity = 0.12 + Math.sin(time * 3.2) * 0.05;
 
       // Amortiguación inercial del arrastre 360°
       masterRig.rotation.y += (targetRotY - masterRig.rotation.y) * 0.08;
