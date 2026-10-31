@@ -269,7 +269,7 @@ export default function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // Three.js Mount (Globo 3D fotorrealista)
+  // Three.js Mount (Globo 3D fotorrealista satélite estilo Google Earth)
   useEffect(() => {
     if (!globeMountRef.current) return;
     const container = globeMountRef.current;
@@ -280,95 +280,161 @@ export default function App() {
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-    camera.position.set(0, 0.2, 4.3);
+    camera.position.set(0, 0.25, 4.3);
 
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: 'high-performance' });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     container.appendChild(renderer.domElement);
 
-    scene.add(new THREE.AmbientLight(0x1a2634, 1.4));
-    const sunLight = new THREE.DirectionalLight(0xffffff, 2.6);
+    // Iluminación solar fotorrealista
+    scene.add(new THREE.AmbientLight(0x1a2634, 1.3));
+    const sunLight = new THREE.DirectionalLight(0xffffff, 2.7);
     sunLight.position.set(6, 3, 5);
     scene.add(sunLight);
+
+    const rimLight = new THREE.PointLight(0x00f2fe, 1.8, 20);
+    rimLight.position.set(-5, -2, -3);
+    scene.add(rimLight);
 
     const masterRig = new THREE.Group();
     scene.add(masterRig);
 
-    const canvas = document.createElement('canvas');
-    canvas.width = 2048;
-    canvas.height = 1024;
-    const ctx = canvas.getContext('2d');
+    // 1. Texturas Fotográficas Terrestres (NASA Blue Marble / Three.js CDN)
+    const textureLoader = new THREE.TextureLoader();
+    textureLoader.crossOrigin = 'anonymous';
 
-    if (ctx) {
-      const oceanGrad = ctx.createLinearGradient(0, 0, 0, 1024);
-      oceanGrad.addColorStop(0, '#04101e');
-      oceanGrad.addColorStop(0.2, '#061d38');
-      oceanGrad.addColorStop(0.5, '#082548');
-      oceanGrad.addColorStop(0.8, '#061a33');
-      oceanGrad.addColorStop(1, '#030d1a');
-      ctx.fillStyle = oceanGrad;
-      ctx.fillRect(0, 0, 2048, 1024);
-
-      const drawLand = (pts: number[][], col: string) => {
-        ctx.fillStyle = col;
-        ctx.beginPath();
-        ctx.moveTo(pts[0][0], pts[0][1]);
-        for (let i = 1; i < pts.length; i++) {
-          const xc = (pts[i][0] + pts[(i + 1) % pts.length][0]) / 2;
-          const yc = (pts[i][1] + pts[(i + 1) % pts.length][1]) / 2;
-          ctx.quadraticCurveTo(pts[i][0], pts[i][1], xc, yc);
-        }
-        ctx.closePath();
-        ctx.fill();
-      };
-
-      drawLand([[280, 180], [360, 140], [480, 160], [540, 220], [510, 320], [440, 360], [390, 440], [350, 420], [310, 340], [240, 260]], '#274b35');
-      drawLand([[420, 470], [500, 520], [560, 580], [530, 680], [490, 780], [440, 840], [420, 740], [390, 610], [395, 520]], '#225232');
-      drawLand([[950, 160], [1080, 140], [1280, 150], [1500, 190], [1650, 260], [1700, 360], [1620, 460], [1480, 450], [1360, 420], [1220, 440], [1120, 380], [1010, 340], [930, 260]], '#3a5836');
-      drawLand([[980, 380], [1120, 390], [1200, 480], [1180, 620], [1110, 750], [1030, 780], [960, 660], [920, 540], [940, 430]], '#4b4b2c');
-      drawLand([[1540, 640], [1660, 620], [1720, 700], [1680, 800], [1580, 810], [1510, 730]], '#5c4d32');
-
-      ctx.fillStyle = '#ffdf78';
-      for (let i = 0; i < 300; i++) {
-        const lx = Math.random() * 2048;
-        const ly = 180 + Math.random() * 660;
-        ctx.beginPath();
-        ctx.arc(lx, ly, 1 + Math.random() * 1.5, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      const stampLogo = (cx: number, cy: number) => {
-        ctx.save();
-        ctx.textAlign = 'center';
-        ctx.font = '900 64px sans-serif';
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText('NEXORA ONE', cx, cy - 10);
-        ctx.font = '700 24px monospace';
-        ctx.fillStyle = '#00f2fe';
-        ctx.fillText('— ENGINE —', cx, cy + 35);
-        ctx.restore();
-      };
-      stampLogo(580, 520);
-      stampLogo(1600, 520);
-    }
-
-    const earthTexture = new THREE.CanvasTexture(canvas);
-    earthTexture.wrapS = THREE.RepeatWrapping;
-
-    const earthMesh = new THREE.Mesh(
-      new THREE.SphereGeometry(1.22, 64, 64),
-      new THREE.MeshPhongMaterial({ map: earthTexture, specular: 0x224466, shininess: 25 })
+    const colorMap = textureLoader.load(
+      'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_atmos_2048.jpg'
     );
+    const normalMap = textureLoader.load(
+      'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_normal_2048.jpg'
+    );
+    const specularMap = textureLoader.load(
+      'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_specular_2048.jpg'
+    );
+    const cloudsMap = textureLoader.load(
+      'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_clouds_1024.png'
+    );
+
+    // Esfera Principal (Tierra con brillo oceánico y relieve)
+    const radius = 1.22;
+    const earthGeom = new THREE.SphereGeometry(radius, 64, 64);
+    const earthMat = new THREE.MeshPhongMaterial({
+      map: colorMap,
+      normalMap: normalMap,
+      normalScale: new THREE.Vector2(0.85, 0.85),
+      specularMap: specularMap,
+      specular: new THREE.Color(0x284868),
+      shininess: 28,
+      emissive: new THREE.Color(0x020814),
+      emissiveIntensity: 0.25,
+    });
+    const earthMesh = new THREE.Mesh(earthGeom, earthMat);
     masterRig.add(earthMesh);
 
-    const orbitRing = new THREE.Mesh(
-      new THREE.TorusGeometry(1.85, 0.016, 16, 120),
-      new THREE.MeshPhongMaterial({ color: 0x00f2fe, emissive: 0x0088cc, shininess: 95 })
-    );
+    // 2. Esfera de Nubes con Rotación Suave Independiente
+    const cloudGeom = new THREE.SphereGeometry(radius * 1.015, 64, 64);
+    const cloudMat = new THREE.MeshPhongMaterial({
+      map: cloudsMap,
+      transparent: true,
+      opacity: 0.45,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    const cloudMesh = new THREE.Mesh(cloudGeom, cloudMat);
+    masterRig.add(cloudMesh);
+
+    // 3. Halo Atmosférico (Dispersión Rayleigh / Corona Fresnel Cian)
+    const atmoGeom = new THREE.SphereGeometry(radius * 1.12, 48, 48);
+    const atmoMat = new THREE.ShaderMaterial({
+      vertexShader: `
+        varying vec3 vNormal;
+        void main() {
+          vNormal = normalize(normalMatrix * normal);
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vNormal;
+        void main() {
+          float intensity = pow(0.68 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.6);
+          gl_FragColor = vec4(0.0, 0.85, 1.0, 1.0) * intensity * 1.6;
+        }
+      `,
+      blending: THREE.AdditiveBlending,
+      side: THREE.BackSide,
+      transparent: true,
+      depthWrite: false,
+    });
+    const atmoMesh = new THREE.Mesh(atmoGeom, atmoMat);
+    masterRig.add(atmoMesh);
+
+    // Función auxiliar para convertir Lat/Lon geográfica a Vector3 en la esfera
+    const latLonToVector3 = (lat: number, lon: number, r: number) => {
+      const phi = (90 - lat) * (Math.PI / 180);
+      const theta = (lon + 180) * (Math.PI / 180);
+      return new THREE.Vector3(
+        -(r * Math.sin(phi) * Math.cos(theta)),
+        r * Math.cos(phi),
+        r * Math.sin(phi) * Math.sin(theta)
+      );
+    };
+
+    // 4. Pines Luminosos de Infraestructura Soberana (Lat/Lon reales)
+    const pinsData = [
+      { lat: -34.6037, lon: -58.3816, name: 'Nodo Primario (Buenos Aires)', color: 0x00f2fe },
+      { lat: 19.4326, lon: -99.1332, name: 'Nodo Perimetral (CDMX)', color: 0xf59e0b },
+      { lat: 40.4168, lon: -3.7038, name: 'Nodo Réplica (Madrid)', color: 0x34d399 }
+    ];
+
+    const beaconGroups: { group: THREE.Group; ring: THREE.Mesh; ringMat: THREE.MeshBasicMaterial }[] = [];
+
+    pinsData.forEach((pin) => {
+      const pinPos = latLonToVector3(pin.lat, pin.lon, radius * 1.002);
+      const group = new THREE.Group();
+      group.position.copy(pinPos);
+      group.lookAt(pinPos.clone().multiplyScalar(2));
+
+      // Anillo de pulso exterior
+      const ringGeom = new THREE.RingGeometry(0.035, 0.075, 32);
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: pin.color,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.9,
+      });
+      const ringMesh = new THREE.Mesh(ringGeom, ringMat);
+      group.add(ringMesh);
+
+      // Núcleo luminoso
+      const dotGeom = new THREE.SphereGeometry(0.028, 16, 16);
+      const dotMat = new THREE.MeshBasicMaterial({ color: pin.color });
+      const dotMesh = new THREE.Mesh(dotGeom, dotMat);
+      group.add(dotMesh);
+
+      // Luz puntual local sobre el pin
+      const pinLight = new THREE.PointLight(pin.color, 1.2, 0.6);
+      group.add(pinLight);
+
+      earthMesh.add(group);
+      beaconGroups.push({ group, ring: ringMesh, ringMat });
+    });
+
+    // 5. Órbita y Satélite de Telemetría
+    const orbitRingGeom = new THREE.TorusGeometry(1.85, 0.016, 16, 120);
+    const orbitRingMat = new THREE.MeshPhongMaterial({ color: 0x00f2fe, emissive: 0x0088cc, shininess: 95 });
+    const orbitRing = new THREE.Mesh(orbitRingGeom, orbitRingMat);
     orbitRing.rotation.x = Math.PI / 2.5;
+    orbitRing.rotation.y = Math.PI / 9;
     masterRig.add(orbitRing);
 
+    const satGeom = new THREE.SphereGeometry(0.065, 16, 16);
+    const satMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const satellite = new THREE.Mesh(satGeom, satMat);
+    masterRig.add(satellite);
+
+    // 6. Interactividad 360° con Puntero / Touch
     let targetRotX = 0.15;
     let targetRotY = 0;
     let isDragging = false;
@@ -378,25 +444,59 @@ export default function App() {
       isDragging = true;
       prevMousePos = { x: e.clientX, y: e.clientY };
     };
+
     const onPointerMove = (e: PointerEvent) => {
       if (!isDragging) return;
       targetRotY += (e.clientX - prevMousePos.x) * 0.008;
       targetRotX += (e.clientY - prevMousePos.y) * 0.008;
       prevMousePos = { x: e.clientX, y: e.clientY };
     };
-    const onPointerUp = () => { isDragging = false; };
+
+    const onPointerUp = () => {
+      isDragging = false;
+    };
 
     container.addEventListener('pointerdown', onPointerDown);
     window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup', onPointerUp);
 
+    const handleResize = () => {
+      if (!container) return;
+      const w = container.clientWidth || 400;
+      const h = container.clientHeight || 360;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    };
+    window.addEventListener('resize', handleResize);
+
     let animId: number;
+    const clock = new THREE.Clock();
     const animate = () => {
       animId = requestAnimationFrame(animate);
-      earthMesh.rotation.y += 0.002;
-      orbitRing.rotation.z += 0.005;
+      const time = clock.getElapsedTime();
+
+      // Rotación suave del globo y nubes a distinta velocidad (efecto volumétrico)
+      earthMesh.rotation.y += 0.0022;
+      cloudMesh.rotation.y += 0.0031;
+
+      // Pulsación de pines luminosos
+      beaconGroups.forEach((b, i) => {
+        const pulse = 1.0 + Math.sin(time * 4.5 + i) * 0.45;
+        b.ring.scale.set(pulse, pulse, pulse);
+        b.ringMat.opacity = 0.35 + Math.sin(time * 4.5 + i) * 0.55;
+      });
+
+      // Trayectoria orbital del satélite
+      satellite.position.x = Math.cos(time * 1.35) * 1.85;
+      satellite.position.y = Math.sin(time * 1.35) * 0.55;
+      satellite.position.z = Math.sin(time * 1.35) * 1.65;
+      orbitRing.rotation.z = time * 0.12;
+
+      // Amortiguación inercial del arrastre 360°
       masterRig.rotation.y += (targetRotY - masterRig.rotation.y) * 0.08;
       masterRig.rotation.x += (targetRotX - masterRig.rotation.x) * 0.08;
+
       renderer.render(scene, camera);
     };
     animate();
@@ -406,7 +506,11 @@ export default function App() {
       container.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('resize', handleResize);
       renderer.dispose();
+      if (container.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
+      }
     };
   }, []);
 
