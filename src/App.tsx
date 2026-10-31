@@ -2,6 +2,16 @@ import { useState, useEffect, useRef, type FormEvent } from 'react';
 import * as THREE from 'three';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
 import { generateNoraResponse, DEFAULT_PAYMENTS, type PaymentDetails } from './lib/noraEngine';
+import { t, type Language } from './lib/i18n';
+import {
+  getLicenseLifecycle,
+  buildNotificationTemplates,
+  simulateEmailDispatch,
+  generatePresencialLicense,
+  type ExtendedLicense,
+  type PresencialPaymentMethod
+} from './lib/licensing';
+import { generateQrSvgString } from './lib/qrCode';
 
 // --- TIPOS DE DATOS ---
 export interface SystemItem {
@@ -27,19 +37,7 @@ export interface PaymentMethod {
   active: boolean;
 }
 
-export interface CorporateLicense {
-  id: string;
-  key: string;
-  client: string;
-  businessName?: string;
-  whatsapp?: string;
-  email?: string;
-  systemId: string;
-  status: 'active' | 'trial' | 'grace' | 'suspended';
-  startDate: string;
-  expires: string;
-  graceLimit: string;
-}
+export type CorporateLicense = ExtendedLicense;
 
 export function formatWhatsAppLink(rawPhone: string, text: string): string {
   let digits = rawPhone.replace(/\D/g, '');
@@ -54,14 +52,14 @@ export function formatWhatsAppLink(rawPhone: string, text: string): string {
 }
 
 export function getLicenseDynamicStatus(lic: CorporateLicense): { label: 'Trial' | 'Activo' | 'En Gracia' | 'Suspendido'; color: string } {
-  if (lic.status === 'trial') {
+  const lifecycle = getLicenseLifecycle(lic);
+  if (lifecycle.stage === 'trial') {
     return { label: 'Trial', color: 'bg-amber-500/15 text-amber-400 border-amber-500/30' };
   }
-  const today = new Date().toISOString().split('T')[0];
-  if (today <= lic.expires) {
+  if (lifecycle.stage === 'active') {
     return { label: 'Activo', color: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' };
   }
-  if (today <= lic.graceLimit) {
+  if (lifecycle.stage === 'grace') {
     return { label: 'En Gracia', color: 'bg-orange-500/15 text-orange-400 border-orange-500/30' };
   }
   return { label: 'Suspendido', color: 'bg-red-500/15 text-red-400 border-red-500/30' };
@@ -250,6 +248,46 @@ const INITIAL_LICENSES: CorporateLicense[] = [
 ];
 
 export default function App() {
+  // --- INTERNACIONALIZACIÓN (ES / EN) ---
+  const [lang, setLang] = useState<Language>(() => {
+    try {
+      const saved = localStorage.getItem('nexora_lang');
+      if (saved === 'es' || saved === 'en') return saved;
+    } catch {}
+    return 'es';
+  });
+
+  const handleSetLang = (newLang: Language) => {
+    setLang(newLang);
+    try {
+      localStorage.setItem('nexora_lang', newLang);
+    } catch {}
+  };
+
+  const tr = t(lang);
+
+  // --- MODAL DUAL QR MÓVIL / PWA ---
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [copiedQrLink, setCopiedQrLink] = useState<'nav' | 'pwa' | null>(null);
+
+  // --- MODAL ALTA PRESENCIAL / MOSTRADOR ---
+  const [isPresencialModalOpen, setIsPresencialModalOpen] = useState(false);
+  const [presencialClient, setPresencialClient] = useState('');
+  const [presencialBusiness, setPresencialBusiness] = useState('');
+  const [presencialWhatsapp, setPresencialWhatsapp] = useState('+54 ');
+  const [presencialEmail, setPresencialEmail] = useState('');
+  const [presencialSystem, setPresencialSystem] = useState('restobar');
+  const [presencialMethod, setPresencialMethod] = useState<PresencialPaymentMethod>('cash');
+  const [presencialNotes, setPresencialNotes] = useState('');
+  const [presencialReceipt, setPresencialReceipt] = useState<ExtendedLicense | null>(null);
+  const [copiedReceipt, setCopiedReceipt] = useState(false);
+
+  // --- MODAL EXPEDIENTE / DOSSIER GRANULAR DEL CLIENTE ---
+  const [selectedLicDossier, setSelectedLicDossier] = useState<ExtendedLicense | null>(null);
+  const [selectedNoticeType, setSelectedNoticeType] = useState<'preventive_25' | 'grace_31' | 'suspension_36'>('preventive_25');
+  const [noticeToast, setNoticeToast] = useState<string | null>(null);
+  const [addSystemSelect, setAddSystemSelect] = useState('carribar');
+
   const [isPortalOpen, setIsPortalOpen] = useState(false);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
@@ -913,7 +951,7 @@ export default function App() {
     setIsSendingChat(true);
 
     try {
-      const responseText = await generateNoraResponse(q, paymentSettings);
+      const responseText = await generateNoraResponse(q, paymentSettings, lang);
       setChatMessages(prev => [
         ...prev,
         { sender: 'nora', text: responseText, timestamp: 'Ahora' }
@@ -923,7 +961,9 @@ export default function App() {
         ...prev,
         {
           sender: 'nora',
-          text: 'Estimado visitante, en este momento opero en modo perimetral directo. ¿En qué solución del catálogo le puedo asesorar?',
+          text: lang === 'en'
+            ? 'Dear visitor, I am currently operating in perimeter mode. Which sovereign solution may I guide you through?'
+            : 'Estimado visitante, en este momento opero en modo perimetral directo. ¿En qué solución del catálogo le puedo asesorar?',
           timestamp: 'Ahora'
         }
       ]);
@@ -931,6 +971,221 @@ export default function App() {
       setIsSendingChat(false);
       setTimeout(() => chatMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
     }
+  };
+
+  // --- 2.B EMISIÓN PRESENCIAL / MOSTRADOR ---
+  const handleCreatePresencialLicense = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!presencialClient.trim() || !presencialWhatsapp.trim() || !presencialEmail.trim()) return;
+
+    const sysName = systems.find(s => s.id === presencialSystem)?.name || presencialSystem;
+    const newLic = generatePresencialLicense({
+      clientName: presencialClient,
+      businessName: presencialBusiness,
+      whatsapp: presencialWhatsapp,
+      email: presencialEmail,
+      systemId: presencialSystem,
+      systemName: sysName,
+      paymentMethod: presencialMethod,
+      notes: presencialNotes
+    });
+
+    const updated = [newLic, ...licenses];
+    setLicenses(updated);
+    localStorage.setItem('nexora_licenses', JSON.stringify(updated));
+
+    if (supabase && isSupabaseConfigured) {
+      try {
+        await supabase.from('licenses').insert([{
+          key: newLic.key,
+          license_key: newLic.key,
+          client: newLic.client,
+          client_name: newLic.client,
+          business_name: newLic.businessName || '',
+          whatsapp: newLic.whatsapp,
+          client_phone: newLic.whatsapp,
+          email: newLic.email,
+          client_email: newLic.email,
+          system_id: newLic.systemId,
+          system_name: sysName,
+          status: newLic.status,
+          start_date: newLic.startDate,
+          starts_at: newLic.startDate,
+          expires: newLic.expires,
+          expires_at: newLic.expires,
+          grace_limit: newLic.graceLimit,
+          payment_method: presencialMethod,
+          notes: presencialNotes
+        }]);
+      } catch (err) {
+        console.warn('Persistencia presencial en Supabase:', err);
+      }
+    }
+
+    setPresencialReceipt(newLic);
+    setIsPresencialModalOpen(false);
+    setPresencialClient('');
+    setPresencialBusiness('');
+    setPresencialWhatsapp('+54 ');
+    setPresencialEmail('');
+    setPresencialNotes('');
+  };
+
+  // --- 2.C GESTIÓN GRANULAR DE CLIENTE (DOSSIER) ---
+  const handleExtendGrace = async (licId: string) => {
+    const updated = licenses.map(l => {
+      if (l.id === licId) {
+        const curGrace = new Date(l.graceLimit + 'T23:59:59');
+        const newGraceObj = new Date(curGrace.getTime() + 5 * 86400000);
+        const newGraceStr = newGraceObj.toISOString().split('T')[0];
+        const newHistory = [
+          ...(l.history || []),
+          {
+            id: `hist-${Date.now()}`,
+            type: 'grace_extended' as const,
+            channel: 'system' as const,
+            sentAt: new Date().toISOString(),
+            detail: `Prórroga de gracia +5 días concedida. Nueva fecha fatal: ${newGraceStr}`,
+            status: 'applied' as const
+          }
+        ];
+        return { ...l, graceLimit: newGraceStr, history: newHistory };
+      }
+      return l;
+    });
+
+    setLicenses(updated);
+    localStorage.setItem('nexora_licenses', JSON.stringify(updated));
+    const target = updated.find(l => l.id === licId);
+    if (target) setSelectedLicDossier(target);
+    setNoticeToast('Gracia perimetral extendida +5 días.');
+    setTimeout(() => setNoticeToast(null), 3000);
+  };
+
+  const handleForceSuspend = async (licId: string) => {
+    const updated = licenses.map(l => {
+      if (l.id === licId) {
+        const newHistory = [
+          ...(l.history || []),
+          {
+            id: `hist-${Date.now()}`,
+            type: 'suspension_36' as const,
+            channel: 'system' as const,
+            sentAt: new Date().toISOString(),
+            detail: 'Suspensión forzosa aplicada desde la consola de control.',
+            status: 'applied' as const
+          }
+        ];
+        return { ...l, status: 'suspended' as const, history: newHistory };
+      }
+      return l;
+    });
+
+    setLicenses(updated);
+    localStorage.setItem('nexora_licenses', JSON.stringify(updated));
+    const target = updated.find(l => l.id === licId);
+    if (target) setSelectedLicDossier(target);
+    setNoticeToast('Licencia suspendida forzosamente.');
+    setTimeout(() => setNoticeToast(null), 3000);
+  };
+
+  const handleAddSystemToLicense = (licId: string, sysId: string) => {
+    const updated = licenses.map(l => {
+      if (l.id === licId) {
+        const cur = l.assignedSystems || [l.systemId];
+        if (!cur.includes(sysId)) {
+          const nextSystems = [...cur, sysId];
+          const sysName = systems.find(s => s.id === sysId)?.name || sysId;
+          const newHistory = [
+            ...(l.history || []),
+            {
+              id: `hist-${Date.now()}`,
+              type: 'renewal' as const,
+              channel: 'system' as const,
+              sentAt: new Date().toISOString(),
+              detail: `Sistema adicional vinculado: ${sysName}`,
+              status: 'applied' as const
+            }
+          ];
+          return { ...l, assignedSystems: nextSystems, history: newHistory };
+        }
+      }
+      return l;
+    });
+
+    setLicenses(updated);
+    localStorage.setItem('nexora_licenses', JSON.stringify(updated));
+    const target = updated.find(l => l.id === licId);
+    if (target) setSelectedLicDossier(target);
+    setNoticeToast('Sistema adicional asignado al cliente.');
+    setTimeout(() => setNoticeToast(null), 3000);
+  };
+
+  const handleRevokeSystemFromLicense = (licId: string, sysId: string) => {
+    const updated = licenses.map(l => {
+      if (l.id === licId) {
+        const cur = l.assignedSystems || [l.systemId];
+        const nextSystems = cur.filter(s => s !== sysId);
+        const sysName = systems.find(s => s.id === sysId)?.name || sysId;
+        const newHistory = [
+          ...(l.history || []),
+          {
+            id: `hist-${Date.now()}`,
+            type: 'suspension_36' as const,
+            channel: 'system' as const,
+            sentAt: new Date().toISOString(),
+            detail: `Sistema desvinculado / revocado: ${sysName}`,
+            status: 'applied' as const
+          }
+        ];
+        return { ...l, assignedSystems: nextSystems, history: newHistory };
+      }
+      return l;
+    });
+
+    setLicenses(updated);
+    localStorage.setItem('nexora_licenses', JSON.stringify(updated));
+    const target = updated.find(l => l.id === licId);
+    if (target) setSelectedLicDossier(target);
+    setNoticeToast('Sistema revocado del expediente.');
+    setTimeout(() => setNoticeToast(null), 3000);
+  };
+
+  const handleSendDossierEmail = (lic: ExtendedLicense, noticeType: 'preventive_25' | 'grace_31' | 'suspension_36') => {
+    if (!lic.email) {
+      alert('El cliente no posee correo electrónico registrado.');
+      return;
+    }
+    const sysName = systems.find(s => s.id === lic.systemId)?.name || lic.systemId;
+    const templates = buildNotificationTemplates(lic, sysName, paymentSettings, lang);
+    const tmpl = templates[noticeType === 'preventive_25' ? 'preventive25' : noticeType === 'grace_31' ? 'grace31' : 'suspension36'];
+
+    const result = simulateEmailDispatch(lic.email, tmpl.emailSubject, tmpl.emailBody);
+
+    const updated = licenses.map(l => {
+      if (l.id === lic.id) {
+        const newHistory = [
+          ...(l.history || []),
+          {
+            id: `hist-${Date.now()}`,
+            type: noticeType,
+            channel: 'email' as const,
+            sentAt: result.timestamp,
+            detail: `Despacho SMTP: "${tmpl.emailSubject}"`,
+            status: 'simulated' as const
+          }
+        ];
+        return { ...l, history: newHistory };
+      }
+      return l;
+    });
+
+    setLicenses(updated);
+    localStorage.setItem('nexora_licenses', JSON.stringify(updated));
+    const target = updated.find(l => l.id === lic.id);
+    if (target) setSelectedLicDossier(target);
+    setNoticeToast(`Correo despachado a <${lic.email}> (Status 250 OK).`);
+    setTimeout(() => setNoticeToast(null), 3500);
   };
 
   // --- 2. EMISIÓN Y RENOVACIÓN DE LICENCIAS (30 DÍAS + 5 DE GRACIA) ---
@@ -1267,26 +1522,58 @@ export default function App() {
           </div>
 
           <nav className="hidden lg:flex items-center gap-6 text-sm text-slate-400 font-medium">
-            <a href="#ecosistema" onClick={() => setIsPortalOpen(false)} className="hover:text-white transition">Ecosistema</a>
-            <a href="#nosotros" onClick={() => setIsPortalOpen(false)} className="hover:text-white transition">Nosotros</a>
-            <a href="#casos" onClick={() => setIsPortalOpen(false)} className="hover:text-white transition">Casos de Éxito</a>
-            <a href="#appstore" onClick={() => setIsPortalOpen(false)} className="hover:text-[#00f2fe] transition">App Store</a>
-            <a href="#licencias" onClick={() => setIsPortalOpen(false)} className="hover:text-white transition">Licencias</a>
+            <a href="#ecosistema" onClick={() => setIsPortalOpen(false)} className="hover:text-white transition">{tr.nav.ecosystem}</a>
+            <a href="#nosotros" onClick={() => setIsPortalOpen(false)} className="hover:text-white transition">{tr.nav.about}</a>
+            <a href="#casos" onClick={() => setIsPortalOpen(false)} className="hover:text-white transition">{tr.nav.cases}</a>
+            <a href="#appstore" onClick={() => setIsPortalOpen(false)} className="hover:text-[#00f2fe] transition">{tr.nav.appstore}</a>
+            <a href="#licencias" onClick={() => setIsPortalOpen(false)} className="hover:text-white transition">{tr.nav.licenses}</a>
           </nav>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* SELECTOR REACTIVO DE IDIOMA (ES | EN) */}
+            <div className="flex items-center bg-[#141822] p-1 rounded-xl border border-white/10 text-xs font-mono">
+              <button
+                type="button"
+                onClick={() => handleSetLang('es')}
+                className={`px-2 py-1 rounded-lg transition font-bold ${lang === 'es' ? 'bg-[#00f2fe] text-slate-950 shadow-[0_0_12px_rgba(0,242,254,0.4)]' : 'text-slate-400 hover:text-white'}`}
+                title="Español"
+              >
+                ES
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSetLang('en')}
+                className={`px-2 py-1 rounded-lg transition font-bold ${lang === 'en' ? 'bg-[#00f2fe] text-slate-950 shadow-[0_0_12px_rgba(0,242,254,0.4)]' : 'text-slate-400 hover:text-white'}`}
+                title="English"
+              >
+                EN
+              </button>
+            </div>
+
+            {/* BOTÓN DUAL QR DE ACCESO RÁPIDO Y DESCARGA PWA MÓVIL */}
+            <button
+              type="button"
+              onClick={() => setIsQrModalOpen(true)}
+              className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#141822] hover:bg-[#1a202c] border border-cyan-500/30 text-cyan-300 font-mono text-xs transition-all flex items-center gap-1.5 shadow-[0_0_15px_rgba(0,242,254,0.15)] cursor-pointer"
+              title={tr.nav.mobileAccess}
+            >
+              <span className="text-sm">📱</span>
+              <span className="hidden sm:inline">{tr.nav.mobileAccess}</span>
+              <span className="sm:hidden">QR</span>
+            </button>
+
             <a
               href="#appstore"
               className="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-[#00f2fe] to-[#00b4d8] text-[#090b0e] font-bold text-xs hover:brightness-110 shadow-[0_0_20px_-3px_rgba(0,242,254,0.35)] transition-all flex items-center gap-2"
             >
-              <span>Explorar Sistemas</span>
+              <span>{tr.nav.explore}</span>
             </a>
             {isPortalOpen && isAdminAuthenticated && (
               <button
                 onClick={handleCloseAdmin}
                 className="px-3 py-1.5 rounded-lg bg-red-500/20 border border-red-500/40 text-red-300 font-mono text-xs hover:bg-red-500/30 transition flex items-center gap-1.5"
               >
-                <span>Cerrar Sesión Admin</span>
+                <span>{tr.nav.closeAdmin}</span>
               </button>
             )}
           </div>
@@ -1348,9 +1635,19 @@ export default function App() {
                       Asigna credenciales criptográficas locales con base de datos perimetral offline.
                     </p>
                   </div>
-                  <span className="text-[11px] font-mono text-emerald-400 self-start sm:self-auto">
-                    ● Total Registros: {licenses.length}
-                  </span>
+                  <div className="flex items-center gap-3 self-start sm:self-auto">
+                    <button
+                      type="button"
+                      onClick={() => setIsPresencialModalOpen(true)}
+                      className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-400 to-teal-500 text-slate-950 font-mono font-bold text-xs hover:brightness-110 shadow-[0_0_15px_rgba(16,185,129,0.35)] transition flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <span>🏪</span>
+                      <span>+ Nueva Licencia Presencial / Mostrador</span>
+                    </button>
+                    <span className="text-[11px] font-mono text-emerald-400">
+                      ● Registros: {licenses.length}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
@@ -1439,27 +1736,35 @@ export default function App() {
                       <tr>
                         <th className="p-3.5">Cliente / Razón Social</th>
                         <th className="p-3.5">WhatsApp / Contacto</th>
-                        <th className="p-3.5">Sistema</th>
+                        <th className="p-3.5">Sistemas Asignados</th>
                         <th className="p-3.5">Clave Emitida</th>
                         <th className="p-3.5">Fecha Inicio</th>
                         <th className="p-3.5">Vencimiento (30d)</th>
                         <th className="p-3.5">Límite Gracia (35d)</th>
-                        <th className="p-3.5">Estado</th>
-                        <th className="p-3.5 text-center">Acción de Cobro</th>
+                        <th className="p-3.5">Estado Ciclo</th>
+                        <th className="p-3.5 text-center">Gestión & Acciones</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
                       {licenses.map(lic => {
                         const statusInfo = getLicenseDynamicStatus(lic);
+                        const lifecycle = getLicenseLifecycle(lic);
                         const systemName = systems.find(s => s.id === lic.systemId)?.name || lic.systemId;
-                        const clientLabel = lic.businessName ? `${lic.client} de (${lic.businessName})` : lic.client;
+                        const clientLabel = lic.businessName ? `${lic.client} (${lic.businessName})` : lic.client;
                         const followUpText = `Estimado/a ${clientLabel}, le saludamos desde el centro de administración de Nexora One Engine respecto a su licencia activa ${lic.key} para ${systemName}.`;
                         const waHref = lic.whatsapp ? formatWhatsAppLink(lic.whatsapp, followUpText) : '#';
 
                         return (
                           <tr key={lic.id} className="hover:bg-white/5 transition-colors">
                             <td className="p-3.5">
-                              <div className="font-bold text-white text-xs">{lic.client}</div>
+                              <div className="font-bold text-white text-xs flex items-center gap-1.5">
+                                <span>{lic.client}</span>
+                                {lic.paymentMethod && (
+                                  <span className="px-1.5 py-0.2 rounded text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 uppercase">
+                                    {lic.paymentMethod}
+                                  </span>
+                                )}
+                              </div>
                               <div className="text-[11px] text-slate-400 font-normal mt-0.5">
                                 {lic.businessName ? lic.businessName : <span className="text-slate-500 italic">Particular</span>}
                               </div>
@@ -1483,29 +1788,52 @@ export default function App() {
                               {lic.email && <div className="text-[10px] text-slate-500 mt-1">{lic.email}</div>}
                             </td>
                             <td className="p-3.5 text-slate-300">
-                              <span className="px-2 py-0.5 rounded bg-white/5 text-slate-200 border border-white/10 text-[10px]">
-                                {systemName}
-                              </span>
+                              <div className="flex flex-col gap-1 items-start">
+                                <span className="px-2 py-0.5 rounded bg-white/5 text-slate-200 border border-white/10 text-[10px]">
+                                  {systemName}
+                                </span>
+                                {lic.assignedSystems && lic.assignedSystems.filter(sid => sid !== lic.systemId).map(sid => (
+                                  <span key={sid} className="px-1.5 py-0.2 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/25 text-[9px]">
+                                    + {systems.find(s => s.id === sid)?.name || sid}
+                                  </span>
+                                ))}
+                              </div>
                             </td>
                             <td className="p-3.5 text-[#00f2fe] select-all font-mono font-semibold">{lic.key}</td>
                             <td className="p-3.5 text-slate-400">{lic.startDate}</td>
                             <td className="p-3.5 text-slate-300 font-semibold">{lic.expires}</td>
                             <td className="p-3.5 text-amber-300/80">{lic.graceLimit}</td>
                             <td className="p-3.5">
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${statusInfo.color}`}>
-                                ● {statusInfo.label}
-                              </span>
+                              <div className="flex flex-col gap-0.5">
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${statusInfo.color}`}>
+                                  ● {statusInfo.label}
+                                </span>
+                                <span className="text-[10px] text-slate-500 font-mono">
+                                  Día {lifecycle.totalCycleDay} / 35
+                                </span>
+                              </div>
                             </td>
-                            <td className="p-3.5 text-center">
-                              <button
-                                type="button"
-                                onClick={() => void handleRenewLicense(lic.id)}
-                                title="Registrar Pago, Conciliar y Renovar (+30 días)"
-                                className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 font-mono text-[10px] font-bold transition flex items-center gap-1.5 mx-auto cursor-pointer"
-                              >
-                                <span>💳</span>
-                                <span>Registrar Pago / Renovar (+30d)</span>
-                              </button>
+                            <td className="p-3.5">
+                              <div className="flex items-center justify-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedLicDossier(lic)}
+                                  className="px-2.5 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 font-mono text-[10px] font-bold transition flex items-center gap-1 cursor-pointer"
+                                  title="Abrir expediente granular, prorrogar o despachar notificaciones"
+                                >
+                                  <span>⚙</span>
+                                  <span>Dossier</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => void handleRenewLicense(lic.id)}
+                                  title="Registrar Pago, Conciliar y Renovar (+30 días)"
+                                  className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 font-mono text-[10px] font-bold transition flex items-center gap-1 cursor-pointer"
+                                >
+                                  <span>💳</span>
+                                  <span>+30d</span>
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         );
@@ -1710,15 +2038,15 @@ export default function App() {
             <div className="lg:col-span-7 flex flex-col gap-5">
               <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full border border-white/10 bg-white/5 backdrop-blur-md w-fit text-xs font-mono">
                 <span className="w-2 h-2 rounded-full bg-[#00f2fe] animate-pulse"></span>
-                <span className="text-slate-200 font-medium">Plataforma Tecnológica Soberana de Nueva Generación</span>
+                <span className="text-slate-200 font-medium">{tr.hero.badge}</span>
               </div>
 
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black leading-tight bg-gradient-to-br from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
-                Infraestructura de alto rendimiento y software empresarial escalable
+                {tr.hero.title}
               </h1>
 
               <p className="text-base sm:text-lg text-slate-300 max-w-2xl leading-relaxed font-normal">
-                Impulsamos la expansión operativa mediante motores de cómputo reactivo offline-first, licenciamiento corporativo automatizado y nuestro agente insignia de IA Nora Itu.
+                {tr.hero.description}
               </p>
 
               <div className="flex flex-wrap items-center gap-3.5 pt-2">
@@ -1726,21 +2054,21 @@ export default function App() {
                   href="#appstore"
                   className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#00f2fe] to-[#00b4d8] text-[#090b0e] font-bold text-sm hover:brightness-110 shadow-[0_0_25px_-3px_rgba(0,242,254,0.4)] transition-all flex items-center gap-2"
                 >
-                  <span>Explorar App Store</span>
+                  <span>{tr.hero.exploreBtn}</span>
                   <span className="text-base leading-none">→</span>
                 </a>
                 <a
                   href="#casos"
                   className="px-5 py-3 rounded-xl border border-white/10 bg-white/5 backdrop-blur-md hover:border-[#00f2fe]/40 hover:bg-white/10 text-slate-200 text-sm font-semibold transition-all flex items-center gap-2"
                 >
-                  <span>Casos de Éxito</span>
+                  <span>{tr.hero.casesBtn}</span>
                   <span className="text-xs text-[#00f2fe]">★</span>
                 </a>
                 <a
                   href="#licencias"
                   className="px-5 py-3 rounded-xl border border-white/10 bg-white/5 backdrop-blur-md hover:border-[#00f2fe]/40 hover:bg-white/10 text-slate-200 text-sm font-semibold transition-all"
                 >
-                  Ver Licencias
+                  {tr.hero.licensesBtn}
                 </a>
               </div>
             </div>
@@ -1762,20 +2090,20 @@ export default function App() {
                 {/* FICHA TÉCNICA EJECUTIVA */}
                 <div className="w-full mt-5 pt-4 border-t border-white/10 space-y-2 font-mono">
                   <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-slate-400">NÚCLEO</span>
+                    <span className="text-slate-400">{tr.hero.techCore}</span>
                     <span className="text-[#00f2fe] font-semibold tracking-wider">NEXORA ONE ENGINE</span>
                   </div>
                   <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-slate-400">ARQUITECTURA</span>
+                    <span className="text-slate-400">{tr.hero.techArch}</span>
                     <span className="text-emerald-400 font-semibold tracking-wider">SOBERANA 2026</span>
                   </div>
                   <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-slate-400">AGENTE</span>
+                    <span className="text-slate-400">{tr.hero.techAgent}</span>
                     <span className="text-cyan-400 font-semibold tracking-wider">NORA ITU</span>
                   </div>
                   <div className="pt-2">
                     <span className="font-mono text-[10px] sm:text-[11px] tracking-wider text-cyan-400 uppercase block text-center">
-                      NÚCLEO: NEXORA ONE ENGINE | ARQUITECTURA: SOBERANA 2026 | AGENTE: NORA ITU
+                      {tr.hero.techTagline}
                     </span>
                   </div>
                 </div>
@@ -1786,28 +2114,28 @@ export default function App() {
           {/* NOSOTROS, POLÍTICAS Y METAS */}
           <section id="nosotros" className="p-6 sm:p-8 rounded-3xl bg-[#141822]/40 border border-white/10 space-y-6">
             <div>
-              <span className="text-xs font-mono font-bold text-[#00f2fe] uppercase tracking-wider">Identidad Corporativa</span>
-              <h2 className="text-2xl sm:text-3xl font-black text-white mt-1">Ingeniería para Empresas que Exigen Autonomía</h2>
-              <p className="text-sm text-slate-300 mt-1">Arquitectura de software que jamás colapsa ante cortes de internet ni retiene fondos.</p>
+              <span className="text-xs font-mono font-bold text-[#00f2fe] uppercase tracking-wider">{tr.about.sectionTag}</span>
+              <h2 className="text-2xl sm:text-3xl font-black text-white mt-1">{tr.about.title}</h2>
+              <p className="text-sm text-slate-300 mt-1">{tr.about.subtitle}</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
               <div className="p-5 rounded-2xl bg-[#090b0e] border border-white/5 space-y-2">
-                <h3 className="font-bold text-white text-base">Qué Hacemos</h3>
+                <h3 className="font-bold text-white text-base">{tr.about.card1Title}</h3>
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  Motores offline-first para gastronomía, carribars, medios periodísticos, marketplaces P2P y sincronizadores de show en vivo sin nube intermedia.
+                  {tr.about.card1Desc}
                 </p>
               </div>
               <div className="p-5 rounded-2xl bg-[#090b0e] border border-white/5 space-y-2">
-                <h3 className="font-bold text-white text-base">Nuestras Políticas</h3>
+                <h3 className="font-bold text-white text-base">{tr.about.card2Title}</h3>
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  Soberanía de datos absoluta. Cero telemetría externa. Todos los programas operan sobre el propio hardware del adquirente con réplica local.
+                  {tr.about.card2Desc}
                 </p>
               </div>
               <div className="p-5 rounded-2xl bg-[#090b0e] border border-white/5 space-y-2">
-                <h3 className="font-bold text-white text-base">Nuestras Metas</h3>
+                <h3 className="font-bold text-white text-base">{tr.about.card3Title}</h3>
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  Eliminar intermediarios abusivos y suscripciones cautivas, devolviendo rentabilidad y control total a los negocios.
+                  {tr.about.card3Desc}
                 </p>
               </div>
             </div>
@@ -2129,15 +2457,42 @@ export default function App() {
       )}
 
       {/* FOOTER CORPORATIVO OFICIAL */}
-      <footer className="bg-[#0e1117] border-t border-white/10 px-4 sm:px-6 py-8 mt-12 text-xs font-mono">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-slate-400">
-          <div>
-            <span className="text-white font-bold text-sm">Nexora One Engine</span>
-            <p className="text-[11px] text-slate-500 mt-0.5">Arquitectura de software soberana y cómputo independiente · NexoraOne</p>
+      <footer className="bg-[#0e1117] border-t border-white/10 px-4 sm:px-6 py-10 mt-16 text-xs font-mono relative z-10">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-slate-400">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#00f2fe]"></span>
+                <span className="text-white font-bold text-sm tracking-wider">NEXORA ONE ENGINE</span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-white/5 border border-white/10 text-slate-400">v2026.1 SOV</span>
+              </div>
+              <p className="text-xs text-slate-300 mt-2 font-normal leading-relaxed max-w-2xl">
+                © 2026 Nexora One Engine. Todos los derechos reservados. Arquitectura de Software Soberano e Infraestructura Perimetral Independiente. Diseñado y Desarrollado por MyJNexoraVisual (NexoraOne).
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-4 text-slate-300 text-xs font-mono">
+              <a href="tel:3786414533" className="hover:text-[#00f2fe] transition flex items-center gap-1.5">
+                <span>📞</span>
+                <span>3786414533</span>
+              </a>
+              <a href="mailto:nexoraone@nexativanews.com.ar" className="hover:text-[#00f2fe] transition flex items-center gap-1.5">
+                <span>✉</span>
+                <span>nexoraone@nexativanews.com.ar</span>
+              </a>
+            </div>
           </div>
-          <div className="flex items-center gap-6 text-slate-300">
-            <a href="tel:3786414533" className="hover:text-[#00f2fe] transition">Tel: 3786414533</a>
-            <a href="mailto:nexoraone@nexativanews.com.ar" className="hover:text-[#00f2fe] transition">nexoraone@nexativanews.com.ar</a>
+
+          <div className="pt-4 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-3 text-[11px] text-slate-500">
+            <div className="flex flex-wrap items-center gap-4">
+              <a href="#licencias" className="hover:text-cyan-400 transition">{tr.footer.terms}</a>
+              <span>·</span>
+              <a href="#nosotros" className="hover:text-cyan-400 transition">{tr.footer.privacy}</a>
+              <span>·</span>
+              <a href="#licencias" className="hover:text-cyan-400 transition">{tr.footer.cryptoVerify}</a>
+            </div>
+            <span className="text-slate-600 font-mono text-[10px]">
+              SHA-256 Nodes: Argentina (Corrientes/CABA) · Offline Mesh Runtime
+            </span>
           </div>
         </div>
       </footer>
@@ -2441,12 +2796,602 @@ Nexora One Engine — Arquitectura Soberana`;
         </div>
       )}
 
-      {/* CHAT FLOTANTE NORA ITU */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+      {/* MODAL DUAL QR DE ACCESO RÁPIDO Y DESCARGA PWA MÓVIL */}
+      {isQrModalOpen && (() => {
+        const originUrl = typeof window !== 'undefined' ? window.location.origin : 'https://nexora-one-engine.vercel.app';
+        const mobileNavUrl = originUrl;
+        const pwaUrl = `${originUrl}/?pwa=true`;
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <div className="w-full max-w-2xl rounded-3xl bg-[#141822] border border-cyan-500/40 p-6 sm:p-8 shadow-[0_0_60px_rgba(0,242,254,0.25)] space-y-6">
+              <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                <div>
+                  <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-mono text-[10px] mb-1">
+                    <span>GATEWAY MÓVIL SOBERANO</span>
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-bold text-white">
+                    {tr.qrModal.title}
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    {tr.qrModal.subtitle}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsQrModalOpen(false)}
+                  className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center text-sm transition"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {/* QR 1: NAVEGACIÓN MÓVIL DIRECTA */}
+                <div className="p-5 rounded-2xl bg-[#090b0e] border border-white/10 flex flex-col items-center text-center space-y-3 group hover:border-cyan-500/40 transition">
+                  <span className="px-2.5 py-0.5 rounded-lg text-[10px] font-mono font-bold bg-cyan-500/15 text-cyan-400 border border-cyan-500/30">
+                    {tr.qrModal.qr1Badge}
+                  </span>
+                  <h4 className="text-sm font-bold text-white">
+                    {tr.qrModal.qr1Title}
+                  </h4>
+                  <div
+                    className="w-48 h-48 rounded-xl bg-[#050b14] p-2 flex items-center justify-center border border-white/10"
+                    dangerouslySetInnerHTML={{
+                      __html: generateQrSvgString(mobileNavUrl, { size: 180, fgColor: '#00f2fe', bgColor: '#050b14' })
+                    }}
+                  />
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    {tr.qrModal.qr1Desc}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(mobileNavUrl);
+                      setCopiedQrLink('nav');
+                      setTimeout(() => setCopiedQrLink(null), 2000);
+                    }}
+                    className="w-full py-2 rounded-xl bg-[#141822] hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white font-mono text-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <span>{copiedQrLink === 'nav' ? '✓ Copiado' : tr.qrModal.copyNav}</span>
+                  </button>
+                </div>
+
+                {/* QR 2: INSTALADOR PWA */}
+                <div className="p-5 rounded-2xl bg-[#090b0e] border border-white/10 flex flex-col items-center text-center space-y-3 group hover:border-emerald-500/40 transition">
+                  <span className="px-2.5 py-0.5 rounded-lg text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                    {tr.qrModal.qr2Badge}
+                  </span>
+                  <h4 className="text-sm font-bold text-white">
+                    {tr.qrModal.qr2Title}
+                  </h4>
+                  <div
+                    className="w-48 h-48 rounded-xl bg-[#050b14] p-2 flex items-center justify-center border border-white/10"
+                    dangerouslySetInnerHTML={{
+                      __html: generateQrSvgString(pwaUrl, { size: 180, fgColor: '#10b981', bgColor: '#050b14' })
+                    }}
+                  />
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    {tr.qrModal.qr2Desc}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(pwaUrl);
+                      setCopiedQrLink('pwa');
+                      setTimeout(() => setCopiedQrLink(null), 2000);
+                    }}
+                    className="w-full py-2 rounded-xl bg-[#141822] hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white font-mono text-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <span>{copiedQrLink === 'pwa' ? '✓ Copiado' : tr.qrModal.copyPwa}</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setIsQrModalOpen(false)}
+                  className="px-5 py-2 rounded-xl bg-[#090b0e] border border-white/15 text-slate-300 hover:text-white text-xs font-mono transition"
+                >
+                  {tr.qrModal.close}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* MODAL ALTA PRESENCIAL / MOSTRADOR */}
+      {isPresencialModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="w-full max-w-lg rounded-3xl bg-[#141822] border border-emerald-500/40 p-6 sm:p-7 shadow-[0_0_50px_rgba(16,185,129,0.25)] space-y-5">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🏪</span>
+                <div>
+                  <h3 className="text-base font-bold text-white font-mono uppercase tracking-wider">
+                    {tr.admin.presencialTitle}
+                  </h3>
+                  <p className="text-[11px] text-slate-400 font-mono">
+                    {tr.admin.presencialDesc}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsPresencialModalOpen(false)}
+                className="text-slate-400 hover:text-white text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreatePresencialLicense} className="space-y-3.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-mono text-slate-400 block mb-1">
+                    {tr.admin.presencialClient}
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ej: Laura Giménez"
+                    value={presencialClient}
+                    onChange={(e) => setPresencialClient(e.target.value)}
+                    className="w-full bg-[#090b0e] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-mono text-slate-400 block mb-1">
+                    {tr.admin.presencialBusiness}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ej: Café de la Plaza (Opcional)"
+                    value={presencialBusiness}
+                    onChange={(e) => setPresencialBusiness(e.target.value)}
+                    className="w-full bg-[#090b0e] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-mono text-slate-400 block mb-1">
+                    {tr.admin.presencialWhatsapp}
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="+54 9 3786 55-1234"
+                    value={presencialWhatsapp}
+                    onChange={(e) => setPresencialWhatsapp(e.target.value)}
+                    className="w-full bg-[#090b0e] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-mono text-slate-400 block mb-1">
+                    {tr.admin.presencialEmail}
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="gerencia@cafedelaplaza.ar"
+                    value={presencialEmail}
+                    onChange={(e) => setPresencialEmail(e.target.value)}
+                    className="w-full bg-[#090b0e] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-mono text-slate-400 block mb-1">
+                    {tr.admin.presencialSystem}
+                  </label>
+                  <select
+                    value={presencialSystem}
+                    onChange={(e) => setPresencialSystem(e.target.value)}
+                    className="w-full bg-[#090b0e] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400"
+                  >
+                    {systems.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} ({s.priceUsd > 0 ? `$${s.priceUsd} USD` : 'Gratuito'})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-mono text-slate-400 block mb-1">
+                    {tr.admin.presencialMethod}
+                  </label>
+                  <select
+                    value={presencialMethod}
+                    onChange={(e) => setPresencialMethod(e.target.value as PresencialPaymentMethod)}
+                    className="w-full bg-[#090b0e] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400 font-mono"
+                  >
+                    <option value="cash">💵 Efectivo (ARS)</option>
+                    <option value="transfer">🏦 Transferencia Bancaria (CBU/CVU)</option>
+                    <option value="usdt">💎 USDT Criptoactivo (TRC-20)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-mono text-slate-400 block mb-1">
+                  {tr.admin.presencialNotes}
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej: Cobrado en mostrador local Central, factura manual 0012"
+                  value={presencialNotes}
+                  onChange={(e) => setPresencialNotes(e.target.value)}
+                  className="w-full bg-[#090b0e] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2.5 pt-3 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setIsPresencialModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-[#090b0e] border border-white/15 text-slate-400 hover:text-white text-xs font-mono transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-400 to-teal-500 text-slate-950 font-bold font-mono text-xs hover:brightness-110 shadow-[0_0_20px_rgba(16,185,129,0.35)] transition flex items-center gap-2 cursor-pointer"
+                >
+                  <span>✓</span>
+                  <span>{tr.admin.presencialSubmit}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL RECIBO CRIPTOGRÁFICO DE ALTA PRESENCIAL */}
+      {presencialReceipt && (() => {
+        const sysName = systems.find(s => s.id === presencialReceipt.systemId)?.name || presencialReceipt.systemId;
+        const receiptText =
+          `════════════════════════════════════════════════════\n` +
+          `  NEXORA ONE ENGINE — RECIBO CRIPTOGRÁFICO DE PAGO\n` +
+          `════════════════════════════════════════════════════\n` +
+          `Cliente:       ${presencialReceipt.client}\n` +
+          `Comercio:      ${presencialReceipt.businessName || 'Particular'}\n` +
+          `WhatsApp:      ${presencialReceipt.whatsapp}\n` +
+          `Email:         ${presencialReceipt.email}\n` +
+          `Sistema:       ${sysName}\n` +
+          `Clave Emitida: ${presencialReceipt.key}\n` +
+          `Forma de Pago: ${(presencialReceipt.paymentMethod || 'cash').toUpperCase()}\n` +
+          `Inicio Ciclo:  ${presencialReceipt.startDate}\n` +
+          `Vencimiento:   ${presencialReceipt.expires} (30 días)\n` +
+          `Límite Gracia: ${presencialReceipt.graceLimit} (+5 días)\n` +
+          `Sello SHA-256: NX-${Date.now().toString(16).toUpperCase()}-SOVEREIGN\n` +
+          `════════════════════════════════════════════════════`;
+
+        const waHref = presencialReceipt.whatsapp
+          ? formatWhatsAppLink(presencialReceipt.whatsapp, receiptText)
+          : '#';
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <div className="w-full max-w-lg rounded-3xl bg-[#141822] border border-emerald-500/40 p-6 sm:p-7 shadow-[0_0_60px_rgba(16,185,129,0.3)] space-y-4">
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-emerald-400 animate-ping"></span>
+                  <h3 className="text-base font-bold text-white font-mono uppercase tracking-wider">
+                    {tr.admin.receiptTitle}
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setPresencialReceipt(null)}
+                  className="text-slate-400 hover:text-white text-sm"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <pre className="p-4 rounded-2xl bg-[#090b0e] border border-white/10 text-emerald-400 font-mono text-[11px] leading-relaxed whitespace-pre-wrap select-all">
+                {receiptText}
+              </pre>
+
+              <div className="flex flex-col sm:flex-row gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(receiptText);
+                    setCopiedReceipt(true);
+                    setTimeout(() => setCopiedReceipt(false), 2000);
+                  }}
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-[#090b0e] hover:bg-white/10 border border-white/15 text-slate-200 text-xs font-mono transition flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <span>{copiedReceipt ? '✓ Copiado al Portapapeles' : tr.admin.receiptCopy}</span>
+                </button>
+                {presencialReceipt.whatsapp && (
+                  <a
+                    href={waHref}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex-1 py-2.5 px-3 rounded-xl bg-[#25D366] hover:bg-[#20ba5a] text-slate-950 font-bold text-xs font-mono shadow-[0_0_20px_rgba(37,211,102,0.4)] transition flex items-center justify-center gap-1.5 cursor-pointer text-center"
+                  >
+                    <span>📲</span>
+                    <span>{tr.admin.receiptSendWa}</span>
+                  </a>
+                )}
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={() => setPresencialReceipt(null)}
+                  className="px-4 py-1.5 rounded-xl bg-[#090b0e] border border-white/10 text-slate-400 hover:text-white text-xs font-mono transition"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* MODAL EXPEDIENTE / DOSSIER GRANULAR DEL CLIENTE */}
+      {selectedLicDossier && (() => {
+        const lifecycle = getLicenseLifecycle(selectedLicDossier);
+        const sysName = systems.find(s => s.id === selectedLicDossier.systemId)?.name || selectedLicDossier.systemId;
+        const templates = buildNotificationTemplates(selectedLicDossier, sysName, paymentSettings, lang);
+        const activeTmpl = templates[selectedNoticeType === 'preventive_25' ? 'preventive25' : selectedNoticeType === 'grace_31' ? 'grace31' : 'suspension36'];
+        const waHref = selectedLicDossier.whatsapp ? formatWhatsAppLink(selectedLicDossier.whatsapp, activeTmpl.whatsapp) : '#';
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+            <div className="w-full max-w-3xl rounded-3xl bg-[#141822] border border-cyan-500/40 p-6 sm:p-7 shadow-[0_0_60px_rgba(0,242,254,0.25)] space-y-5 max-h-[92vh] overflow-y-auto">
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-white font-mono uppercase tracking-wider">
+                      {tr.admin.dossierTitle} — {selectedLicDossier.client}
+                    </h3>
+                    <p className="text-[11px] text-slate-400 font-mono">
+                      Clave: <span className="text-[#00f2fe] select-all">{selectedLicDossier.key}</span> | {selectedLicDossier.businessName || 'Particular'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSelectedLicDossier(null)}
+                  className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center text-sm transition"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Toast de acción */}
+              {noticeToast && (
+                <div className="p-3 rounded-xl bg-cyan-500/15 border border-cyan-500/40 text-cyan-300 font-mono text-xs flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+                  <span>{noticeToast}</span>
+                </div>
+              )}
+
+              {/* Telemetría del Ciclo 30+5 */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono">
+                <div className="p-3.5 rounded-2xl bg-[#090b0e] border border-white/10 space-y-1">
+                  <span className="text-[10px] text-slate-400 uppercase block">{tr.admin.cycleStage}</span>
+                  <span className={`inline-block px-2 py-0.5 rounded text-xs font-bold ${lifecycle.badgeColor} ${lifecycle.textColor}`}>
+                    {lifecycle.label}
+                  </span>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-[#090b0e] border border-white/10 space-y-1">
+                  <span className="text-[10px] text-slate-400 uppercase block">{tr.admin.cycleDay}</span>
+                  <span className="text-base font-bold text-white">
+                    Día {lifecycle.totalCycleDay} <span className="text-xs text-slate-500 font-normal">/ 35</span>
+                  </span>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-[#090b0e] border border-white/10 space-y-1">
+                  <span className="text-[10px] text-slate-400 uppercase block">{tr.admin.daysRemaining}</span>
+                  <span className="text-base font-bold text-[#00f2fe]">
+                    {lifecycle.daysRemaining} días
+                  </span>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-[#090b0e] border border-white/10 space-y-1">
+                  <span className="text-[10px] text-slate-400 uppercase block">{tr.admin.graceLimit}</span>
+                  <span className="text-xs font-bold text-amber-300">
+                    {selectedLicDossier.graceLimit}
+                  </span>
+                </div>
+              </div>
+
+              {/* Panel de Acciones Granulares */}
+              <div className="p-4 rounded-2xl bg-[#0e1117] border border-white/10 space-y-3">
+                <h4 className="text-xs font-mono font-bold text-white uppercase tracking-wider text-cyan-400">
+                  Acciones Rápidas sobre la Licencia
+                </h4>
+                <div className="flex flex-wrap gap-2 font-mono text-xs">
+                  <button
+                    type="button"
+                    onClick={() => handleExtendGrace(selectedLicDossier.id)}
+                    className="px-3 py-1.5 rounded-xl bg-orange-500/20 hover:bg-orange-500/30 border border-orange-500/40 text-orange-300 font-bold transition cursor-pointer"
+                  >
+                    ⏳ {tr.admin.extendGrace}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleForceSuspend(selectedLicDossier.id)}
+                    className="px-3 py-1.5 rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-red-300 font-bold transition cursor-pointer"
+                  >
+                    🛑 {tr.admin.forceSuspend}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleRenewLicense(selectedLicDossier.id)}
+                    className="px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 font-bold transition cursor-pointer"
+                  >
+                    💳 {tr.admin.renewCycle}
+                  </button>
+                </div>
+
+                {/* Sistemas asignados y revocación */}
+                <div className="pt-2 border-t border-white/5 space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[11px] font-mono text-slate-400">Sistemas activos en este expediente:</span>
+                    <span className="px-2 py-0.5 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 text-[10px] font-mono font-bold">
+                      {sysName} (Principal)
+                    </span>
+                    {selectedLicDossier.assignedSystems && selectedLicDossier.assignedSystems.filter(sid => sid !== selectedLicDossier.systemId).map(sid => (
+                      <span key={sid} className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/25 text-[10px] font-mono">
+                        <span>+ {systems.find(s => s.id === sid)?.name || sid}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRevokeSystemFromLicense(selectedLicDossier.id, sid)}
+                          className="hover:text-red-400 text-slate-400 text-xs font-bold transition cursor-pointer"
+                          title="Revocar este sistema adicional"
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Asignar Sistema Adicional */}
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    <span className="text-[11px] font-mono text-slate-400">Vincular otro sistema al cliente:</span>
+                    <select
+                      value={addSystemSelect}
+                      onChange={(e) => setAddSystemSelect(e.target.value)}
+                      className="bg-[#090b0e] border border-white/10 rounded-lg px-2.5 py-1 text-xs text-white font-mono focus:outline-none focus:border-cyan-400"
+                    >
+                      {systems.map((s) => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => handleAddSystemToLicense(selectedLicDossier.id, addSystemSelect)}
+                      className="px-3 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 font-mono text-xs font-bold transition cursor-pointer"
+                    >
+                      + Asignar
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Disparador de Notificaciones (WhatsApp / SMTP) */}
+              <div className="p-4 rounded-2xl bg-[#0e1117] border border-white/10 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <h4 className="text-xs font-mono font-bold text-white uppercase tracking-wider text-cyan-400">
+                    Disparador de Notificaciones de Cobro
+                  </h4>
+                  <div className="flex items-center gap-1 font-mono text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedNoticeType('preventive_25')}
+                      className={`px-2.5 py-1 rounded-lg transition ${selectedNoticeType === 'preventive_25' ? 'bg-[#00f2fe] text-slate-950 font-bold' : 'bg-white/5 text-slate-400 hover:text-white'}`}
+                    >
+                      Día 25 (Preventivo)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedNoticeType('grace_31')}
+                      className={`px-2.5 py-1 rounded-lg transition ${selectedNoticeType === 'grace_31' ? 'bg-[#00f2fe] text-slate-950 font-bold' : 'bg-white/5 text-slate-400 hover:text-white'}`}
+                    >
+                      Día 31 (Gracia Fatal)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedNoticeType('suspension_36')}
+                      className={`px-2.5 py-1 rounded-lg transition ${selectedNoticeType === 'suspension_36' ? 'bg-[#00f2fe] text-slate-950 font-bold' : 'bg-white/5 text-slate-400 hover:text-white'}`}
+                    >
+                      Día 36+ (Corte)
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-[#090b0e] border border-white/10 space-y-2">
+                  <span className="text-[10px] font-mono text-cyan-300 uppercase block font-bold">
+                    Vista Previa: {activeTmpl.title}
+                  </span>
+                  <pre className="text-xs font-mono text-slate-300 whitespace-pre-wrap leading-relaxed max-h-36 overflow-y-auto">
+                    {activeTmpl.whatsapp}
+                  </pre>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
+                  {selectedLicDossier.whatsapp ? (
+                    <a
+                      href={waHref}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex-1 py-2.5 px-3 rounded-xl bg-[#25D366] hover:bg-[#20ba5a] text-slate-950 font-bold text-xs font-mono shadow-[0_0_20px_rgba(37,211,102,0.35)] transition flex items-center justify-center gap-1.5 cursor-pointer text-center"
+                    >
+                      <span>📲</span>
+                      <span>{tr.admin.sendWhatsappNotice}</span>
+                    </a>
+                  ) : (
+                    <button disabled className="flex-1 py-2.5 px-3 rounded-xl bg-white/5 text-slate-500 text-xs font-mono">
+                      Sin WhatsApp Registrado
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => handleSendDossierEmail(selectedLicDossier, selectedNoticeType)}
+                    className="flex-1 py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#00f2fe] to-[#00b4d8] text-slate-950 font-bold text-xs font-mono shadow-[0_0_20px_rgba(0,242,254,0.3)] transition flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <span>✉</span>
+                    <span>{tr.admin.sendEmailNotice}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Historial de Auditoría */}
+              {selectedLicDossier.history && selectedLicDossier.history.length > 0 && (
+                <div className="p-4 rounded-2xl bg-[#0e1117] border border-white/10 space-y-2">
+                  <h4 className="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider">
+                    {tr.admin.auditHistory}
+                  </h4>
+                  <div className="space-y-1.5 max-h-32 overflow-y-auto font-mono text-[11px]">
+                    {selectedLicDossier.history.map((h) => (
+                      <div key={h.id} className="p-2 rounded-lg bg-[#090b0e] border border-white/5 flex items-center justify-between gap-2 text-slate-300">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs">
+                            {h.channel === 'whatsapp' ? '📲' : h.channel === 'email' ? '✉' : '⚙'}
+                          </span>
+                          <span>{h.detail}</span>
+                        </div>
+                        <span className="text-[10px] text-slate-500 whitespace-nowrap">
+                          {new Date(h.sentAt).toLocaleTimeString()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end pt-2 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setSelectedLicDossier(null)}
+                  className="px-5 py-2 rounded-xl bg-[#090b0e] border border-white/15 text-slate-300 hover:text-white text-xs font-mono transition"
+                >
+                  Cerrar Expediente
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* CHAT FLOTANTE NORA ITU - ELEVADO PARA NO TAPAR EL FOOTER */}
+      <div className="fixed bottom-10 right-6 sm:bottom-12 sm:right-10 z-40 flex flex-col items-end">
         {isNoraChatOpen && (
           <div className="w-80 sm:w-96 rounded-2xl bg-[#141822] border border-[#00f2fe]/30 shadow-2xl mb-3 overflow-hidden flex flex-col h-[440px]">
             <div className="bg-[#0e1117] p-3 flex justify-between items-center border-b border-white/10">
-              <span className="text-xs font-bold text-white">Nora Itu — Asistente Soberana</span>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span className="text-xs font-bold text-white">Nora Itu — Concierge Soberana</span>
+              </div>
               <button onClick={() => setIsNoraChatOpen(false)} className="text-slate-400 hover:text-white text-xs">✕</button>
             </div>
 
@@ -2465,13 +3410,13 @@ Nexora One Engine — Arquitectura Soberana`;
             <form onSubmit={handleSendChat} className="p-2 bg-[#0e1117] border-t border-white/10 flex gap-2">
               <input
                 type="text"
-                placeholder="Pregunta a Nora Itu..."
+                placeholder={lang === 'en' ? 'Ask Nora Itu anything...' : 'Pregunta a Nora Itu...'}
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 className="flex-1 bg-[#141822] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#00f2fe]"
               />
               <button type="submit" disabled={isSendingChat} className="px-3 py-1.5 bg-[#00f2fe] text-slate-950 font-bold rounded-lg text-xs hover:bg-[#00f2fe]/90">
-                Enviar
+                {lang === 'en' ? 'Send' : 'Enviar'}
               </button>
             </form>
           </div>
@@ -2479,7 +3424,7 @@ Nexora One Engine — Arquitectura Soberana`;
 
         <button
           onClick={() => setIsNoraChatOpen(!isNoraChatOpen)}
-          className="p-3.5 rounded-2xl bg-gradient-to-br from-[#00f2fe] to-[#00b4d8] text-slate-950 shadow-xl hover:scale-105 transition-all flex items-center gap-2 font-bold text-xs"
+          className="p-3.5 rounded-2xl bg-gradient-to-br from-[#00f2fe] to-[#00b4d8] text-slate-950 shadow-[0_0_25px_rgba(0,242,254,0.4)] hover:scale-105 transition-all flex items-center gap-2 font-bold text-xs cursor-pointer"
         >
           <span>Nora Itu AI</span>
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>

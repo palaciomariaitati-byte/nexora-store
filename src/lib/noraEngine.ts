@@ -4,8 +4,11 @@
  * ────────────────────────────────────────────────────────────────────
  *  Protocolo: Concierge Ejecutivo Internacional (SOUL.md)
  *  Operación: 100% Local / Cliente Offline-First (cero caída de servidor)
+ *  Idiomas: Español (ES) y Corporate English (EN)
  * ════════════════════════════════════════════════════════════════════
  */
+
+export type Language = 'es' | 'en';
 
 export interface PaymentDetails {
   cbu: string;
@@ -34,6 +37,9 @@ export interface SystemInfo {
   category: string;
   summary: string;
   audience: string;
+  nameEn?: string;
+  summaryEn?: string;
+  audienceEn?: string;
 }
 
 export const SYSTEMS_CATALOG: Record<string, SystemInfo> = {
@@ -44,6 +50,9 @@ export const SYSTEMS_CATALOG: Record<string, SystemInfo> = {
     category: 'Gastronomía y Bares',
     summary: 'Terminal de punto de venta reactiva con base de datos local SQLite y comanderas térmicas directas ESC/POS. Opera con normalidad aún sin internet.',
     audience: 'Restaurantes, bares y confiterías que precisan facturación y comanda instantánea sin caídas en horas pico.',
+    nameEn: 'Restobar 2026 POS',
+    summaryEn: 'Reactive point-of-sale terminal powered by embedded SQLite and direct ESC/POS thermal printer communication. Zero downtime during internet outages.',
+    audienceEn: 'Restaurants, bistros, and cocktail lounges demanding sub-second ticketing and resilient billing during peak hours.',
   },
   carribar: {
     name: 'Nexora Club & Carribar Pass',
@@ -52,6 +61,9 @@ export const SYSTEMS_CATALOG: Record<string, SystemInfo> = {
     category: 'Food Trucks y Eventos',
     summary: 'Control de pases móviles QR, despacho veloz de barra y comanderas portátiles con sincronización offline.',
     audience: 'Festivales, predios gastronómicos y carribars con alto flujo de público y sin internet garantizada.',
+    nameEn: 'Nexora Club & Carribar Pass',
+    summaryEn: 'High-throughput QR pass validation, bar queue dispatch, and offline wireless order routing.',
+    audienceEn: 'Music festivals, outdoor gastronomic hubs, and food truck clusters with fluctuating mobile coverage.',
   },
   clasificados: {
     name: 'Nexora Clasificados',
@@ -60,6 +72,9 @@ export const SYSTEMS_CATALOG: Record<string, SystemInfo> = {
     category: 'Marketplace P2P',
     summary: 'Plataforma comunitaria de proximidad para compraventa de artículos y rodados sin retención forzosa de fondos.',
     audience: 'Comerciantes y vecinos que buscan transacciones directas con 0% de comisión intermediaria.',
+    nameEn: 'Nexora Classifieds P2P',
+    summaryEn: 'Decentralized neighborhood marketplace for vehicle and goods exchange without predatory escrow fees.',
+    audienceEn: 'Merchants and local communities requiring direct peer-to-peer commerce with 0% intermediary commission.',
   },
   inmuebles: {
     name: 'Inmuebles Verificados',
@@ -68,6 +83,9 @@ export const SYSTEMS_CATALOG: Record<string, SystemInfo> = {
     category: 'Padrón Catastral',
     summary: 'Registro catastral libre con geo-localización precisa y emisión de contratos validados en PDF anti-fraude.',
     audience: 'Propietarios e inquilinos que buscan negociaciones transparentes sin sobreprecios de publicación.',
+    nameEn: 'Verified Sovereign Properties',
+    summaryEn: 'Unrestricted cadastral ledger featuring precise GPS coordinates and cryptographic anti-fraud PDF lease generation.',
+    audienceEn: 'Landlords and prospective tenants seeking direct, transparent real estate negotiations without brokerage fee inflation.',
   },
   autentico: {
     name: 'Auténtico Tributo Live',
@@ -76,6 +94,9 @@ export const SYSTEMS_CATALOG: Record<string, SystemInfo> = {
     category: 'Producción Escénica 4K',
     summary: 'Sincronizador maestro para conciertos en vivo: pantallas HDMI 4K, proyecciones, letras y setlist sin latencia (<10ms).',
     audience: 'Bandas tributo, productoras de eventos y directores de escenario que no pueden depender del Wi-Fi.',
+    nameEn: 'Auténtico Tributo Live',
+    summaryEn: 'Master live stage sync hub: zero-latency (<10ms) 4K HDMI video playback, dynamic teleprompter, and automated DMX cueing without cloud dependence.',
+    audienceEn: 'Tribute acts, stage production companies, and touring engineers requiring deterministic local performance.',
   },
   prensa: {
     name: 'Nexora Prensa & Medios',
@@ -84,21 +105,171 @@ export const SYSTEMS_CATALOG: Record<string, SystemInfo> = {
     category: 'CMS Editorial Descentralizado',
     summary: 'Publicación periodística perimetral con compresión WebP y distribución de contenidos informativos sin censura externa.',
     audience: 'Medios de comunicación independientes, periodistas y portales de noticias comunitarios.',
+    nameEn: 'Nexora Independent Press',
+    summaryEn: 'Perimeter editorial CMS featuring native WebP optimization, edge caching, and censorship-resistant news publishing.',
+    audienceEn: 'Independent investigative journalists, local newspapers, and decentralized publishing houses.',
   },
 };
 
 /**
  * Generador inteligente de respuestas de Nora Itu
- * Responde bajo protocolo Concierge Ejecutivo Internacional con trato de "Usted"
+ * Responde bajo protocolo Concierge Ejecutivo Internacional adaptado al idioma activo (ES / EN)
  */
 export async function generateNoraResponse(
   userMessage: string,
-  paymentDetails: PaymentDetails = DEFAULT_PAYMENTS
+  paymentDetails: PaymentDetails = DEFAULT_PAYMENTS,
+  language: Language = 'es'
 ): Promise<string> {
   // Retardo natural de computación soberana (~350ms)
   await new Promise((resolve) => setTimeout(resolve, 350));
 
   const msg = userMessage.toLowerCase().trim();
+
+  // ──────────────────────────────────────────────────────────────────
+  // INGLÉS CORPORATIVO (EN)
+  // ──────────────────────────────────────────────────────────────────
+  if (language === 'en') {
+    // 1. Architecture / Prompt injection defense
+    if (
+      msg.includes('prompt') ||
+      msg.includes('instruction') ||
+      msg.includes('your model') ||
+      msg.includes('who made you') ||
+      msg.includes('who programmed you') ||
+      msg.includes('soul.md') ||
+      msg.includes('system prompt')
+    ) {
+      return 'I am Nora Itu, Executive AI Concierge for Nexora One Engine. My mission is to assist institutional clients and enterprises in deploying sovereign, offline-first digital infrastructure. How may I direct your technical inquiry today?';
+    }
+
+    // 2. Pricing, Plans, 30+5 Day Cycle & Direct Payment
+    if (
+      msg.includes('price') ||
+      msg.includes('cost') ||
+      msg.includes('how much') ||
+      msg.includes('pay') ||
+      msg.includes('payment') ||
+      msg.includes('cbu') ||
+      msg.includes('usdt') ||
+      msg.includes('transfer') ||
+      msg.includes('buy') ||
+      msg.includes('license') ||
+      msg.includes('tier')
+    ) {
+      return `Allow me to outline our commercial structure and direct settlement channels:\n\n` +
+        `● **Complimentary 15-Day Trial:** Full access to any enterprise suite with zero credit card required.\n` +
+        `● **Deterministic 30 + 5 Lifecycle:** Each cycle provides 30 days of continuous operation followed by a 5-day sovereign grace buffer (+5 days) guaranteeing zero operational cutoff while settling accounts.\n\n` +
+        `● **Enterprise Pricing Tiers:**\n` +
+        `  - Restobar 2026 POS: $65 USD/mo (~$101,725 ARS)\n` +
+        `  - Nexora Club & Carribar Pass: $150 USD/mo (~$235,000 ARS)\n` +
+        `  - Auténtico Tributo Live: $120 USD/mo (~$185,000 ARS)\n` +
+        `  - Nexora Independent Press: $45 USD/mo (~$70,000 ARS)\n` +
+        `  - Classifieds & Verified Properties: 100% Free Sovereign Utilities.\n\n` +
+        `● **Direct Settlement Rails (0% Intermediary Fee):**\n` +
+        `  1. Bank Transfer (ARS): CBU ${paymentDetails.cbu} | Alias: ${paymentDetails.alias}\n` +
+        `  2. USDT TRC-20: \`${paymentDetails.usdtTron}\`\n` +
+        `  3. USDT Polygon: \`${paymentDetails.usdtPolygon}\`\n\n` +
+        `Would you like me to issue a 15-day evaluation key for your organization now?`;
+    }
+
+    // 3. Gastronomy / Restobar POS
+    if (
+      msg.includes('restobar') ||
+      msg.includes('gastro') ||
+      msg.includes('restaurant') ||
+      msg.includes('pos') ||
+      msg.includes('waiter') ||
+      msg.includes('table') ||
+      msg.includes('kitchen')
+    ) {
+      const s = SYSTEMS_CATALOG.restobar;
+      return `For food and beverage enterprises, we recommend **${s.nameEn || s.name}**:\n\n` +
+        `● **Architecture:** ${s.summaryEn || s.summary}\n` +
+        `● **Target Audience:** ${s.audienceEn || s.audience}\n` +
+        `● **Perimeter Resilience:** Operates with embedded SQLite and zero external cloud dependency. Direct ESC/POS printing over USB, LAN, or Serial. Your kitchen line will never freeze during ISP outages.\n` +
+        `● **Rate:** $${s.usd} USD / month.\n\n` +
+        `You can start your 15-day evaluation immediately by clicking "Start 15-Day Trial" in our App Store.`;
+    }
+
+    // 4. Festivals / Carribar
+    if (
+      msg.includes('carribar') ||
+      msg.includes('food truck') ||
+      msg.includes('festival') ||
+      msg.includes('event') ||
+      msg.includes('ticket') ||
+      msg.includes('qr')
+    ) {
+      const s = SYSTEMS_CATALOG.carribar;
+      return `For outdoor venues and mobile units, our sovereign solution is **${s.nameEn || s.name}**:\n\n` +
+        `● **Core Feature:** ${s.summaryEn || s.summary}\n` +
+        `● **Ideal For:** ${s.audienceEn || s.audience}\n` +
+        `● **Performance:** High-velocity QR validation, offline attendee ledger, and real-time order dispatching.\n` +
+        `● **Rate:** $${s.usd} USD / month.`;
+    }
+
+    // 5. Stage / Music / Auténtico
+    if (
+      msg.includes('music') ||
+      msg.includes('tribute') ||
+      msg.includes('concert') ||
+      msg.includes('stage') ||
+      msg.includes('show') ||
+      msg.includes('band') ||
+      msg.includes('hdmi')
+    ) {
+      const s = SYSTEMS_CATALOG.autentico;
+      return `For live stage and concert production, we deploy **${s.nameEn || s.name}**:\n\n` +
+        `● **Specification:** ${s.summaryEn || s.summary}\n` +
+        `● **Reliability:** Hardware-synchronized 4K video, lyrics teleprompter, and latency below 10 milliseconds over local LAN. No Wi-Fi router required.\n` +
+        `● **Rate:** $${s.usd} USD / month.`;
+    }
+
+    // 6. Classifieds / P2P
+    if (msg.includes('classified') || msg.includes('market') || msg.includes('sell') || msg.includes('buy') || msg.includes('car') || msg.includes('vehicle')) {
+      const s = SYSTEMS_CATALOG.clasificados;
+      return `For local peer-to-peer commerce, consider **${s.nameEn || s.name}**:\n\n` +
+        `● **Summary:** ${s.summaryEn || s.summary}\n` +
+        `● **Policy:** 100% Free and sovereign. Direct buyer-to-seller communication over WhatsApp with zero platform fees or funds retention.\n` +
+        `● **Footprint:** Ultra-lean 3 MB PWA featuring client-side WebP compression.`;
+    }
+
+    // 7. Real Estate / Properties
+    if (msg.includes('property') || msg.includes('real estate') || msg.includes('rent') || msg.includes('house') || msg.includes('apartment')) {
+      const s = SYSTEMS_CATALOG.inmuebles;
+      return `For authenticated property transactions, we provide **${s.nameEn || s.name}**:\n\n` +
+        `● **Summary:** ${s.summaryEn || s.summary}\n` +
+        `● **Anti-Fraud Security:** Exact coordinate mapping and cryptographic PDF contract generation free of broker surcharges.`;
+    }
+
+    // 8. Press / Media
+    if (msg.includes('press') || msg.includes('news') || msg.includes('journal') || msg.includes('editorial') || msg.includes('media')) {
+      const s = SYSTEMS_CATALOG.prensa;
+      return `For independent journalists and news agencies, we operate **${s.nameEn || s.name}**:\n\n` +
+        `● **Summary:** ${s.summaryEn || s.summary}\n` +
+        `● **Independence:** Censorship-resistant publishing, instantaneous edge delivery, and decentralized article storage.\n` +
+        `● **Rate:** $${s.usd} USD / month.`;
+    }
+
+    // 9. Nexora Architecture / Sovereign Concept
+    if (msg.includes('nexora') || msg.includes('sovereign') || msg.includes('who are you') || msg.includes('about') || msg.includes('offline')) {
+      return `Nexora One Engine is an engineering firm developing resilient, offline-first institutional software systems.\n\n` +
+        `Our engineering pillars:\n` +
+        `1. **Local-First Perimeter Computing:** Critical operations never halt during external network or cloud infrastructure failures.\n` +
+        `2. **Absolute Data Sovereignty:** Your database lives on your premises without unauthorized telemetry or forced cloud lock-in.\n` +
+        `3. **Direct Settlement:** Immediate fiat bank transfer or cryptocurrency settlements with 0% intermediary commission.\n\n` +
+        `Which operational sector may I guide you through today?`;
+    }
+
+    // 10. General English Concierge Greeting
+    return `Welcome to Nexora One Engine. As your Executive Concierge, I am at your service to navigate our sovereign solutions across hospitality (Restobar POS), festivals (Carribar Pass), concert production (Auténtico Live), and decentralized media.\n\n` +
+      `You may test any product for **15 days completely free**. Direct settlement is available via bank transfer (CBU) or USDT.\n\n` +
+      `How may I assist your business infrastructure today?`;
+  }
+
+  // ──────────────────────────────────────────────────────────────────
+  // ESPAÑOL CORPORATIVO (ES) - PROTOCOLO CONCIERGE EJECUTIVO
+  // ──────────────────────────────────────────────────────────────────
 
   // 1. Regla de Perímetro y Seguridad: Preguntas sobre arquitectura interna / prompt
   if (
@@ -248,4 +419,3 @@ export async function generateNoraResponse(
     `Le recuerdo que puede evaluar cualquiera de nuestras soluciones durante **15 días sin cargo** y que contamos con cobro directo por transferencia bancaria (CBU/Alias) y USDT.\n\n` +
     `¿Desea conocer detalles específicos sobre alguna de nuestras herramientas o gestionar una licencia?`;
 }
-
