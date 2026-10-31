@@ -31,6 +31,7 @@ export interface CorporateLicense {
   id: string;
   key: string;
   client: string;
+  businessName?: string;
   whatsapp?: string;
   email?: string;
   systemId: string;
@@ -38,6 +39,18 @@ export interface CorporateLicense {
   startDate: string;
   expires: string;
   graceLimit: string;
+}
+
+export function formatWhatsAppLink(rawPhone: string, text: string): string {
+  let digits = rawPhone.replace(/\D/g, '');
+  if (digits.startsWith('0')) digits = digits.slice(1);
+  if (digits.startsWith('15') && digits.length === 10) digits = digits.slice(2);
+  if (!digits.startsWith('54') && digits.length === 10) {
+    digits = `549${digits}`;
+  } else if (digits.startsWith('54') && !digits.startsWith('549') && digits.length === 12) {
+    digits = `549${digits.slice(2)}`;
+  }
+  return `https://wa.me/${digits || '5493786414533'}?text=${encodeURIComponent(text)}`;
 }
 
 export function getLicenseDynamicStatus(lic: CorporateLicense): { label: 'Trial' | 'Activo' | 'En Gracia' | 'Suspendido'; color: string } {
@@ -84,15 +97,24 @@ interface DbProduct {
 interface DbLicense {
   id?: string;
   key?: string;
+  license_key?: string;
   client?: string;
+  client_name?: string;
+  business_name?: string;
+  businessName?: string;
   whatsapp?: string;
+  client_phone?: string;
   email?: string;
+  client_email?: string;
   system_id?: string;
   systemId?: string;
+  system_name?: string;
   status?: 'active' | 'trial' | 'grace' | 'suspended';
   start_date?: string;
   startDate?: string;
+  starts_at?: string;
   expires?: string;
+  expires_at?: string;
   grace_limit?: string;
   graceLimit?: string;
 }
@@ -189,7 +211,8 @@ const INITIAL_LICENSES: CorporateLicense[] = [
   {
     id: 'lic_1',
     key: 'NX-7701-RESTOBAR-SOV',
-    client: 'Bistró Central',
+    client: 'Marcelo Díaz',
+    businessName: 'Bistró Central',
     whatsapp: '+54 9 11 4522-8901',
     email: 'gerencia@bistrocentral.com.ar',
     systemId: 'restobar',
@@ -201,7 +224,8 @@ const INITIAL_LICENSES: CorporateLicense[] = [
   {
     id: 'lic_2',
     key: 'NX-9942-STAGE-LIVE',
-    client: 'Producciones Tour 2026',
+    client: 'Gonzalo Benítez',
+    businessName: 'Producciones Tour 2026',
     whatsapp: '+54 9 3786 51-2290',
     email: 'escenario@tourlive.com',
     systemId: 'autentico',
@@ -213,7 +237,8 @@ const INITIAL_LICENSES: CorporateLicense[] = [
   {
     id: 'lic_3',
     key: 'NX-4108-CARRIBAR-PASS',
-    client: 'Food Park Costanera',
+    client: 'Clara Valenzuela',
+    businessName: 'Food Park Costanera',
     whatsapp: '+54 9 3794 88-1244',
     email: 'contacto@foodpark.ar',
     systemId: 'carribar',
@@ -235,10 +260,18 @@ export default function App() {
   const [isTrialModalOpen, setIsTrialModalOpen] = useState(false);
   const [selectedTrialSystem, setSelectedTrialSystem] = useState<SystemItem | null>(null);
   const [leadName, setLeadName] = useState('');
-  const [leadWhatsapp, setLeadWhatsapp] = useState('');
+  const [leadBusiness, setLeadBusiness] = useState('');
+  const [leadWhatsapp, setLeadWhatsapp] = useState('+54 ');
   const [leadEmail, setLeadEmail] = useState('');
   const [isSubmittingTrial, setIsSubmittingTrial] = useState(false);
-  const [trialResult, setTrialResult] = useState<{ key: string; expires: string } | null>(null);
+  const [trialResult, setTrialResult] = useState<{
+    key: string;
+    expires: string;
+    clientName: string;
+    businessName: string;
+    whatsapp: string;
+  } | null>(null);
+  const [copiedKey, setCopiedKey] = useState(false);
 
   const [portalTab, setPortalTab] = useState<'licenses' | 'payments' | 'catalog'>('licenses');
   const [activeCategory, setActiveCategory] = useState<string>('all');
@@ -261,6 +294,7 @@ export default function App() {
 
   // Formularios de Backoffice
   const [newLicClient, setNewLicClient] = useState('');
+  const [newLicBusiness, setNewLicBusiness] = useState('');
   const [newLicWhatsapp, setNewLicWhatsapp] = useState('');
   const [newLicEmail, setNewLicEmail] = useState('');
   const [newLicSystem, setNewLicSystem] = useState('restobar');
@@ -317,14 +351,15 @@ export default function App() {
         if (!licErr && licData && licData.length > 0 && isMounted) {
           const mappedLics: CorporateLicense[] = licData.map((l: DbLicense) => ({
             id: String(l.id || `lic_${Date.now()}`),
-            key: l.key || `NX-SOV-${Math.random().toString(16).slice(2, 6).toUpperCase()}`,
-            client: l.client || 'Cliente Corporativo',
-            whatsapp: l.whatsapp || '',
-            email: l.email || '',
-            systemId: l.systemId || l.system_id || 'restobar',
+            key: l.key || l.license_key || `NX-SOV-${Math.random().toString(16).slice(2, 6).toUpperCase()}`,
+            client: l.client || l.client_name || 'Cliente Corporativo',
+            businessName: l.businessName || l.business_name || '',
+            whatsapp: l.whatsapp || l.client_phone || '',
+            email: l.email || l.client_email || '',
+            systemId: l.systemId || l.system_id || l.system_name || 'restobar',
             status: l.status || 'active',
-            startDate: l.startDate || l.start_date || '2026-10-31',
-            expires: l.expires || '2026-11-30',
+            startDate: l.startDate || l.start_date || l.starts_at || '2026-10-31',
+            expires: l.expires || l.expires_at || '2026-11-30',
             graceLimit: l.graceLimit || l.grace_limit || '2026-12-05'
           }));
           setLicenses(mappedLics);
@@ -914,9 +949,10 @@ export default function App() {
     const newLic: CorporateLicense = {
       id: `lic_${Date.now()}`,
       key: `NX-${hex}-${newLicSystem.toUpperCase()}-SOV`,
-      client: newLicClient,
-      whatsapp: newLicWhatsapp,
-      email: newLicEmail,
+      client: newLicClient.trim(),
+      businessName: newLicBusiness.trim() || undefined,
+      whatsapp: newLicWhatsapp.trim(),
+      email: newLicEmail.trim(),
       systemId: newLicSystem,
       status: 'active',
       startDate,
@@ -929,6 +965,7 @@ export default function App() {
     localStorage.setItem('nexora_licenses', JSON.stringify(updated));
 
     setNewLicClient('');
+    setNewLicBusiness('');
     setNewLicWhatsapp('');
     setNewLicEmail('');
 
@@ -936,13 +973,21 @@ export default function App() {
       try {
         await supabase.from('licenses').insert([{
           key: newLic.key,
+          license_key: newLic.key,
           client: newLic.client,
+          client_name: newLic.client,
+          business_name: newLic.businessName || '',
           whatsapp: newLic.whatsapp,
+          client_phone: newLic.whatsapp,
           email: newLic.email,
+          client_email: newLic.email,
           system_id: newLic.systemId,
+          system_name: systems.find(s => s.id === newLic.systemId)?.name || newLic.systemId,
           status: newLic.status,
           start_date: newLic.startDate,
+          starts_at: newLic.startDate,
           expires: newLic.expires,
+          expires_at: newLic.expires,
           grace_limit: newLic.graceLimit
         }]);
       } catch (err) {
@@ -958,6 +1003,8 @@ export default function App() {
     const expires = expObj.toISOString().split('T')[0];
     const graceObj = new Date(today.getTime() + 35 * 24 * 60 * 60 * 1000);
     const graceLimit = graceObj.toISOString().split('T')[0];
+
+    const targetLic = licenses.find(l => l.id === licId);
 
     const updated = licenses.map(l => {
       if (l.id === licId) {
@@ -980,12 +1027,33 @@ export default function App() {
         await supabase.from('licenses').update({
           status: 'active',
           start_date: startDate,
+          starts_at: startDate,
           expires,
+          expires_at: expires,
           grace_limit: graceLimit,
           payment_status: 'paid'
         }).eq('id', licId);
       } catch (err) {
         console.warn('Persistencia de renovación en Supabase:', err);
+      }
+
+      // Registro de conciliación de cobro asociado a WhatsApp y ciclo operativo
+      if (targetLic) {
+        try {
+          await supabase.from('payments_reconciliation').insert([{
+            license_id: licId,
+            license_key: targetLic.key,
+            client_name: targetLic.client,
+            business_name: targetLic.businessName || '',
+            whatsapp: targetLic.whatsapp || '',
+            system_id: targetLic.systemId,
+            cycle_days: 30,
+            status: 'conciliated',
+            conciliated_at: new Date().toISOString()
+          }]);
+        } catch {
+          // Fallback silencioso si la tabla auxiliar aún no está creada
+        }
       }
     }
   };
@@ -1043,15 +1111,17 @@ export default function App() {
   const handleOpenTrialModal = (sys: SystemItem) => {
     setSelectedTrialSystem(sys);
     setLeadName('');
-    setLeadWhatsapp('');
+    setLeadBusiness('');
+    setLeadWhatsapp('+54 ');
     setLeadEmail('');
     setTrialResult(null);
+    setCopiedKey(false);
     setIsTrialModalOpen(true);
   };
 
   const handleSubmitTrialLead = async (e: FormEvent) => {
     e.preventDefault();
-    if (!leadName.trim() || !leadWhatsapp.trim() || !selectedTrialSystem) return;
+    if (!leadName.trim() || !leadWhatsapp.trim() || !leadEmail.trim() || !selectedTrialSystem) return;
     setIsSubmittingTrial(true);
 
     const today = new Date();
@@ -1066,9 +1136,10 @@ export default function App() {
     const newLic: CorporateLicense = {
       id: `lic_trial_${Date.now()}`,
       key: trialKey,
-      client: leadName,
-      whatsapp: leadWhatsapp,
-      email: leadEmail,
+      client: leadName.trim(),
+      businessName: leadBusiness.trim() || undefined,
+      whatsapp: leadWhatsapp.trim(),
+      email: leadEmail.trim(),
       systemId: selectedTrialSystem.id,
       status: 'trial',
       startDate,
@@ -1084,14 +1155,22 @@ export default function App() {
       try {
         await supabase.from('licenses').insert([{
           key: trialKey,
-          client: leadName,
-          whatsapp: leadWhatsapp,
-          email: leadEmail,
+          license_key: trialKey,
+          client: leadName.trim(),
+          client_name: leadName.trim(),
+          business_name: leadBusiness.trim() || '',
+          whatsapp: leadWhatsapp.trim(),
+          client_phone: leadWhatsapp.trim(),
+          email: leadEmail.trim(),
+          client_email: leadEmail.trim(),
           system_id: selectedTrialSystem.id,
+          system_name: selectedTrialSystem.name,
           status: 'trial',
           payment_status: 'trial',
           start_date: startDate,
+          starts_at: startDate,
           expires: expDate,
+          expires_at: expDate,
           grace_limit: graceDate
         }]);
       } catch (err) {
@@ -1100,10 +1179,18 @@ export default function App() {
 
       try {
         await supabase.from('leads').insert([{
-          name: leadName,
-          whatsapp: leadWhatsapp,
-          email: leadEmail,
+          name: leadName.trim(),
+          client_name: leadName.trim(),
+          business_name: leadBusiness.trim() || '',
+          whatsapp: leadWhatsapp.trim(),
+          client_phone: leadWhatsapp.trim(),
+          email: leadEmail.trim(),
+          client_email: leadEmail.trim(),
           system_id: selectedTrialSystem.id,
+          system_name: selectedTrialSystem.name,
+          license_key: trialKey,
+          starts_at: startDate,
+          expires_at: expDate,
           payment_status: 'trial'
         }]);
       } catch {
@@ -1114,8 +1201,12 @@ export default function App() {
     setIsSubmittingTrial(false);
     setTrialResult({
       key: trialKey,
-      expires: expDate
+      expires: expDate,
+      clientName: leadName.trim(),
+      businessName: leadBusiness.trim(),
+      whatsapp: leadWhatsapp.trim()
     });
+    setCopiedKey(false);
   };
 
   // --- DESCARGA DIRECTA DE PAQUETE DE INDUCCIÓN (SIN 404) ---
@@ -1262,15 +1353,25 @@ export default function App() {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
                   <div>
-                    <label className="text-[10px] font-mono text-slate-400 block mb-1">CLIENTE / RAZÓN SOCIAL *</label>
+                    <label className="text-[10px] font-mono text-slate-400 block mb-1">CLIENTE / TITULAR *</label>
                     <input
                       type="text"
                       required
-                      placeholder="Ej: Bistró Central"
+                      placeholder="Ej: Marcelo Díaz"
                       value={newLicClient}
                       onChange={(e) => setNewLicClient(e.target.value)}
+                      className="w-full bg-[#090b0e] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#00f2fe]"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-mono text-slate-400 block mb-1">COMERCIO / EMPRESA</label>
+                    <input
+                      type="text"
+                      placeholder="Ej: Bistró Central (Opcional)"
+                      value={newLicBusiness}
+                      onChange={(e) => setNewLicBusiness(e.target.value)}
                       className="w-full bg-[#090b0e] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#00f2fe]"
                     />
                   </div>
@@ -1336,27 +1437,50 @@ export default function App() {
                   <table className="w-full text-left text-xs font-mono whitespace-nowrap">
                     <thead className="bg-[#090b0e] text-slate-400 border-b border-white/10">
                       <tr>
-                        <th className="p-3.5">Cliente / Empresa</th>
-                        <th className="p-3.5">Contacto (WhatsApp / Email)</th>
+                        <th className="p-3.5">Cliente / Razón Social</th>
+                        <th className="p-3.5">WhatsApp / Contacto</th>
                         <th className="p-3.5">Sistema</th>
                         <th className="p-3.5">Clave Emitida</th>
                         <th className="p-3.5">Fecha Inicio</th>
                         <th className="p-3.5">Vencimiento (30d)</th>
                         <th className="p-3.5">Límite Gracia (35d)</th>
                         <th className="p-3.5">Estado</th>
-                        <th className="p-3.5 text-center">Acciones</th>
+                        <th className="p-3.5 text-center">Acción de Cobro</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
                       {licenses.map(lic => {
                         const statusInfo = getLicenseDynamicStatus(lic);
                         const systemName = systems.find(s => s.id === lic.systemId)?.name || lic.systemId;
+                        const clientLabel = lic.businessName ? `${lic.client} de (${lic.businessName})` : lic.client;
+                        const followUpText = `Estimado/a ${clientLabel}, le saludamos desde el centro de administración de Nexora One Engine respecto a su licencia activa ${lic.key} para ${systemName}.`;
+                        const waHref = lic.whatsapp ? formatWhatsAppLink(lic.whatsapp, followUpText) : '#';
+
                         return (
                           <tr key={lic.id} className="hover:bg-white/5 transition-colors">
-                            <td className="p-3.5 font-bold text-white">{lic.client}</td>
+                            <td className="p-3.5">
+                              <div className="font-bold text-white text-xs">{lic.client}</div>
+                              <div className="text-[11px] text-slate-400 font-normal mt-0.5">
+                                {lic.businessName ? lic.businessName : <span className="text-slate-500 italic">Particular</span>}
+                              </div>
+                            </td>
                             <td className="p-3.5 text-slate-300">
-                              <div>{lic.whatsapp || '—'}</div>
-                              {lic.email && <div className="text-[10px] text-slate-500">{lic.email}</div>}
+                              {lic.whatsapp ? (
+                                <a
+                                  href={waHref}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition group font-mono text-[11px]"
+                                  title="Iniciar conversación de seguimiento por WhatsApp en un clic"
+                                >
+                                  <span>💬</span>
+                                  <span className="font-semibold underline decoration-emerald-500/40">{lic.whatsapp}</span>
+                                  <span className="text-[10px] opacity-70 group-hover:opacity-100">↗</span>
+                                </a>
+                              ) : (
+                                <span className="text-slate-500">—</span>
+                              )}
+                              {lic.email && <div className="text-[10px] text-slate-500 mt-1">{lic.email}</div>}
                             </td>
                             <td className="p-3.5 text-slate-300">
                               <span className="px-2 py-0.5 rounded bg-white/5 text-slate-200 border border-white/10 text-[10px]">
@@ -1376,7 +1500,7 @@ export default function App() {
                               <button
                                 type="button"
                                 onClick={() => void handleRenewLicense(lic.id)}
-                                title="Registrar Pago y Renovar (+30 días)"
+                                title="Registrar Pago, Conciliar y Renovar (+30 días)"
                                 className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 font-mono text-[10px] font-bold transition flex items-center gap-1.5 mx-auto cursor-pointer"
                               >
                                 <span>💳</span>
@@ -2120,37 +2244,72 @@ export default function App() {
             {!trialResult ? (
               <form onSubmit={handleSubmitTrialLead} className="space-y-3.5">
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  Accede a la versión completa con motor soberano local durante <strong className="text-white">15 días continuos</strong> sin necesidad de tarjeta de crédito.
+                  Active su acceso de evaluación durante <strong className="text-white">15 días continuos</strong> con motor soberano y comanderas locales sin requerir tarjeta de crédito.
                 </p>
 
+                {/* 1. NOMBRE COMPLETO */}
                 <div>
-                  <label className="text-[10px] font-mono text-slate-400 block mb-1">NOMBRE / EMPRESA *</label>
+                  <label className="text-[10px] font-mono text-slate-400 block mb-1">
+                    NOMBRE COMPLETO *
+                  </label>
                   <input
                     type="text"
                     required
-                    placeholder="Ej: Marcelo Díaz / Bistró Costanera"
+                    placeholder="Ej: Marcelo Díaz"
                     value={leadName}
                     onChange={(e) => setLeadName(e.target.value)}
                     className="w-full bg-[#090b0e] border border-white/15 focus:border-[#00f2fe] rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none transition"
                   />
                 </div>
 
+                {/* 2. COMERCIO / RAZÓN SOCIAL */}
                 <div>
-                  <label className="text-[10px] font-mono text-slate-400 block mb-1">WHATSAPP DE ACTIVACIÓN *</label>
+                  <div className="flex justify-between items-baseline mb-1">
+                    <label className="text-[10px] font-mono text-slate-400 block">
+                      COMERCIO / RAZÓN SOCIAL
+                    </label>
+                    <span className="text-[9px] font-mono text-slate-500 italic">Opcional</span>
+                  </div>
                   <input
-                    type="tel"
-                    required
-                    placeholder="Ej: +54 9 3786 414533"
-                    value={leadWhatsapp}
-                    onChange={(e) => setLeadWhatsapp(e.target.value)}
+                    type="text"
+                    placeholder="Ej: Bistró Costanera SRL"
+                    value={leadBusiness}
+                    onChange={(e) => setLeadBusiness(e.target.value)}
                     className="w-full bg-[#090b0e] border border-white/15 focus:border-[#00f2fe] rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none transition"
                   />
+                  <span className="text-[10px] text-slate-500 font-mono block mt-1">
+                    * Dejar en blanco si es uso personal o profesional independiente.
+                  </span>
                 </div>
 
+                {/* 3. WHATSAPP CON PREFIJO INTERNACIONAL VISIBLE */}
                 <div>
-                  <label className="text-[10px] font-mono text-slate-400 block mb-1">CORREO ELECTRÓNICO (OPCIONAL)</label>
+                  <label className="text-[10px] font-mono text-slate-400 block mb-1">
+                    WHATSAPP DE ACTIVACIÓN *
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <span className="px-3 py-2 rounded-xl bg-[#0e1117] border border-white/15 text-xs font-mono text-[#00f2fe] select-none font-bold">
+                      🇦🇷 +54
+                    </span>
+                    <input
+                      type="tel"
+                      required
+                      placeholder="9 3786 414533"
+                      value={leadWhatsapp}
+                      onChange={(e) => setLeadWhatsapp(e.target.value)}
+                      className="flex-1 bg-[#090b0e] border border-white/15 focus:border-[#00f2fe] rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none font-mono transition"
+                    />
+                  </div>
+                </div>
+
+                {/* 4. CORREO ELECTRÓNICO */}
+                <div>
+                  <label className="text-[10px] font-mono text-slate-400 block mb-1">
+                    CORREO ELECTRÓNICO *
+                  </label>
                   <input
                     type="email"
+                    required
                     placeholder="contacto@tuempresa.com"
                     value={leadEmail}
                     onChange={(e) => setLeadEmail(e.target.value)}
@@ -2162,9 +2321,9 @@ export default function App() {
                   <button
                     type="submit"
                     disabled={isSubmittingTrial}
-                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#00f2fe] to-[#00b4d8] text-slate-950 text-xs font-bold font-mono hover:brightness-110 shadow-[0_0_20px_-3px_rgba(0,242,254,0.4)] transition flex items-center justify-center gap-2"
+                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#00f2fe] to-[#00b4d8] text-slate-950 text-xs font-bold font-mono hover:brightness-110 shadow-[0_0_20px_-3px_rgba(0,242,254,0.4)] transition flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    <span>{isSubmittingTrial ? 'Generando Licencia...' : 'Activar Prueba de 15 Días'}</span>
+                    <span>{isSubmittingTrial ? 'Generando Clave...' : 'Solicitar Acceso y Clave de Evaluación'}</span>
                     <span className="text-slate-950 font-sans">→</span>
                   </button>
                   <span className="block text-[10px] text-center text-slate-500 font-mono mt-2">
@@ -2177,37 +2336,95 @@ export default function App() {
                 <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-center space-y-1.5">
                   <span className="text-xs font-mono font-bold text-emerald-400">✓ ACCESO SOBERANO CONCEDIDO</span>
                   <p className="text-xs text-slate-300">
-                    Tu período de evaluación de 15 días ha sido activado con éxito.
+                    Su período de evaluación de 15 días para <strong className="text-white">{selectedTrialSystem.name}</strong> ha sido activado con éxito.
                   </p>
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-[#090b0e] border border-white/10 space-y-1">
-                  <span className="text-[10px] font-mono text-slate-400 block">CLAVE DE LICENCIA DE PRUEBA:</span>
-                  <div className="flex items-center justify-between font-mono font-bold text-xs text-[#00f2fe] bg-[#141822] p-2 rounded-lg border border-[#00f2fe]/30 select-all">
-                    <span>{trialResult.key}</span>
-                    <span className="text-[10px] text-slate-400">Vence: {trialResult.expires}</span>
+                {/* TARJETA DE CONFIRMACIÓN CON CLAVE Y COPIADO RÁPIDO */}
+                <div className="p-4 rounded-xl bg-[#090b0e] border border-white/10 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">
+                      CLAVE DE LICENCIA CRIPTOGRÁFICA
+                    </span>
+                    <span className="text-[10px] font-mono text-emerald-400">Vence: {trialResult.expires}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 font-mono font-bold text-xs sm:text-sm text-[#00f2fe] bg-[#141822] p-2.5 rounded-xl border border-[#00f2fe]/30 select-all tracking-wider text-center overflow-x-auto">
+                      {trialResult.key}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(trialResult.key);
+                        setCopiedKey(true);
+                        setTimeout(() => setCopiedKey(false), 2500);
+                      }}
+                      className="px-3 py-2.5 rounded-xl bg-[#141822] hover:bg-[#1f2433] border border-white/20 text-slate-200 text-xs font-mono font-semibold transition flex items-center gap-1.5 cursor-pointer shrink-0"
+                      title="Copiar Clave al Portapapeles"
+                    >
+                      <span>{copiedKey ? '✓' : '📋'}</span>
+                      <span>{copiedKey ? '¡Copiada!' : 'Copiar'}</span>
+                    </button>
                   </div>
                 </div>
 
-                <div className="space-y-2.5 pt-2">
-                  <button
-                    type="button"
-                    onClick={handleDownloadTrialKit}
-                    className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#00f2fe] to-[#00b4d8] text-slate-950 text-xs font-bold font-mono hover:brightness-110 shadow-[0_0_20px_-3px_rgba(0,242,254,0.4)] transition flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <span>⬇ Descargar Credencial e Instalador Soberano (.json)</span>
-                  </button>
+                {/* BOTÓN PRIORITARIO WHATSAPP DESTACADO EN VERDE */}
+                {(() => {
+                  const saludoCliente = trialResult.businessName
+                    ? `${trialResult.clientName} de (${trialResult.businessName})`
+                    : trialResult.clientName;
 
-                  <a
-                    href={`https://wa.me/5493786414533?text=${encodeURIComponent(`Estimado equipo de Nexora One, he activado el período de evaluación de 15 días para ${selectedTrialSystem.name} con la credencial ${trialResult.key}. Solicito asistencia para el despliegue local.`)}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="w-full py-2 px-4 rounded-xl bg-[#25D366]/20 border border-[#25D366]/40 text-[#25D366] text-xs font-bold font-mono hover:bg-[#25D366]/30 transition flex items-center justify-center gap-2"
-                  >
-                    <span>Confirmar con Nora Itu / Soporte por WhatsApp</span>
-                    <span>💬</span>
-                  </a>
-                </div>
+                  const plantillawa = `Estimado/a ${saludoCliente}:
+
+Le damos la bienvenida a Nexora One Engine.
+Su acceso de evaluación por 15 días para ${selectedTrialSystem.name} ha sido concedido exitosamente.
+
+🔑 Clave de Licencia: ${trialResult.key}
+📅 Vigencia de Prueba: 15 días
+🚀 Enlace de Acceso / Demo: https://nexora-store-app.vercel.app/#demo-${selectedTrialSystem.id}
+
+Conserve este mensaje oficial. Al término de su período de prueba o para habilitar el servicio definitivo, este canal verificará su comprobante de pago directo (Transferencia Bancaria, Mercado Pago o USDT).
+
+Nexora One Engine — Arquitectura Soberana`;
+
+                  const waHref = formatWhatsAppLink(trialResult.whatsapp, plantillawa);
+                  const supportHref = formatWhatsAppLink(
+                    '5493786414533',
+                    `Estimado equipo de soporte de Nexora One Engine, me comunico por la licencia de prueba ${trialResult.key} para ${selectedTrialSystem.name} solicitada por ${saludoCliente}.`
+                  );
+
+                  return (
+                    <div className="space-y-2.5 pt-1">
+                      <a
+                        href={waHref}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="w-full py-3 px-4 rounded-xl bg-[#25D366] hover:bg-[#20ba5a] text-slate-950 text-xs font-bold font-mono shadow-[0_0_25px_rgba(37,211,102,0.4)] transition-all flex items-center justify-center gap-2 text-center cursor-pointer"
+                      >
+                        <span className="text-base leading-none">📲</span>
+                        <span>Enviar Licencia y Acceso a mi WhatsApp</span>
+                      </a>
+
+                      <a
+                        href={supportHref}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="w-full py-2.5 px-4 rounded-xl bg-[#141822] border border-white/15 text-slate-300 hover:text-white text-xs font-mono transition flex items-center justify-center gap-2"
+                      >
+                        <span>💬 Contactar Asistencia Oficial (+54 9 3786 414533)</span>
+                      </a>
+
+                      <button
+                        type="button"
+                        onClick={handleDownloadTrialKit}
+                        className="w-full py-2 px-3 rounded-lg text-slate-400 hover:text-[#00f2fe] text-[11px] font-mono transition flex items-center justify-center gap-1 cursor-pointer"
+                      >
+                        <span>⬇ Descargar también copia local en formato .json</span>
+                      </button>
+                    </div>
+                  );
+                })()}
 
                 <button
                   onClick={() => {
