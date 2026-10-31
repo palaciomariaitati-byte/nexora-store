@@ -1,9 +1,10 @@
 /**
  * ════════════════════════════════════════════════════════════════════
- *  NEXORA ONE ENGINE — Nora Copilot Backoffice Runtime
+ *  NEXORA ONE — NORA COPILOT OPERATIVO (BACKOFFICE EXCLUSIVO)
  * ────────────────────────────────────────────────────────────────────
- *  Rol: Copiloto Técnico y Guía de Operaciones Internas para Operadores.
- *  Operación: 100% Local / In-Memory / Determinista (Cero fugas a terceros).
+ *  Rol: Copiloto de Oficina y Guía Pragmática Paso a Paso para Operadores.
+ *  Regla de Oro: Cero código fuente, cero esquemas técnicos.
+ *  100% Instrucciones visuales y operativas directas de mostrador.
  * ════════════════════════════════════════════════════════════════════
  */
 
@@ -18,108 +19,87 @@ export interface CopilotTopic {
 export const COPILOT_KNOWLEDGE_BASE: Record<string, CopilotTopic> = {
   alta_sistemas: {
     id: 'alta_sistemas',
-    title: 'Alta y Configuración de Sistemas en Catálogo',
-    badge: 'ESTRUCTURA DE DATOS',
-    summary: 'Requisitos y especificaciones para integrar una nueva solución al App Store público y backoffice.',
+    title: 'Publicar Nuevo Sistema en la Tienda',
+    badge: 'PASO A PASO',
+    summary: 'Cómo dar de alta un producto o módulo en la App Store pública en 3 pasos simples.',
     content:
-      `### Estructura de Datos Requerida (SystemItem):\n\n` +
-      `Para registrar un nuevo software en el catálogo, cada ítem debe contar con:\n` +
-      `● **id:** Cadena alfanumérica única en minúsculas (ej: 'restobar', 'carribar', 'logistica').\n` +
-      `● **name:** Nombre comercial oficial del sistema (ej: 'Restobar 2026 POS').\n` +
-      `● **subtitle:** Subtítulo técnico en mayúsculas (ej: 'PUNTO DE VENTA & COMANDERAS OFFLINE').\n` +
-      `● **category:** Uno de los 6 dominios perimetrales: 'gastronomia' | 'comercio' | 'eventos' | 'inmuebles' | 'servicios' | 'medios'.\n` +
-      `● **Catálogo Actual (11 Soluciones Activas):** Restobar 2026 POS, Nexora Club & Carribar Pass, Prensa & Medios Soberano, Auténtico Tributo Live, Nexora Clasificados, Inmuebles Verificados, Nexora Stock & Retail 2026, Nexora Turnos & Citas Express, Nexora Hotel & Cabañas Desk, Nexora Flota & Encomiendas, Nexora Caja Fuerte & Auditoría.\n` +
-      `● **priceUsd / priceArs:** Valores duales para cotización en tiempo real. Si es comunitario o gratuito, ambos valores son 0.\n` +
-      `● **slaOrBadge:** Métrica visual destacada (ej: '< 2MS LATENCY', 'ANTI-FRAUDE', '0% COMISIÓN').\n` +
-      `● **slaColor:** Clases CSS de Tailwind para color de insignia.\n` +
-      `● **description:** Resumen conciso de 1-2 oraciones enfocado en la ventaja competitiva offline-first.\n` +
-      `● **targetAudience:** Texto explicativo para el desplegable '¿A quién le resuelve el día?'.\n` +
-      `● **tags:** Array de strings con especificaciones técnicas (ej: ['SQLite Local', 'ESC/POS LAN', 'Sin Nube']).\n` +
-      `● **active:** Booleano para activar o desactivar la visibilidad en el App Store sin borrar el registro.`,
+      `### Cómo publicar un nuevo sistema en 3 pasos:\n\n` +
+      `1. **Hacé clic en la pestaña Catálogo & Precios** en la barra superior de este panel.\n` +
+      `2. **Pulsá el botón verde '+ Publicar Nuevo Sistema / Módulo'** y completá el formulario:\n` +
+      `   - Nombre comercial del software (ej: Turnos Médicos Express).\n` +
+      `   - Rubro o categoría (Gastronomía, Comercio, Eventos, Inmuebles, Servicios o Medios).\n` +
+      `   - Arancel en pesos argentinos ($ ARS) y en dólares ($ USD).\n` +
+      `   - Descripción breve de 1 renglón.\n` +
+      `   - Enlace de acceso a la demo o instalador.\n` +
+      `   - Selector de visibilidad: Marcá 'Sí' para que se vea en la tienda.\n` +
+      `3. **Pulsá Guardar y Publicar**; el sistema impactará en la App Store pública de inmediato sin tocar código ni reiniciar nada.`,
   },
   licencias_presenciales: {
     id: 'licencias_presenciales',
-    title: 'Protocolo de Emisión de Licencias Presenciales (Mostrador)',
-    badge: 'OPERACIÓN DE COBRO',
-    summary: 'Procedimiento paso a paso para el cobro físico en mostrador y entrega de clave con recibo criptográfico.',
+    title: 'Cobro y Emisión de Licencia en Mostrador',
+    badge: 'VENTAS Y COBROS',
+    summary: 'Procedimiento sencillo para registrar un cliente presencial, cobrar y entregarle su recibo con clave.',
     content:
-      `### Guía de Emisión Presencial:\n\n` +
-      `1. **Recepción del Cliente:** Diríjase a la pestaña 'Descargas & Licencias' y presione el botón verde '+ Nueva Licencia Presencial / Mostrador'.\n` +
-      `2. **Completado de Datos:**\n` +
-      `   - Ingrese el *Nombre Completo* del titular.\n` +
-      `   - Ingrese el *Comercio / Razón Social* (o deje vacío si es profesional independiente).\n` +
-      `   - Ingrese el *WhatsApp* con prefijo internacional (ej: +54 9 3786...).\n` +
-      `   - Ingrese el *Correo Electrónico* corporativo.\n` +
-      `   - Seleccione el *Sistema* adquirido.\n` +
-      `   - Seleccione la forma de pago percibida: 'Efectivo (ARS)', 'Transferencia Bancaria (CBU/CVU)' o 'USDT TRC-20'.\n` +
-      `3. **Emisión Criptográfica:** Al presionar 'Emitir Licencia y Cobrar', el motor calcula automáticamente:\n` +
-      `   - Inicio: Fecha de hoy.\n` +
-      `   - Vencimiento regular: +30 días continuos.\n` +
-      `   - Margen de gracia perimetral: +35 días continuos (5 días de gracia).\n` +
-      `   - Clave única: NX-PRE-[HEX]-[SISTEMA]-30D.\n` +
-      `4. **Entrega de Comprobante:** Se abrirá el modal con el recibo firmado por SHA-256. Presione 'Copiar Recibo' o 'Enviar Recibo por WhatsApp' para enviarlo directamente al celular del cliente.`,
+      `### Cómo registrar una venta física y emitir la licencia:\n\n` +
+      `1. En la pestaña **Descargas & Licencias**, hacé clic en el botón verde **'+ Nueva Licencia Presencial / Mostrador'**.\n` +
+      `2. Completá la ficha del cliente: Nombre y Apellido, Comercio o Razón Social (opcional), número de WhatsApp y Correo Electrónico.\n` +
+      `3. Seleccioná el sistema adquirido (ej: Restobar 2026 POS, Retail o Turnos Express).\n` +
+      `4. Indicá la forma de cobro percibida en mostrador: Efectivo en mano (ARS), Transferencia bancaria (CBU/CVU) o USDT.\n` +
+      `5. Pulsá **'Emitir Licencia y Cobrar'**. Se generará la clave activada por 30 días (+5 días de gracia).\n` +
+      `6. Hacé clic en **'Enviar Recibo por WhatsApp'** para mandarle el comprobante oficial al celular del cliente en 1 segundo.`,
   },
   regla_30_5: {
     id: 'regla_30_5',
-    title: 'Regla 30 + 5 de Gracia y Gestión de Cortes',
-    badge: 'POLÍTICA DETERMINISTA',
-    summary: 'Gestión de etapas del ciclo de vida, avisos preventivos, prórrogas y reactivación inmediata.',
+    title: 'Vencimientos y Período de Gracia (30 + 5 Días)',
+    badge: 'ATENCIÓN AL CLIENTE',
+    summary: 'Qué hacer cuando un cliente está por vencer, entra en gracia o necesita unos días extra para pagar.',
     content:
-      `### Ciclo Operativo 30 + 5 Días:\n\n` +
-      `● **Días 1 a 30 (Activo):** Acceso regular pleno sin restricciones. El día 25 se dispara el aviso preventivo de renovación.\n` +
-      `● **Días 31 a 35 (En Gracia):** El sistema venció, pero el software perimetral NO se interrumpe para proteger el negocio del cliente. Muestra aviso de cuenta en período de gracia con fecha fatal.\n` +
-      `● **Día 36+ (Suspendido / Corte):** Corte forzoso. La clave no valida licencias y requiere regularización.\n\n` +
-      `### Acciones del Operador:\n` +
-      `1. **Reactivación / Renovación Ordinaria:** Presione el botón '💳 +30d' en la fila o 'Reactivar / Renovar (+30d)' dentro del Dossier. Esto reinicia el contador de 30 días + 5 de gracia desde hoy y reconcilia el pago.\n` +
-      `2. **Prórroga Excepcional:** Si el cliente solicita unos días más para abonar, abra '⚙ Dossier' y presione '⏳ Extender Gracia (+5d)'. Esto extiende la fecha de corte 5 días adicionales sin reiniciar el ciclo completo.\n` +
-      `3. **Corte Manual:** Si se detecta uso no autorizado o incumplimiento grave, presione '🛑 Suspender Forzosamente'.`,
+      `### Cómo funciona el ciclo de pago (30 + 5 Días):\n\n` +
+      `● **Día 1 al 30 (Al Día / Activo):** El cliente usa su sistema normalmente. El día 25 podés enviarle el aviso recordatorio por WhatsApp con un solo clic.\n` +
+      `● **Día 31 al 35 (En Gracia):** Se cumplieron los 30 días, pero **el sistema NO se corta** para que su negocio no se detenga. Le sale un aviso amable de cuenta en período de gracia con fecha límite.\n` +
+      `● **Día 36 en adelante (Corte Preventivo / Suspendido):** Si no abonó, el acceso se suspende automáticamente hasta regularizar.\n\n` +
+      `### ¿Qué botón tocar cuando el cliente paga?:\n` +
+      `● **Si abonó su cuota:** Buscalo en la tabla y pulsá el botón **'💳 +30d'**. Listo: se reinicia su mes completo de servicio desde hoy.\n` +
+      `● **Si pide una prórroga de unos días:** Abrí **'⚙ Dossier'** y pulsá **'⏳ Extender Gracia (+5d)'** para darle 5 días adicionales sin cortar el sistema.\n` +
+      `● **Si hubo un conflicto grave:** Podés presionar **'🛑 Suspender Forzosamente'**.`,
   },
   formas_cobro: {
     id: 'formas_cobro',
-    title: 'Modificación de Canales de Cobro (CBU / MP / USDT)',
-    badge: 'CONFIGURACIÓN FINANCIERA',
-    summary: 'Cómo actualizar cuentas bancarias y billeteras cripto sin editar código fuente.',
+    title: 'Cambiar Cuentas Bancarias y Enlaces de Pago',
+    badge: 'FINANZAS',
+    summary: 'Cómo actualizar el CBU, Alias o billetera de cobro en un solo clic.',
     content:
-      `### Actualización de Coordenadas Financieras:\n\n` +
-      `1. En el Dashboard administrativo, ingrese a la pestaña **'Formas de Pago'**.\n` +
-      `2. Dispone de tres canales administrables en tiempo real:\n` +
-      `   - **Transferencia CBU / CVU:** Actualice CBU/CVU (22 dígitos), Alias bancario y Nombre del Titular.\n` +
-      `   - **Mercado Pago:** Actualice el enlace de cobro checkout directo o URL del QR.\n` +
-      `   - **Criptoactivos USDT:** Configure las direcciones para red TRC-20 (Tron) y red Polygon.\n` +
-      `3. Presione el botón **'Guardar Métodos de Cobro'**.\n` +
-      `4. **Sincronización Inmediata:** Los cambios se persisten en almacenamiento soberano y tanto Nora Itu (en el front público) como las plantillas de notificación de cobro (Día 25, 31 y 36) comenzarán a responder con los nuevos datos al instante, sin reiniciar el servidor.`,
+      `### Cómo modificar los datos donde los clientes te pagan:\n\n` +
+      `1. Hacé clic en la pestaña **'Formas de Pago'** en el menú superior.\n` +
+      `2. Vas a ver los 3 canales oficiales:\n` +
+      `   - **Transferencia Bancaria:** Modificá el CBU/CVU (22 dígitos), Alias bancario y Nombre del Titular.\n` +
+      `   - **Mercado Pago:** Actualizá el enlace directo de cobro o URL del QR.\n` +
+      `   - **Criptoactivos USDT:** Actualizá las direcciones de red Tron (TRC-20) o Polygon.\n` +
+      `3. Pulsá el botón **'Guardar Métodos de Cobro'**.\n` +
+      `4. ¡Listo! Los nuevos datos impactan inmediatamente tanto en la tienda pública como en las plantillas automáticas de cobro que envía Nora.`,
   },
   offline_distribucion: {
     id: 'offline_distribucion',
-    title: 'Despliegue Local para Computadoras de la Empresa',
-    badge: 'DISTRIBUCIÓN PERIMETRAL',
-    summary: 'Cómo empaquetar y ejecutar Nexora One Engine en las computadoras de la oficina sin internet.',
+    title: 'Instalar el Sistema en las PCs de la Oficina',
+    badge: 'USO EN OFICINA',
+    summary: 'Cómo llevar el sistema a cualquier computadora para trabajar sin conexión a internet.',
     content:
-      `### Ejecución Local-First en PCs de la Empresa:\n\n` +
-      `1. Ejecute en la terminal el comando: \`npm run package:offline\`.\n` +
-      `2. Esto generará la carpeta autónoma \`dist-offline\` que contiene:\n` +
-      `   - Todos los activos estáticos compilados.\n` +
-      `   - Servidor ultraliviano nativo de Node.js.\n` +
-      `   - Archivo ejecutable \`iniciar-nexora-local.bat\`.\n` +
-      `3. **Uso en Mostrador / Oficina:**\n` +
-      `   - Copie la carpeta \`dist-offline\` a cualquier PC con Windows (o distribúyala vía pendrive/red LAN).\n` +
-      `   - Haga doble clic en \`iniciar-nexora-local.bat\`.\n` +
-      `   - El sistema abrirá automáticamente el navegador en \`http://localhost:3000\` en modo offline.\n` +
-      `   - Todas las altas, cobros y operaciones se guardan de forma local sin requerir conexión a internet ni depender de Vercel.`,
+      `### Cómo usar el sistema en las computadoras de la empresa:\n\n` +
+      `1. Copiá la carpeta \`dist-offline\` a la computadora donde vas a trabajar (mediante un pendrive o red local).\n` +
+      `2. Hacé **doble clic en el archivo \`iniciar-nexora-local.bat\`**.\n` +
+      `3. Se abrirá automáticamente el navegador en \`http://localhost:3000/#admin\`.\n` +
+      `4. Podés registrar clientes, cobrar y emitir licencias sin necesitar conexión a internet ni depender de servidores externos.`,
   },
   blindaje_seguridad: {
     id: 'blindaje_seguridad',
-    title: 'Blindaje Perimetral y Seguridad Ofensiva / Defensiva',
-    badge: 'SEGURIDAD PERIMETRAL',
-    summary: 'Medidas de protección de credenciales, bloqueo de consola F12 y desacople de builds.',
+    title: 'Seguridad y Privacidad del Negocio',
+    badge: 'PROTECCIÓN',
+    summary: 'Por qué los datos de tus clientes están seguros y nadie puede espiarlos.',
     content:
-      `### Mecanismos de Blindaje Implementados:\n\n` +
-      `● **Cero Credenciales 'service_role' en Front:** El código cliente jamás emite claves maestras. Únicamente utiliza tokens públicos anonimizados.\n` +
-      `● **Políticas RLS en Base de Datos:** Las consultas directas desde la consola del navegador (F12) sobre \`licenses\` y \`clients\` son rechazadas con error 403 Forbidden a nivel de base de datos salvo autorización explícita.\n` +
-      `● **Builds Separadas:**\n` +
-      `   - \`npm run build:public\`: Compila exclusivamente el App Store y portada pública sin rastros de lógica de backoffice.\n` +
-      `   - \`npm run build:admin\`: Empaqueta la consola interna para uso de operadores autorizados.\n` +
-      `● **Firma Local Determinista:** Todas las claves de licencia se verifican mediante funciones criptográficas locales sin consultar servidores externos.`,
+      `### Protección del negocio para el operador:\n\n` +
+      `● **Base de datos propia y privada:** La información de tus clientes y cobros reside en tu propio hardware.\n` +
+      `● **Acceso protegido por PIN:** Solo el personal autorizado con clave interna (ej: PIN 2026) puede ingresar a este panel.\n` +
+      `● **Separación absoluta:** Las personas que visitan la web pública ven únicamente el catálogo de venta. Nadie desde el exterior puede ver tu lista de clientes, contactos ni montos cobrados.`,
   },
 };
 
@@ -135,81 +115,145 @@ export async function generateCopilotResponse(
     systemsCount?: number;
   }
 ): Promise<string> {
-  // Retardo de procesamiento local (~200ms)
-  await new Promise((resolve) => setTimeout(resolve, 200));
+  // Retardo de procesamiento local natural (~180ms)
+  await new Promise((resolve) => setTimeout(resolve, 180));
 
   const q = userQuery.toLowerCase().trim();
 
   // 0. Identidad, origen y sede soberana de Nexora One
-  if (q.includes('quien') || q.includes('quién') || q.includes('origen') || q.includes('sede') || q.includes('empresa') || q.includes('donde') || q.includes('dónde') || q.includes('corrientes')) {
+  if (
+    q.includes('quien') ||
+    q.includes('quién') ||
+    q.includes('origen') ||
+    q.includes('sede') ||
+    q.includes('empresa') ||
+    q.includes('donde') ||
+    q.includes('dónde') ||
+    q.includes('corrientes')
+  ) {
     return `### Nora Copilot — Identidad y Sede Soberana\n\n` +
-      `Pertenezco con orgullo a **Nexora One**, firma de ingeniería tecnológica soberana con base de operaciones y desarrollo radicada con exclusividad en **Ituzaingó, Corrientes, Argentina**.\n\n` +
-      `Como su copiloto técnico de backoffice, mi función es asistirle en la administración del ecosistema de software perimetral, la emisión presencial de licencias y el resguardo de la infraestructura sin dependencias externas.`;
+      `Pertenezco con orgullo a **Nexora One**, firma de software e infraestructura soberana radicada exclusivamente en **Ituzaingó, Corrientes, Argentina**.\n\n` +
+      `Como su copiloto técnico de backoffice, mi función es guiarle paso a paso en la administración de clientes, cobros de mostrador, publicación de sistemas y resguardo de su negocio sin depender de nubes externas.`;
   }
 
-  // 1. Offline / PCs de la empresa / Paquete local
-  if (q.includes('offline') || q.includes('pc') || q.includes('oficina') || q.includes('local') || q.includes('bat') || q.includes('instalar') || q.includes('descargar') || q.includes('sin internet')) {
+  // 1. Alta y publicación de sistemas (Guía de 3 pasos)
+  if (
+    q.includes('publicar') ||
+    q.includes('subir') ||
+    q.includes('alta') ||
+    q.includes('nuevo sistema') ||
+    q.includes('catalogo') ||
+    q.includes('catálogo') ||
+    q.includes('agregar sistema') ||
+    q.includes('cargar sistema') ||
+    q.includes('crear sistema')
+  ) {
+    const topic = COPILOT_KNOWLEDGE_BASE.alta_sistemas;
+    return `### Nora Copilot — ${topic.title}\n\n` +
+      `Para publicar un nuevo sistema o módulo en la tienda pública, seguí estos 3 pasos directos:\n\n` +
+      `1. **Hacé clic en la pestaña Catálogo & Precios** en la barra superior de este panel.\n` +
+      `2. **Pulsá el botón '+ Publicar Nuevo Sistema / Módulo'** y completá el formulario (Nombre comercial, rubro, precio en pesos/dólares y el enlace de la demo).\n` +
+      `3. **Pulsá Guardar y Publicar**; el sistema impactará en la App Store pública de inmediato sin tocar código ni reiniciar nada.\n\n` +
+      `💡 *Atajo:* Podés abrir ahora mismo la pestaña 'Catálogo & Precios' y comenzar la carga en segundos.`;
+  }
+
+  // 2. Offline / PCs de la empresa / Paquete local (.bat)
+  if (
+    q.includes('offline') ||
+    q.includes('pc') ||
+    q.includes('oficina') ||
+    q.includes('local') ||
+    q.includes('bat') ||
+    q.includes('instalar') ||
+    q.includes('descargar') ||
+    q.includes('sin internet')
+  ) {
     const topic = COPILOT_KNOWLEDGE_BASE.offline_distribucion;
     return `### Nora Copilot — ${topic.title}\n\n` +
       `${topic.summary}\n\n` +
       `${topic.content}\n\n` +
-      `💡 *Atajo:* Ejecute \`npm run package:offline\` y copie el contenido de \`dist-offline\` al equipo de destino.`;
+      `💡 *Recordá:* Para crear la carpeta actualizada de oficina, ejecutás \`npm run package:offline\` y te llevás la carpeta \`dist-offline\` en un pendrive.`;
   }
 
-  // 2. Licencias presenciales / mostrador
-  if (q.includes('presencial') || q.includes('mostrador') || q.includes('emitir') || q.includes('cliente nuevo') || q.includes('cobro fisico') || q.includes('efectivo')) {
+  // 3. Licencias presenciales / mostrador / cobros físicos
+  if (
+    q.includes('presencial') ||
+    q.includes('mostrador') ||
+    q.includes('emitir') ||
+    q.includes('cliente nuevo') ||
+    q.includes('cobro fisico') ||
+    q.includes('efectivo') ||
+    q.includes('vender')
+  ) {
     const topic = COPILOT_KNOWLEDGE_BASE.licencias_presenciales;
     return `### Nora Copilot — ${topic.title}\n\n` +
       `${topic.summary}\n\n` +
       `${topic.content}\n\n` +
-      `💡 *Consejo:* Puede utilizar el botón '+ Nueva Licencia Presencial / Mostrador' ubicado en la parte superior de la tabla de licencias.`;
+      `💡 *Tip rápido:* Si el cliente te paga en efectivo o transferencia, dale a '+ Nueva Licencia Presencial / Mostrador' arriba de la tabla y en 30 segundos tiene el comprobante en su WhatsApp.`;
   }
 
-  // 3. Regla 30 + 5 y estados de gracia / corte
-  if (q.includes('30') || q.includes('gracia') || q.includes('corte') || q.includes('vence') || q.includes('vencimiento') || q.includes('suspension') || q.includes('dias')) {
+  // 4. Regla 30 + 5 y estados de gracia / corte / renovación
+  if (
+    q.includes('30') ||
+    q.includes('gracia') ||
+    q.includes('corte') ||
+    q.includes('vence') ||
+    q.includes('vencimiento') ||
+    q.includes('suspension') ||
+    q.includes('dias') ||
+    q.includes('renovar') ||
+    q.includes('pagan')
+  ) {
     const topic = COPILOT_KNOWLEDGE_BASE.regla_30_5;
     return `### Nora Copilot — ${topic.title}\n\n` +
       `${topic.summary}\n\n` +
       `${topic.content}\n\n` +
       (context
-        ? `📊 *Estado Actual del Parque:* ${context.activeLicenses || 0} licencias activas y ${context.graceLicenses || 0} en período de gracia.`
+        ? `📊 *Estado actual:* Contás con ${context.activeLicenses || 0} licencias activas al día y ${context.graceLicenses || 0} en período de gracia.`
         : '');
   }
 
-  // 4. Formas de cobro (CBU / MP / USDT)
-  if (q.includes('pago') || q.includes('cbu') || q.includes('alias') || q.includes('usdt') || q.includes('wallet') || q.includes('mercadopago') || q.includes('cobro')) {
+  // 5. Formas de cobro (CBU / MP / USDT)
+  if (
+    q.includes('pago') ||
+    q.includes('cbu') ||
+    q.includes('alias') ||
+    q.includes('usdt') ||
+    q.includes('wallet') ||
+    q.includes('mercadopago') ||
+    q.includes('cobro') ||
+    q.includes('banco')
+  ) {
     const topic = COPILOT_KNOWLEDGE_BASE.formas_cobro;
     return `### Nora Copilot — ${topic.title}\n\n` +
       `${topic.summary}\n\n` +
       `${topic.content}`;
   }
 
-  // 5. Seguridad y blindaje
-  if (q.includes('seguridad') || q.includes('blindaje') || q.includes('f12') || q.includes('consola') || q.includes('rls') || q.includes('build')) {
+  // 6. Seguridad y blindaje
+  if (
+    q.includes('seguridad') ||
+    q.includes('blindaje') ||
+    q.includes('f12') ||
+    q.includes('consola') ||
+    q.includes('proteccion') ||
+    q.includes('privacidad') ||
+    q.includes('espia')
+  ) {
     const topic = COPILOT_KNOWLEDGE_BASE.blindaje_seguridad;
     return `### Nora Copilot — ${topic.title}\n\n` +
       `${topic.summary}\n\n` +
       `${topic.content}`;
   }
 
-  // 6. Alta y subida de sistemas
-  if (q.includes('sistema') || q.includes('alta') || q.includes('subir') || q.includes('catalogo') || q.includes('producto') || q.includes('campos') || q.includes('estructura')) {
-    const topic = COPILOT_KNOWLEDGE_BASE.alta_sistemas;
-    return `### Nora Copilot — ${topic.title}\n\n` +
-      `${topic.summary}\n\n` +
-      `${topic.content}\n\n` +
-      `💡 *Consejo:* Para agregar un sistema de prueba, verifique que los precios USD y ARS reflejen el arancel mensual correspondiente y que la categoría sea válida.`;
-  }
-
   // 7. Respuesta de bienvenida y guía operativa general
-  return `### Nora Copilot — Centro de Control Operativo\n\n` +
-    `Hola, soy su copiloto técnico interno de **Nexora One**, con base de operaciones y desarrollo en **Ituzaingó, Corrientes, Argentina**. Estoy configurada para asistirle en las siguientes tareas clave:\n\n` +
-    `1. 📦 **Alta y Estructura de Sistemas:** Cómo dar de alta nuevos programas en el catálogo.\n` +
-    `2. 🏪 **Emisión Presencial en Mostrador:** Procedimiento para cobros físicos y entrega de recibos.\n` +
-    `3. ⏳ **Regla 30 + 5 de Gracia:** Qué hacer ante clientes en gracia, corte preventivo o renovación.\n` +
-    `4. 💳 **Canales de Cobro Directo:** Configuración de CBU, Mercado Pago y wallets USDT sin tocar código.\n` +
-    `5. 💻 **Despliegue Offline en PCs:** Cómo empaquetar y correr el sistema con doble clic (\`.bat\`) sin internet.\n` +
-    `6. 🛡️ **Blindaje y RLS:** Seguridad contra desarrolladores e inspección externa.\n\n` +
-    `¿Sobre cuál de estos temas requiere orientación inmediata?`;
+  return `### Nora Copilot — Asistente de Operaciones\n\n` +
+    `Hola, soy su copiloto de oficina para la administración de **Nexora One**, radicada en **Ituzaingó, Corrientes, Argentina**. Estoy aquí para orientarle paso a paso en las tareas del negocio:\n\n` +
+    `1. 📦 **Publicar Sistemas:** Cómo agregar nuevos productos a la tienda en 3 pasos con el botón verde.\n` +
+    `2. 🏪 **Ventas de Mostrador:** Cómo cargar clientes físicos, registrar el pago y emitir la licencia.\n` +
+    `3. ⏳ **Ciclo 30 + 5 Días:** Qué hacer cuando un cliente está en gracia, regulariza su cuota (+30d) o pide prórroga.\n` +
+    `4. 💳 **Cuentas de Cobro:** Cómo cambiar tu CBU, Alias o Mercado Pago sin tocar código.\n` +
+    `5. 💻 **Uso en Oficina Offline:** Cómo correr el sistema con doble clic (\`.bat\`) en las computadoras sin internet.\n` +
+    `6. 🛡️ **Seguridad:** Cómo se protegen tus clientes y números del negocio.\n\n` +
+    `¿En qué tarea necesitás ayuda en este momento?`;
 }
-

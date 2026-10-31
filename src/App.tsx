@@ -328,7 +328,7 @@ export default function App() {
     try {
       const saved = localStorage.getItem('nexora_lang');
       if (saved === 'es' || saved === 'en') return saved;
-    } catch {}
+    } catch { }
     return 'es';
   });
 
@@ -336,7 +336,7 @@ export default function App() {
     setLang(newLang);
     try {
       localStorage.setItem('nexora_lang', newLang);
-    } catch {}
+    } catch { }
   };
 
   const tr = t(lang);
@@ -386,6 +386,17 @@ export default function App() {
   } | null>(null);
   const [copiedKey, setCopiedKey] = useState(false);
 
+  // --- MODAL VISUAL "+ PUBLICAR NUEVO SISTEMA / MÓDULO" ---
+  const [isNewSystemModalOpen, setIsNewSystemModalOpen] = useState(false);
+  const [newSysName, setNewSysName] = useState('');
+  const [newSysCategory, setNewSysCategory] = useState<SystemItem['category']>('gastronomia');
+  const [newSysSubtitle, setNewSysSubtitle] = useState('');
+  const [newSysPriceArs, setNewSysPriceArs] = useState<number | ''>('');
+  const [newSysPriceUsd, setNewSysPriceUsd] = useState<number | ''>('');
+  const [newSysDescription, setNewSysDescription] = useState('');
+  const [newSysDemoUrl, setNewSysDemoUrl] = useState('');
+  const [newSysActive, setNewSysActive] = useState(true);
+
   const [portalTab, setPortalTab] = useState<'licenses' | 'payments' | 'catalog' | 'copilot'>('licenses');
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -395,7 +406,7 @@ export default function App() {
   const [copilotMessages, setCopilotMessages] = useState<Array<{ sender: 'user' | 'nora'; text: string; timestamp: string }>>([
     {
       sender: 'nora',
-      text: 'Hola, soy Nora Copilot. Asistente técnico exclusivo para el operador del backoffice. ¿En qué tarea operativa puedo orientarle hoy?',
+      text: 'Hola, soy Nora Copilot, su asistente de operaciones de Nexora One. Estoy para orientarle paso a paso en publicaciones de sistemas, ventas de mostrador, ciclo de 30+5 días y configuración de cobros. ¿En qué tarea necesita ayuda?',
       timestamp: 'Ahora'
     }
   ]);
@@ -413,7 +424,7 @@ export default function App() {
     try {
       const saved = localStorage.getItem('nexora_payment_settings');
       if (saved) return JSON.parse(saved);
-    } catch {}
+    } catch { }
     return DEFAULT_PAYMENTS;
   });
   const [paymentSavedToast, setPaymentSavedToast] = useState(false);
@@ -1628,6 +1639,64 @@ export default function App() {
     URL.revokeObjectURL(url);
   };
 
+  // --- FORMULARIO PRAGMÁTICO: PUBLICAR NUEVO SISTEMA (CERO CÓDIGO) ---
+  const handleCreateNewSystem = (e: FormEvent) => {
+    e.preventDefault();
+    if (!newSysName.trim()) return;
+
+    const cleanId = newSysName.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 15) || `sys_${Date.now()}`;
+    const newSystem: SystemItem = {
+      id: cleanId,
+      name: newSysName.trim(),
+      subtitle: newSysSubtitle.trim() || 'SOLUCIÓN SOBERANA & OFFLINE',
+      category: newSysCategory,
+      slaOrBadge: 'SLA 100%',
+      slaColor: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30',
+      priceUsd: Number(newSysPriceUsd) || 0,
+      priceArs: Number(newSysPriceArs) || 0,
+      description: newSysDescription.trim() || 'Sistema de cómputo perimetral independiente con base de datos local.',
+      targetAudience: 'Comercios y empresas que precisan facturar e interactuar sin caídas de conexión a internet.',
+      tags: ['Local-First', 'SQLite/IndexedDB', 'Sin Nube', 'ESC/POS Directo'],
+      active: newSysActive,
+    };
+
+    setSystems((prev) => [newSystem, ...prev]);
+
+    try {
+      const existing = JSON.parse(localStorage.getItem('nexora_custom_systems') || '[]');
+      existing.unshift(newSystem);
+      localStorage.setItem('nexora_custom_systems', JSON.stringify(existing));
+    } catch { }
+
+    if (supabase && isSupabaseConfigured) {
+      void Promise.resolve(
+        supabase.from('products').insert([{
+          id: cleanId,
+          name: newSystem.name,
+          subtitle: newSystem.subtitle,
+          category: newSystem.category,
+          price_usd: newSystem.priceUsd,
+          price_ars: newSystem.priceArs,
+          description: newSystem.description,
+          target_audience: newSystem.targetAudience,
+          active: newSystem.active
+        }])
+      ).catch(() => { });
+    }
+
+    setNewSysName('');
+    setNewSysSubtitle('');
+    setNewSysPriceArs('');
+    setNewSysPriceUsd('');
+    setNewSysDescription('');
+    setNewSysDemoUrl('');
+    setNewSysActive(true);
+    setIsNewSystemModalOpen(false);
+
+    setNoticeToast(`¡"${newSystem.name}" publicado exitosamente en la tienda!`);
+    setTimeout(() => setNoticeToast(null), 4000);
+  };
+
   const filteredSystems = systems.filter(sys => {
     if (!sys.active && (!isPortalOpen || !isAdminAuthenticated)) return false;
     const matchCat = activeCategory === 'all' || sys.category === activeCategory;
@@ -1743,7 +1812,7 @@ export default function App() {
                   onClick={() => setPortalTab('copilot')}
                   className={`px-3 py-1.5 rounded-lg transition ${portalTab === 'copilot' ? 'bg-[#00f2fe] text-slate-950 font-bold shadow-[0_0_15px_-3px_rgba(0,242,254,0.4)]' : 'text-slate-400 hover:text-white'}`}
                 >
-                  🤖 Nora Copilot
+                  🤖 Copilot Operador
                 </button>
               </div>
               <button
@@ -2117,11 +2186,21 @@ export default function App() {
           {/* TAB 3: GESTIÓN DE CATÁLOGO Y PRECIOS DUALES */}
           {portalTab === 'catalog' && (
             <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h2 className="text-sm font-mono text-[#00f2fe] font-bold">ADMINISTRACIÓN DE SISTEMAS Y PRECIOS DUALES</h2>
-                <span className="text-[11px] font-mono text-slate-400">
-                  Persistencia: <span className="text-emerald-400 font-bold">{isSupabaseConfigured ? 'Supabase DB' : 'Memoria Local-First'}</span>
-                </span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-sm font-mono text-[#00f2fe] font-bold">ADMINISTRACIÓN DE SISTEMAS Y PRECIOS DUALES</h2>
+                  <span className="text-[11px] font-mono text-slate-400">
+                    Persistencia: <span className="text-emerald-400 font-bold">{isSupabaseConfigured ? 'Supabase DB' : 'Memoria Local-First'}</span>
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsNewSystemModalOpen(true)}
+                  className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 font-mono font-bold text-xs hover:brightness-110 shadow-[0_0_15px_rgba(0,242,254,0.35)] transition flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
+                >
+                  <span className="text-sm font-black">+</span>
+                  <span>Publicar Nuevo Sistema / Módulo</span>
+                </button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -2175,14 +2254,14 @@ export default function App() {
                     <div>
                       <div className="flex items-center gap-2">
                         <h2 className="text-base sm:text-lg font-bold text-white font-mono uppercase tracking-wider">
-                          Nora Copilot — Terminal de Operaciones Internas
+                          Copilot Operador — Terminal de Operaciones Internas
                         </h2>
                         <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
                           BACKOFFICE EXCLUSIVO
                         </span>
                       </div>
                       <p className="text-xs text-slate-400 font-mono mt-0.5">
-                        Guía técnica interactiva para el operador: altas de sistemas, cobros presenciales, ciclo 30+5 y blindaje perimetral.
+                        Guía interactiva paso a paso para el operador: altas de sistemas, cobros presenciales, ciclo 30+5 y configuración de pagos (cero código).
                       </p>
                     </div>
                   </div>
@@ -2200,51 +2279,51 @@ export default function App() {
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
-                      onClick={() => handleSendCopilotChat('¿Cómo dar de alta y estructurar un nuevo sistema en el catálogo?')}
+                      onClick={() => handleSendCopilotChat('¿Cómo publico un nuevo sistema en la tienda usando el botón visual?')}
                       className="px-3 py-1.5 rounded-xl bg-[#090b0e] hover:bg-white/10 border border-white/10 text-slate-300 hover:text-cyan-300 text-xs font-mono transition flex items-center gap-1.5 cursor-pointer"
                     >
                       <span>📦</span>
-                      <span>Estructura de Sistemas</span>
+                      <span>Publicar Nuevo Sistema</span>
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleSendCopilotChat('¿Cómo emitir una licencia en mostrador/presencial y cobrar en efectivo o CBU?')}
+                      onClick={() => handleSendCopilotChat('¿Cómo cobro y emito una licencia en mostrador/presencial en efectivo o transferencia?')}
                       className="px-3 py-1.5 rounded-xl bg-[#090b0e] hover:bg-white/10 border border-white/10 text-slate-300 hover:text-cyan-300 text-xs font-mono transition flex items-center gap-1.5 cursor-pointer"
                     >
                       <span>🏪</span>
-                      <span>Emisión Presencial</span>
+                      <span>Venta en Mostrador</span>
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleSendCopilotChat('¿Cómo funciona la regla de 30+5 días de gracia y qué hacer ante clientes en corte?')}
+                      onClick={() => handleSendCopilotChat('¿Cómo funciona la regla de 30+5 días y qué botón toco para registrar un pago?')}
                       className="px-3 py-1.5 rounded-xl bg-[#090b0e] hover:bg-white/10 border border-white/10 text-slate-300 hover:text-cyan-300 text-xs font-mono transition flex items-center gap-1.5 cursor-pointer"
                     >
                       <span>⏳</span>
-                      <span>Regla 30 + 5 Días</span>
+                      <span>Regla 30 + 5 Días (+30d)</span>
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleSendCopilotChat('¿Cómo modificar las cuentas de CBU, Mercado Pago y wallets USDT?')}
+                      onClick={() => handleSendCopilotChat('¿Cómo configuro el CBU, Mercado Pago y USDT para que el bot pase mis cuentas?')}
                       className="px-3 py-1.5 rounded-xl bg-[#090b0e] hover:bg-white/10 border border-white/10 text-slate-300 hover:text-cyan-300 text-xs font-mono transition flex items-center gap-1.5 cursor-pointer"
                     >
                       <span>💳</span>
-                      <span>Canales de Cobro</span>
+                      <span>Configurar Cobros</span>
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleSendCopilotChat('¿Cómo correr Nexora en las PCs de la oficina sin internet usando el archivo .bat?')}
+                      onClick={() => handleSendCopilotChat('¿Cómo iniciar el sistema en la oficina sin internet con el archivo bat?')}
                       className="px-3 py-1.5 rounded-xl bg-[#090b0e] hover:bg-white/10 border border-white/10 text-slate-300 hover:text-cyan-300 text-xs font-mono transition flex items-center gap-1.5 cursor-pointer"
                     >
                       <span>💻</span>
-                      <span>Despliegue Local (.bat)</span>
+                      <span>Usar en PC sin Internet</span>
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleSendCopilotChat('¿Qué blindaje perimetral y políticas RLS protegen la base de datos de desarrolladores externos?')}
+                      onClick={() => handleSendCopilotChat('¿Por qué es seguro el sistema ante desarrolladores externos y quién tiene el PIN?')}
                       className="px-3 py-1.5 rounded-xl bg-[#090b0e] hover:bg-white/10 border border-white/10 text-slate-300 hover:text-cyan-300 text-xs font-mono transition flex items-center gap-1.5 cursor-pointer"
                     >
                       <span>🛡️</span>
-                      <span>Blindaje & RLS</span>
+                      <span>Seguridad y PIN Operador</span>
                     </button>
                   </div>
                 </div>
@@ -2255,11 +2334,10 @@ export default function App() {
                     {copilotMessages.map((m, idx) => (
                       <div key={idx} className={`flex flex-col ${m.sender === 'user' ? 'items-end' : 'items-start'}`}>
                         <div
-                          className={`p-3.5 rounded-2xl max-w-[90%] sm:max-w-[80%] whitespace-pre-wrap leading-relaxed shadow-lg ${
-                            m.sender === 'user'
+                          className={`p-3.5 rounded-2xl max-w-[90%] sm:max-w-[80%] whitespace-pre-wrap leading-relaxed shadow-lg ${m.sender === 'user'
                               ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-bold'
                               : 'bg-[#141822] text-slate-200 border border-cyan-500/20'
-                          }`}
+                            }`}
                         >
                           {m.text}
                         </div>
@@ -2642,9 +2720,8 @@ export default function App() {
                     <button
                       key={tab.id}
                       onClick={() => setActiveCategory(tab.id)}
-                      className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
-                        activeCategory === tab.id ? 'bg-[#00f2fe] text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
-                      }`}
+                      className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${activeCategory === tab.id ? 'bg-[#00f2fe] text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
+                        }`}
                     >
                       {tab.label}
                     </button>
@@ -3732,53 +3809,239 @@ Nexora One — Arquitectura Soberana`;
         </div>
       )}
 
-      {/* CHAT FLOTANTE NORA ITU - ELEVADO PARA NO TAPAR EL FOOTER */}
-      <div className="fixed bottom-10 right-6 sm:bottom-12 sm:right-10 z-40 flex flex-col items-end">
-        {isNoraChatOpen && (
-          <div className="w-80 sm:w-96 rounded-2xl bg-[#141822] border border-[#00f2fe]/30 shadow-2xl mb-3 overflow-hidden flex flex-col h-[440px]">
-            <div className="bg-[#0e1117] p-3 flex justify-between items-center border-b border-white/10">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span className="text-xs font-bold text-white">Nora Itu — Concierge Soberana</span>
+      {/* MODAL PRAGMÁTICO: + PUBLICAR NUEVO SISTEMA / MÓDULO (CERO CÓDIGO) */}
+      {isNewSystemModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="w-full max-w-xl rounded-3xl bg-[#141822] border border-cyan-400/50 p-6 sm:p-7 shadow-[0_0_60px_rgba(0,242,254,0.3)] space-y-5 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div>
+                <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+                  CATÁLOGO & TIENDA SOBERANA
+                </span>
+                <h3 className="text-base font-bold text-white font-mono mt-1">
+                  Publicar Nuevo Sistema / Módulo
+                </h3>
               </div>
-              <button onClick={() => setIsNoraChatOpen(false)} className="text-slate-400 hover:text-white text-xs">✕</button>
-            </div>
-
-            <div className="flex-1 p-3 overflow-y-auto space-y-2 text-xs bg-[#090b0e]">
-              {chatMessages.map((m, i) => (
-                <div key={i} className={`flex flex-col ${m.sender === 'user' ? 'items-end' : 'items-start'}`}>
-                  <div className={`p-2.5 rounded-xl max-w-[85%] ${m.sender === 'user' ? 'bg-[#00f2fe] text-slate-950 font-medium' : 'bg-[#141822] text-slate-200 border border-white/10'}`}>
-                    {m.text}
-                  </div>
-                </div>
-              ))}
-              {isSendingChat && <div className="text-[11px] text-slate-500 font-mono">Nora Itu procesando...</div>}
-              <div ref={chatMessagesEndRef} />
-            </div>
-
-            <form onSubmit={handleSendChat} className="p-2 bg-[#0e1117] border-t border-white/10 flex gap-2">
-              <input
-                type="text"
-                placeholder={lang === 'en' ? 'Ask Nora Itu anything...' : 'Pregunta a Nora Itu...'}
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                className="flex-1 bg-[#141822] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#00f2fe]"
-              />
-              <button type="submit" disabled={isSendingChat} className="px-3 py-1.5 bg-[#00f2fe] text-slate-950 font-bold rounded-lg text-xs hover:bg-[#00f2fe]/90">
-                {lang === 'en' ? 'Send' : 'Enviar'}
+              <button
+                onClick={() => setIsNewSystemModalOpen(false)}
+                className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center text-sm transition cursor-pointer"
+              >
+                ✕
               </button>
+            </div>
+
+            <form onSubmit={handleCreateNewSystem} className="space-y-4 text-xs font-mono">
+              <div>
+                <label className="text-slate-300 block mb-1 font-semibold">
+                  Nombre del Software / Módulo *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ej: Nexora Taller Mecánico, Nexora Carnicería..."
+                  value={newSysName}
+                  onChange={(e) => setNewSysName(e.target.value)}
+                  className="w-full bg-[#090b0e] border border-white/15 rounded-xl px-3.5 py-2 text-white placeholder-slate-600 focus:outline-none focus:border-cyan-400"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-slate-300 block mb-1 font-semibold">
+                    Categoría / Rubro
+                  </label>
+                  <select
+                    value={newSysCategory}
+                    onChange={(e) => setNewSysCategory(e.target.value as SystemItem['category'])}
+                    className="w-full bg-[#090b0e] border border-white/15 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-cyan-400"
+                  >
+                    <option value="gastronomia">Gastronomía & Restobares</option>
+                    <option value="logistica">Logística, Flotas & Envíos</option>
+                    <option value="salud">Salud, Clínicas & Farmacias</option>
+                    <option value="retail">Comercio, Retail & Supermercados</option>
+                    <option value="corporativo">Corporativo & Enterprise ERP</option>
+                    <option value="legal">Legal, Escribanías & Notarial</option>
+                    <option value="finanzas">Finanzas, Fintech & Pagos</option>
+                    <option value="educacion">Educación & Colegios</option>
+                    <option value="hotel">Hotelería, Cabañas & Turismo</option>
+                    <option value="agro">Agro & Acopio</option>
+                    <option value="industrial">Industria & Producción</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-slate-300 block mb-1 font-semibold">
+                    Subtítulo / SLA
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ej: Gestión Taller Offline · SLA 100%"
+                    value={newSysSubtitle}
+                    onChange={(e) => setNewSysSubtitle(e.target.value)}
+                    className="w-full bg-[#090b0e] border border-white/15 rounded-xl px-3.5 py-2 text-white placeholder-slate-600 focus:outline-none focus:border-cyan-400"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-slate-300 block mb-1 font-semibold">
+                    Precio Pesos ($ ARS) / mes
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="Ej: 35000"
+                    value={newSysPriceArs}
+                    onChange={(e) => setNewSysPriceArs(e.target.value === '' ? '' : Number(e.target.value))}
+                    className="w-full bg-[#090b0e] border border-white/15 rounded-xl px-3.5 py-2 text-white placeholder-slate-600 focus:outline-none focus:border-cyan-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-slate-300 block mb-1 font-semibold">
+                    Precio Dólares ($ USD) / mes
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="Ej: 35"
+                    value={newSysPriceUsd}
+                    onChange={(e) => setNewSysPriceUsd(e.target.value === '' ? '' : Number(e.target.value))}
+                    className="w-full bg-[#090b0e] border border-white/15 rounded-xl px-3.5 py-2 text-white placeholder-slate-600 focus:outline-none focus:border-cyan-400"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-slate-300 block mb-1 font-semibold">
+                  Descripción Breve del Sistema
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Ej: Control de órdenes de reparación, repuestos, clientes y cobranzas con funcionamiento offline."
+                  value={newSysDescription}
+                  onChange={(e) => setNewSysDescription(e.target.value)}
+                  className="w-full bg-[#090b0e] border border-white/15 rounded-xl px-3.5 py-2 text-white placeholder-slate-600 focus:outline-none focus:border-cyan-400 resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-slate-300 block mb-1 font-semibold">
+                  Enlace Demo o Binario de Instalación (Opcional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="https://... o ruta local"
+                  value={newSysDemoUrl}
+                  onChange={(e) => setNewSysDemoUrl(e.target.value)}
+                  className="w-full bg-[#090b0e] border border-white/15 rounded-xl px-3.5 py-2 text-white placeholder-slate-600 focus:outline-none focus:border-cyan-400"
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-xl bg-[#090b0e] border border-white/10">
+                <span className="text-slate-300 font-semibold">Visible en Tienda Pública:</span>
+                <button
+                  type="button"
+                  onClick={() => setNewSysActive(!newSysActive)}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
+                    newSysActive
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                      : 'bg-red-500/20 text-red-300 border border-red-500/40'
+                  }`}
+                >
+                  {newSysActive ? 'SÍ (Activo)' : 'NO (Pausado)'}
+                </button>
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setIsNewSystemModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-mono transition cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 font-bold text-xs font-mono shadow-[0_0_20px_rgba(0,242,254,0.35)] hover:brightness-110 transition cursor-pointer flex items-center gap-1.5"
+                >
+                  <span>✓</span>
+                  <span>Guardar y Publicar en Tienda</span>
+                </button>
+              </div>
             </form>
           </div>
-        )}
+        </div>
+      )}
 
-        <button
-          onClick={() => setIsNoraChatOpen(!isNoraChatOpen)}
-          className="p-3.5 rounded-2xl bg-gradient-to-br from-[#00f2fe] to-[#00b4d8] text-slate-950 shadow-[0_0_25px_rgba(0,242,254,0.4)] hover:scale-105 transition-all flex items-center gap-2 font-bold text-xs cursor-pointer"
-        >
-          <span>Nora Itu AI</span>
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-        </button>
-      </div>
+      {/* CHAT FLOTANTE NORA ITU - EXCLUSIVO PARA VISITANTES EN EL SITIO PÚBLICO */}
+      {!(isPortalOpen && isAdminAuthenticated) && (
+        <div className="fixed bottom-10 right-6 sm:bottom-12 sm:right-10 z-40 flex flex-col items-end">
+          {isNoraChatOpen && (
+            <div className="w-80 sm:w-96 rounded-2xl bg-[#141822] border border-[#00f2fe]/30 shadow-2xl mb-3 overflow-hidden flex flex-col h-[440px]">
+              <div className="bg-[#0e1117] p-3 flex justify-between items-center border-b border-white/10">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span className="text-xs font-bold text-white">Nora Itu — Concierge Soberana</span>
+                </div>
+                <button onClick={() => setIsNoraChatOpen(false)} className="text-slate-400 hover:text-white text-xs">✕</button>
+              </div>
+
+              <div className="flex-1 p-3 overflow-y-auto space-y-2 text-xs bg-[#090b0e]">
+                {chatMessages.map((m, i) => (
+                  <div key={i} className={`flex flex-col ${m.sender === 'user' ? 'items-end' : 'items-start'}`}>
+                    <div className={`p-2.5 rounded-xl max-w-[85%] ${m.sender === 'user' ? 'bg-[#00f2fe] text-slate-950 font-medium' : 'bg-[#141822] text-slate-200 border border-white/10'}`}>
+                      {m.text}
+                    </div>
+                  </div>
+                ))}
+                {isSendingChat && <div className="text-[11px] text-slate-500 font-mono">Nora Itu procesando...</div>}
+                <div ref={chatMessagesEndRef} />
+              </div>
+
+              <form onSubmit={handleSendChat} className="p-2 bg-[#0e1117] border-t border-white/10 flex gap-2">
+                <input
+                  type="text"
+                  placeholder={lang === 'en' ? 'Ask Nora Itu anything...' : 'Pregunta a Nora Itu...'}
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  className="flex-1 bg-[#141822] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#00f2fe]"
+                />
+                <button type="submit" disabled={isSendingChat} className="px-3 py-1.5 bg-[#00f2fe] text-slate-950 font-bold rounded-lg text-xs hover:bg-[#00f2fe]/90">
+                  {lang === 'en' ? 'Send' : 'Enviar'}
+                </button>
+              </form>
+            </div>
+          )}
+
+          <button
+            onClick={() => setIsNoraChatOpen(!isNoraChatOpen)}
+            className="p-3.5 rounded-2xl bg-gradient-to-br from-[#00f2fe] to-[#00b4d8] text-slate-950 shadow-[0_0_25px_rgba(0,242,254,0.4)] hover:scale-105 transition-all flex items-center gap-2 font-bold text-xs cursor-pointer"
+          >
+            <span>Nora Itu AI</span>
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+          </button>
+        </div>
+      )}
+
+      {/* BOTÓN FLOTANTE COPILOT OPERADOR - EXCLUSIVO EN EL DASHBOARD ADMINISTRATIVO */}
+      {isPortalOpen && isAdminAuthenticated && (
+        <div className="fixed bottom-10 right-6 sm:bottom-12 sm:right-10 z-40 flex flex-col items-end">
+          <button
+            onClick={() => {
+              setPortalTab('copilot');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className="p-3.5 rounded-2xl bg-gradient-to-br from-[#141822] via-[#0d121c] to-[#070b12] border border-cyan-400 text-cyan-300 shadow-[0_0_25px_rgba(0,242,254,0.3)] hover:scale-105 transition-all flex items-center gap-2 font-mono font-bold text-xs cursor-pointer"
+            title="Abrir Asistente Copilot para Operador"
+          >
+            <span className="text-base">🤖</span>
+            <span>Copilot Operador</span>
+            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+          </button>
+        </div>
+      )}
 
     </div>
   );
