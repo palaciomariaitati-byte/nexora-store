@@ -99,7 +99,7 @@ export const SYSTEMS_CATALOG: Record<string, SystemInfo> = {
     audienceEn: 'Tribute acts, stage production companies, and touring engineers requiring deterministic local performance.',
   },
   prensa: {
-    name: 'Nexora Prensa & Medios',
+    name: 'Prensa & Medios Soberano',
     usd: 45,
     ars: 70000,
     category: 'CMS Editorial Descentralizado',
@@ -108,6 +108,61 @@ export const SYSTEMS_CATALOG: Record<string, SystemInfo> = {
     nameEn: 'Nexora Independent Press',
     summaryEn: 'Perimeter editorial CMS featuring native WebP optimization, edge caching, and censorship-resistant news publishing.',
     audienceEn: 'Independent investigative journalists, local newspapers, and decentralized publishing houses.',
+  },
+  retail: {
+    name: 'Nexora Stock & Retail 2026',
+    usd: 55,
+    ars: 85000,
+    category: 'Comercio & Retail',
+    summary: 'Punto de venta comercial, control de stock y lector de códigos offline con pistola USB/Bluetooth y arqueo multidepósito.',
+    audience: 'Comercios minoristas, ferreterías, almacenes y minimercados que precisan facturar sin interrupciones por corte de internet.',
+    nameEn: 'Nexora Stock & Retail 2026',
+    summaryEn: 'High-speed commercial retail POS featuring barcode scanner support, multi-warehouse inventory control, and offline daily reconciliation.',
+    audienceEn: 'Retail stores, hardware shops, and mini-markets requiring resilient, offline checkout that never halts during ISP failures.',
+  },
+  turnos: {
+    name: 'Nexora Turnos & Citas Express',
+    usd: 40,
+    ars: 62000,
+    category: 'Servicios & Consultorios',
+    summary: 'Agendamiento autónomo para clínicas y consultorios. Reserva local, sincronización por WhatsApp y confirmaciones automáticas sin intermediarios.',
+    audience: 'Médicos, odontólogos, centros de estética, peluquerías y consultorios independientes que requieren turnero directo.',
+    nameEn: 'Nexora Appointments Express',
+    summaryEn: 'Autonomous appointment scheduling for clinics and practices. Local reservation database, WhatsApp notifications, and automated reminders.',
+    audienceEn: 'Healthcare professionals, dentists, aesthetics centers, and independent practices requiring zero-commission booking.',
+  },
+  hotel: {
+    name: 'Nexora Hotel & Cabañas Desk',
+    usd: 85,
+    ars: 132000,
+    category: 'Hotelería & Inmuebles',
+    summary: 'Check-in local, reservas y administración hotelera sin intermediarios. Cuadrícula de ocupación, cobro en mostrador y gestión de cabañas desconectada de OTAs.',
+    audience: 'Hoteles boutique, complejos de cabañas, hosterías y administradores turísticos que rechazan comisiones abusivas de portales externos.',
+    nameEn: 'Nexora Hotel & Lodge Desk',
+    summaryEn: 'Local front-desk PMS, check-in management, and independent room/cabin booking system free from third-party OTA commissions.',
+    audienceEn: 'Boutique hotels, cabin resorts, and independent vacation rentals seeking full operational autonomy.',
+  },
+  flota: {
+    name: 'Nexora Flota & Encomiendas',
+    usd: 90,
+    ars: 140000,
+    category: 'Logística & Envíos',
+    summary: 'Ruteo logístico, despachos y control perimetral de paquetería. Manifiesto de carga, hojas de ruta offline y firma de entrega digital en mano.',
+    audience: 'Empresas de logística urbana, distribuidoras, expresos y cooperativas de transporte de encomiendas.',
+    nameEn: 'Nexora Fleet & Parcel Logistics',
+    summaryEn: 'Perimeter fleet dispatch, delivery manifest routing, package barcode tracking, and offline digital hand-delivery confirmation.',
+    audienceEn: 'Urban logistics carriers, local distributors, and courier freight services needing robust edge tracking.',
+  },
+  cajafuerte: {
+    name: 'Nexora Caja Fuerte & Auditoría',
+    usd: 70,
+    ars: 108000,
+    category: 'Tesorería & Auditoría',
+    summary: 'Arqueo ciego de sucursales, control de turnos y prevención de fugas. Auditoría criptográfica estricta de efectivo, transferencias y comprobantes.',
+    audience: 'Franquicias, comercios con múltiples turnos de cajeros y locales con alta circulación de dinero físico que demandan trazabilidad absoluta.',
+    nameEn: 'Nexora SafeBox & Vault Audit',
+    summaryEn: 'Blind cashier shift audits, multi-branch cash reconciliation, and cryptographic fraud-prevention telemetry.',
+    audienceEn: 'Multi-store franchises and high-cash turnover venues requiring immutable cashier accountability and leakage prevention.',
   },
 };
 
@@ -159,12 +214,17 @@ export async function generateNoraResponse(
       return `Allow me to outline our commercial structure and direct settlement channels:\n\n` +
         `● **Complimentary 15-Day Trial:** Full access to any enterprise suite with zero credit card required.\n` +
         `● **Deterministic 30 + 5 Lifecycle:** Each cycle provides 30 days of continuous operation followed by a 5-day sovereign grace buffer (+5 days) guaranteeing zero operational cutoff while settling accounts.\n\n` +
-        `● **Enterprise Pricing Tiers:**\n` +
+        `● **Enterprise Pricing Tiers (11 Sovereign Solutions):**\n` +
         `  - Restobar 2026 POS: $65 USD/mo (~$101,725 ARS)\n` +
         `  - Nexora Club & Carribar Pass: $150 USD/mo (~$235,000 ARS)\n` +
         `  - Auténtico Tributo Live: $120 USD/mo (~$185,000 ARS)\n` +
-        `  - Nexora Independent Press: $45 USD/mo (~$70,000 ARS)\n` +
-        `  - Classifieds & Verified Properties: 100% Free Sovereign Utilities.\n\n` +
+        `  - Prensa & Medios Soberano: $45 USD/mo (~$70,000 ARS)\n` +
+        `  - Nexora Stock & Retail 2026: $55 USD/mo (~$85,000 ARS)\n` +
+        `  - Nexora Turnos & Citas Express: $40 USD/mo (~$62,000 ARS)\n` +
+        `  - Nexora Hotel & Cabañas Desk: $85 USD/mo (~$132,000 ARS)\n` +
+        `  - Nexora Flota & Encomiendas: $90 USD/mo (~$140,000 ARS)\n` +
+        `  - Nexora Caja Fuerte & Auditoría: $70 USD/mo (~$108,000 ARS)\n` +
+        `  - Nexora Clasificados & Inmuebles Verificados: 100% Free Sovereign Utilities.\n\n` +
         `● **Direct Settlement Rails (0% Intermediary Fee):**\n` +
         `  1. Bank Transfer (ARS): CBU ${paymentDetails.cbu} | Alias: ${paymentDetails.alias}\n` +
         `  2. USDT TRC-20: \`${paymentDetails.usdtTron}\`\n` +
@@ -251,6 +311,51 @@ export async function generateNoraResponse(
         `● **Rate:** $${s.usd} USD / month.`;
     }
 
+    // 8b. Retail / Stock POS
+    if (msg.includes('retail') || msg.includes('store') || msg.includes('shop') || msg.includes('barcode') || msg.includes('inventory') || msg.includes('warehouse')) {
+      const s = SYSTEMS_CATALOG.retail;
+      return `For commercial stores and retail outlets, we deploy **${s.nameEn || s.name}**:\n\n` +
+        `● **Core Feature:** ${s.summaryEn || s.summary}\n` +
+        `● **Hardware Integration:** Instant barcode scanning via USB/Bluetooth, multi-warehouse stock management, and local thermal receipts.\n` +
+        `● **Rate:** $${s.usd} USD / month.`;
+    }
+
+    // 8c. Appointments / Turnos Express
+    if (msg.includes('appointment') || msg.includes('booking') || msg.includes('clinic') || msg.includes('doctor') || msg.includes('patient') || msg.includes('turnos')) {
+      const s = SYSTEMS_CATALOG.turnos;
+      return `For medical clinics, dental practices, and appointment-based services, we offer **${s.nameEn || s.name}**:\n\n` +
+        `● **Functionality:** ${s.summaryEn || s.summary}\n` +
+        `● **Automation:** Automated WhatsApp booking confirmations, local calendar sync, and zero middleman fees.\n` +
+        `● **Rate:** $${s.usd} USD / month.`;
+    }
+
+    // 8d. Hotel / Lodge / Cabañas
+    if (msg.includes('hotel') || msg.includes('lodge') || msg.includes('cabin') || msg.includes('resort') || msg.includes('check-in') || msg.includes('room')) {
+      const s = SYSTEMS_CATALOG.hotel;
+      return `For independent hotels and cabin complexes, we provide **${s.nameEn || s.name}**:\n\n` +
+        `● **Overview:** ${s.summaryEn || s.summary}\n` +
+        `● **Sovereignty:** Front-desk PMS, visual room grid, guest check-in/out, and direct booking independent of predatory OTAs.\n` +
+        `● **Rate:** $${s.usd} USD / month.`;
+    }
+
+    // 8e. Fleet & Parcel Logistics
+    if (msg.includes('fleet') || msg.includes('parcel') || msg.includes('logistics') || msg.includes('package') || msg.includes('delivery') || msg.includes('cargo') || msg.includes('flota')) {
+      const s = SYSTEMS_CATALOG.flota;
+      return `For freight operators and courier services, we operate **${s.nameEn || s.name}**:\n\n` +
+        `● **Capability:** ${s.summaryEn || s.summary}\n` +
+        `● **Perimeter Control:** Offline manifest routing, driver digital signatures, and package delivery handoff verification.\n` +
+        `● **Rate:** $${s.usd} USD / month.`;
+    }
+
+    // 8f. SafeBox & Cashier Audit
+    if (msg.includes('safe') || msg.includes('vault') || msg.includes('audit') || msg.includes('cashier') || msg.includes('leakage') || msg.includes('cajafuerte')) {
+      const s = SYSTEMS_CATALOG.cajafuerte;
+      return `For cash management and theft prevention, we deliver **${s.nameEn || s.name}**:\n\n` +
+        `● **Protection:** ${s.summaryEn || s.summary}\n` +
+        `● **Accountability:** Blind shift closures, multi-terminal cash balancing, and cryptographic anti-tamper audit logs.\n` +
+        `● **Rate:** $${s.usd} USD / month.`;
+    }
+
     // 9. Nexora Architecture / Sovereign Concept
     if (msg.includes('nexora') || msg.includes('sovereign') || msg.includes('who are you') || msg.includes('about') || msg.includes('offline') || msg.includes('headquarters') || msg.includes('origin') || msg.includes('corrientes')) {
       return `Nexora One is a sovereign engineering firm with its operational and development headquarters based exclusively in Ituzaingó, Corrientes, Argentina.\n\n` +
@@ -301,11 +406,16 @@ export async function generateNoraResponse(
     return `Con el mayor de los gustos le detallo nuestro modelo comercial y canales de cobro directo:\n\n` +
       `● **Período de Evaluación Gratuita:** Dispone de una prueba de 15 días continuos sin requerir tarjeta de crédito en cualquiera de nuestras suites.\n` +
       `● **Ciclo Operativo:** Cada licencia cubre 30 días de servicio ininterrumpido más 5 días de gracia operativa (+5 días adicionales) para regularizar su ciclo sin interrupción de su negocio.\n\n` +
-      `● **Aranceles vigentes:**\n` +
+      `● **Aranceles vigentes (Catálogo Completo de 11 Soluciones):**\n` +
       `  - Restobar 2026 POS: $65 USD (~$101.725 ARS)\n` +
       `  - Nexora Club & Carribar Pass: $150 USD (~$235.000 ARS)\n` +
       `  - Auténtico Tributo Live: $120 USD (~$185.000 ARS)\n` +
       `  - Prensa & Medios Soberano: $45 USD (~$70.000 ARS)\n` +
+      `  - Nexora Stock & Retail 2026: $55 USD (~$85.000 ARS)\n` +
+      `  - Nexora Turnos & Citas Express: $40 USD (~$62.000 ARS)\n` +
+      `  - Nexora Hotel & Cabañas Desk: $85 USD (~$132.000 ARS)\n` +
+      `  - Nexora Flota & Encomiendas: $90 USD (~$140.000 ARS)\n` +
+      `  - Nexora Caja Fuerte & Auditoría: $70 USD (~$108.000 ARS)\n` +
       `  - Nexora Clasificados e Inmuebles Verificados: 100% Gratuitos y Comunitarios.\n\n` +
       `● **Canales Oficiales de Cobro Directo (Sin comisiones intermedias):**\n` +
       `  1. Transferencia Bancaria (ARS): CBU ${paymentDetails.cbu} | Alias: ${paymentDetails.alias} | Titular: ${paymentDetails.titular}\n` +
@@ -394,6 +504,56 @@ export async function generateNoraResponse(
     return `Para empresas periodísticas y redacciones independientes, contamos con **${s.name}**:\n\n` +
       `● **Propósito:** ${s.summary}\n` +
       `● **Soberanía:** Difusión sin algoritmos de censura, renderizado estático de ultra velocidad y base de datos descentralizada.\n` +
+      `● **Inversión:** $${s.usd} USD / mes (~$${s.ars.toLocaleString('es-AR')} ARS).`;
+  }
+
+  // 8b. Comercio / Retail / Stock 2026
+  if (msg.includes('retail') || msg.includes('comercio') || msg.includes('negocio') || msg.includes('almacen') || msg.includes('ferreteria') || msg.includes('codigo de barra') || msg.includes('stock')) {
+    const s = SYSTEMS_CATALOG.retail;
+    return `Para comercios minoristas, ferreterías y tiendas de retail, le presentamos **${s.name}**:\n\n` +
+      `● **Propósito:** ${s.summary}\n` +
+      `● **A quién resuelve el día:** ${s.audience}\n` +
+      `● **Prestaciones Clave:** Lectura ultrarrápida de códigos de barras (pistola USB o Bluetooth), control de inventario multidepósito y arqueo diario en máquina local sin interrupciones ante cortes de internet.\n` +
+      `● **Inversión:** $${s.usd} USD / mes (~$${s.ars.toLocaleString('es-AR')} ARS).`;
+  }
+
+  // 8c. Turnos & Citas Express
+  if (msg.includes('turno') || msg.includes('cita') || msg.includes('clinica') || msg.includes('consultorio') || msg.includes('odontolog') || msg.includes('medico') || msg.includes('peluqueria') || msg.includes('agenda')) {
+    const s = SYSTEMS_CATALOG.turnos;
+    return `Para profesionales independientes, clínicas y consultorios, disponemos de **${s.name}**:\n\n` +
+      `● **Propósito:** ${s.summary}\n` +
+      `● **A quién resuelve el día:** ${s.audience}\n` +
+      `● **Ventajas:** Agendamiento directo y confirmación automatizada por WhatsApp, sin comisiones intermediarias por turno y con base de pacientes 100% privada.\n` +
+      `● **Inversión:** $${s.usd} USD / mes (~$${s.ars.toLocaleString('es-AR')} ARS).`;
+  }
+
+  // 8d. Hotel & Cabañas Desk
+  if (msg.includes('hotel') || msg.includes('cabaña') || msg.includes('hospedaje') || msg.includes('alojamiento') || msg.includes('check-in') || msg.includes('reserva')) {
+    const s = SYSTEMS_CATALOG.hotel;
+    return `Para hoteles boutique, complejos turísticos y cabañas, nuestra solución soberana es **${s.name}**:\n\n` +
+      `● **Propósito:** ${s.summary}\n` +
+      `● **A quién resuelve el día:** ${s.audience}\n` +
+      `● **Autonomía:** Cuadrícula interactiva de ocupación, check-in y check-out ágil en mostrador, y cobro directo sin pagar 15% o 20% a OTAs extranjeras.\n` +
+      `● **Inversión:** $${s.usd} USD / mes (~$${s.ars.toLocaleString('es-AR')} ARS).`;
+  }
+
+  // 8e. Flota & Encomiendas
+  if (msg.includes('flota') || msg.includes('encomienda') || msg.includes('logistica') || msg.includes('paquete') || msg.includes('envio') || msg.includes('flete') || msg.includes('despacho')) {
+    const s = SYSTEMS_CATALOG.flota;
+    return `Para empresas de transporte, mensajerías y distribución urbana, contamos con **${s.name}**:\n\n` +
+      `● **Propósito:** ${s.summary}\n` +
+      `● **A quién resuelve el día:** ${s.audience}\n` +
+      `● **Operación Perimetral:** Ruteo logístico y manifiestos de carga offline, escaneo de remitos de entrega y firma digital del receptor en mano.\n` +
+      `● **Inversión:** $${s.usd} USD / mes (~$${s.ars.toLocaleString('es-AR')} ARS).`;
+  }
+
+  // 8f. Caja Fuerte & Auditoría
+  if (msg.includes('cajafuerte') || msg.includes('caja fuerte') || msg.includes('arqueo') || msg.includes('auditoria') || msg.includes('tesoreria') || msg.includes('fuga') || msg.includes('cajero')) {
+    const s = SYSTEMS_CATALOG.cajafuerte;
+    return `Para tesorería, franquicias y comercios con múltiples turnos, implementamos **${s.name}**:\n\n` +
+      `● **Propósito:** ${s.summary}\n` +
+      `● **A quién resuelve el día:** ${s.audience}\n` +
+      `● **Blindaje Total:** Arqueo ciego por cajero, conciliación estricta de efectivo, cupones y transferencias con registro criptográfico inmutable contra fugas internas.\n` +
       `● **Inversión:** $${s.usd} USD / mes (~$${s.ars.toLocaleString('es-AR')} ARS).`;
   }
 

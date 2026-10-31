@@ -23,7 +23,7 @@ export interface SystemItem {
   id: string;
   name: string;
   subtitle: string;
-  category: 'gastronomia' | 'clasificados' | 'inmuebles' | 'musica' | 'prensa';
+  category: 'gastronomia' | 'comercio' | 'eventos' | 'inmuebles' | 'servicios' | 'medios' | 'clasificados' | 'musica' | 'prensa';
   slaOrBadge: string;
   slaColor: string;
   priceUsd: number;
@@ -122,11 +122,11 @@ interface DbLicense {
   graceLimit?: string;
 }
 
-// --- CATÁLOGO DETERMINISTA LOCAL OFFLINE-FIRST ---
+// --- CATÁLOGO DETERMINISTA LOCAL OFFLINE-FIRST (11 SOLUCIONES ACTIVAS) ---
 const INITIAL_SYSTEMS: SystemItem[] = [
   {
     id: 'restobar',
-    name: 'Restobar 2026',
+    name: 'Restobar 2026 POS',
     subtitle: 'SUITE GASTRONÓMICA SOBERANA & COMANDAS',
     category: 'gastronomia',
     slaOrBadge: 'SLA 100%',
@@ -153,15 +153,43 @@ const INITIAL_SYSTEMS: SystemItem[] = [
     active: true
   },
   {
+    id: 'prensa',
+    name: 'Prensa & Medios Soberano',
+    subtitle: 'CMS EDITORIAL SOBERANO & DIFUSIÓN',
+    category: 'medios',
+    slaOrBadge: 'PUBLISHER LIBRE',
+    slaColor: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/30',
+    priceUsd: 45,
+    priceArs: 70000,
+    description: 'CMS descentralizado con sindicación remota continua conectada a portal productivo. Distribución ultra liviana en WebP con soberanía editorial total.',
+    targetAudience: 'Medios independientes, radios y portales comunitarios que buscan control total de sus artículos sin censura algorítmica ni dependencias externas.',
+    tags: ['CMS Ultra Liviano', 'Syndication Feed', 'Soberanía Editorial', 'PWA Noticias'],
+    active: true
+  },
+  {
+    id: 'autentico',
+    name: 'Auténtico Tributo Live',
+    subtitle: 'LIVE STAGE SYNC & 4K HDMI ENGINE',
+    category: 'eventos',
+    slaOrBadge: '< 10MS SYNC',
+    slaColor: 'text-amber-400 bg-amber-500/10 border-amber-500/30',
+    priceUsd: 120,
+    priceArs: 185000,
+    description: 'Sincronizador para conciertos en vivo: pantallas HDMI 4K, letras y setlist sin requerir internet. Boletería directa, streaming y gestión para artistas.',
+    targetAudience: 'Bandas, artistas y directores técnicos de espectáculos que no pueden depender de conectividad Wi-Fi durante el show.',
+    tags: ['4K HDMI', 'LAN Sockets', 'Portal Fan PWA', 'Cero Latencia'],
+    active: true
+  },
+  {
     id: 'clasificados',
     name: 'Nexora Clasificados',
     subtitle: 'MARKETPLACE COMUNITARIO P2P',
-    category: 'clasificados',
+    category: 'comercio',
     slaOrBadge: '0% COMISIÓN',
     slaColor: 'text-amber-400 bg-amber-500/10 border-amber-500/30',
     priceUsd: 0,
     priceArs: 0,
-    description: 'Compraventa directa barrial de rodados y artículos sin pasarelas intermedias retenedoras.',
+    description: 'Marketplace comunitario de compra-venta directa de rodados y artículos sin pasarelas intermedias retenedoras.',
     targetAudience: 'Comerciantes y particulares cansados de comisiones abusivas y retenciones de fondos.',
     tags: ['Compresión WebP', 'WhatsApp Direct', 'PWA 3MB', 'Nora Copywriter'],
     active: true
@@ -175,37 +203,79 @@ const INITIAL_SYSTEMS: SystemItem[] = [
     slaColor: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/30',
     priceUsd: 0,
     priceArs: 0,
-    description: 'Registro catastral libre con mapas precisos y emisión local de contratos validados en PDF.',
+    description: 'Catálogo inmobiliario con trazabilidad criptográfica. Registro catastral libre con mapas precisos y emisión local de contratos validados en PDF.',
     targetAudience: 'Propietarios e inquilinos que buscan operaciones directas sin costos ocultos de publicación.',
     tags: ['PDF Engine Local', 'GeoJSON Mapping', 'Anti-Fraude', 'Contratos Validados'],
     active: true
   },
   {
-    id: 'autentico',
-    name: 'Auténtico Tributo',
-    subtitle: 'LIVE STAGE SYNC & 4K HDMI ENGINE',
-    category: 'musica',
-    slaOrBadge: '< 10MS SYNC',
-    slaColor: 'text-amber-400 bg-amber-500/10 border-amber-500/30',
-    priceUsd: 120,
-    priceArs: 185000,
-    description: 'Sincronizador para conciertos en vivo: pantallas HDMI 4K, letras y setlist sin requerir internet.',
-    targetAudience: 'Bandas y directores técnicos que no pueden depender de conectividad Wi-Fi en vivo.',
-    tags: ['4K HDMI', 'LAN Sockets', 'Portal Fan PWA', 'Cero Latencia'],
+    id: 'retail',
+    name: 'Nexora Stock & Retail 2026',
+    subtitle: 'PUNTO DE VENTA COMERCIAL & STOCK OFFLINE',
+    category: 'comercio',
+    slaOrBadge: '< 2MS SCAN',
+    slaColor: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30',
+    priceUsd: 55,
+    priceArs: 85000,
+    description: 'Punto de venta comercial, control de stock y lector de códigos offline. Lectura instantánea con pistola USB/Bluetooth y arqueo multidepósito.',
+    targetAudience: 'Comercios minoristas, ferreterías, almacenes y minimercados que precisan facturar sin interrupciones por corte de internet.',
+    tags: ['Lector Códigos', 'Control Stock', 'Offline Local', 'Ticket Térmico'],
     active: true
   },
   {
-    id: 'prensa',
-    name: 'Nexora Prensa & Medios',
-    subtitle: 'CMS EDITORIAL SOBERANO & DIFUSIÓN',
-    category: 'prensa',
-    slaOrBadge: 'PUBLISHER LIBRE',
+    id: 'turnos',
+    name: 'Nexora Turnos & Citas Express',
+    subtitle: 'AGENDAMIENTO AUTÓNOMO PARA CLÍNICAS',
+    category: 'servicios',
+    slaOrBadge: 'CERO ESPERA',
     slaColor: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/30',
-    priceUsd: 45,
-    priceArs: 70000,
-    description: 'Plataforma de redacción y publicación periodística barrial o regional. Distribución ultra liviana en WebP con sindicación independiente.',
-    targetAudience: 'Medios independientes, radios y portales comunitarios que buscan control total de sus artículos sin censura algorítmica ni pagos forzados en dólares.',
-    tags: ['CMS Ultra Liviano', 'Syndication Feed', 'Soberanía Editorial', 'PWA Noticias'],
+    priceUsd: 40,
+    priceArs: 62000,
+    description: 'Agendamiento autónomo para clínicas y consultorios. Reserva local, sincronización por WhatsApp y confirmaciones automáticas sin intermediarios.',
+    targetAudience: 'Médicos, odontólogos, centros de estética, peluquerías y consultorios independientes que requieren turnero directo.',
+    tags: ['WhatsApp Bot', 'Agenda Local', 'Recordatorios', 'Sin Comisiones'],
+    active: true
+  },
+  {
+    id: 'hotel',
+    name: 'Nexora Hotel & Cabañas Desk',
+    subtitle: 'CHECK-IN LOCAL & PMS HOTELERO',
+    category: 'inmuebles',
+    slaOrBadge: 'PMS SOBERANO',
+    slaColor: 'text-amber-400 bg-amber-500/10 border-amber-500/30',
+    priceUsd: 85,
+    priceArs: 132000,
+    description: 'Check-in local, reservas y administración hotelera sin intermediarios. Cuadrícula de ocupación, cobro en mostrador y gestión de cabañas desconectada de OTAs.',
+    targetAudience: 'Hoteles boutique, complejos de cabañas, hosterías y administradores turísticos que rechazan comisiones abusivas de portales externos.',
+    tags: ['Check-in Local', 'Plano Tarifario', 'Cero OTAs', 'Calendario Offline'],
+    active: true
+  },
+  {
+    id: 'flota',
+    name: 'Nexora Flota & Encomiendas',
+    subtitle: 'RUTEO LOGÍSTICO & CONTROL DE PAQUETERÍA',
+    category: 'servicios',
+    slaOrBadge: 'DESPACHO REAL-TIME',
+    slaColor: 'text-purple-400 bg-purple-500/10 border-purple-500/30',
+    priceUsd: 90,
+    priceArs: 140000,
+    description: 'Ruteo logístico, despachos y control perimetral de paquetería. Manifiesto de carga, hojas de ruta offline y firma de entrega digital en mano.',
+    targetAudience: 'Empresas de logística urbana, distribuidoras, expresos y cooperativas de transporte de encomiendas.',
+    tags: ['Ruteo Offline', 'Firma Digital', 'Paquetería', 'Manifiesto de Carga'],
+    active: true
+  },
+  {
+    id: 'cajafuerte',
+    name: 'Nexora Caja Fuerte & Auditoría',
+    subtitle: 'ARQUEO CIEGO & PREVENCIÓN DE FUGAS',
+    category: 'comercio',
+    slaOrBadge: 'BLINDAJE TOTAL',
+    slaColor: 'text-rose-400 bg-rose-500/10 border-rose-500/30',
+    priceUsd: 70,
+    priceArs: 108000,
+    description: 'Arqueo ciego de sucursales, control de turnos y prevención de fugas. Auditoría criptográfica estricta de efectivo, transferencias y comprobantes.',
+    targetAudience: 'Franquicias, comercios con múltiples turnos de cajeros y locales con alta circulación de dinero físico que demandan trazabilidad absoluta.',
+    tags: ['Arqueo Ciego', 'Control Fugas', 'Auditoría Criptográfica', 'Multi-Turno'],
     active: true
   }
 ];
@@ -1526,7 +1596,7 @@ export default function App() {
   const handleDownloadTrialKit = () => {
     if (!selectedTrialSystem || !trialResult) return;
     const kitData = {
-      empresa_emisora: 'Nexora One Engine',
+      empresa_emisora: 'Nexora One',
       suite: selectedTrialSystem.name,
       sistema_id: selectedTrialSystem.id,
       credencial_soberana: trialResult.key,
@@ -2559,16 +2629,24 @@ export default function App() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="bg-[#141822] border border-white/10 rounded-xl px-3 py-1 text-xs text-white focus:outline-none focus:border-[#00f2fe] w-48"
                 />
-                <div className="flex items-center gap-1 bg-[#141822] p-1 rounded-xl border border-white/10 text-xs font-mono">
-                  {(['all', 'gastronomia', 'clasificados', 'inmuebles', 'musica', 'prensa'] as const).map((cat) => (
+                <div className="flex flex-wrap items-center gap-1 bg-[#141822] p-1 rounded-xl border border-white/10 text-xs font-mono">
+                  {([
+                    { id: 'all', label: 'Todos' },
+                    { id: 'gastronomia', label: 'Gastronomía' },
+                    { id: 'comercio', label: 'Comercio' },
+                    { id: 'eventos', label: 'Eventos' },
+                    { id: 'inmuebles', label: 'Inmuebles' },
+                    { id: 'servicios', label: 'Servicios' },
+                    { id: 'medios', label: 'Medios' },
+                  ] as const).map((tab) => (
                     <button
-                      key={cat}
-                      onClick={() => setActiveCategory(cat)}
-                      className={`px-2.5 py-1 rounded-lg capitalize transition ${
-                        activeCategory === cat ? 'bg-[#00f2fe] text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
+                      key={tab.id}
+                      onClick={() => setActiveCategory(tab.id)}
+                      className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
+                        activeCategory === tab.id ? 'bg-[#00f2fe] text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
                       }`}
                     >
-                      {cat === 'all' ? 'Todos' : cat}
+                      {tab.label}
                     </button>
                   ))}
                 </div>
@@ -2962,23 +3040,24 @@ export default function App() {
                     ? `${trialResult.clientName} de (${trialResult.businessName})`
                     : trialResult.clientName;
 
+                  const demoUrl = typeof window !== 'undefined' ? `${window.location.origin}/#demo-${selectedTrialSystem.id}` : `https://nexoraone.com/#demo-${selectedTrialSystem.id}`;
                   const plantillawa = `Estimado/a ${saludoCliente}:
 
-Le damos la bienvenida a Nexora One Engine.
+Le damos la bienvenida a Nexora One.
 Su acceso de evaluación por 15 días para ${selectedTrialSystem.name} ha sido concedido exitosamente.
 
 🔑 Clave de Licencia: ${trialResult.key}
 📅 Vigencia de Prueba: 15 días
-🚀 Enlace de Acceso / Demo: https://nexora-store-app.vercel.app/#demo-${selectedTrialSystem.id}
+🚀 Enlace de Acceso / Demo: ${demoUrl}
 
 Conserve este mensaje oficial. Al término de su período de prueba o para habilitar el servicio definitivo, este canal verificará su comprobante de pago directo (Transferencia Bancaria, Mercado Pago o USDT).
 
-Nexora One Engine — Arquitectura Soberana`;
+Nexora One — Arquitectura Soberana`;
 
                   const waHref = formatWhatsAppLink(trialResult.whatsapp, plantillawa);
                   const supportHref = formatWhatsAppLink(
                     '5493786414533',
-                    `Estimado equipo de soporte de Nexora One Engine, me comunico por la licencia de prueba ${trialResult.key} para ${selectedTrialSystem.name} solicitada por ${saludoCliente}.`
+                    `Estimado equipo de soporte de Nexora One, me comunico por la licencia de prueba ${trialResult.key} para ${selectedTrialSystem.name} solicitada por ${saludoCliente}.`
                   );
 
                   return (

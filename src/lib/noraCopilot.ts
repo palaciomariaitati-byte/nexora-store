@@ -27,7 +27,8 @@ export const COPILOT_KNOWLEDGE_BASE: Record<string, CopilotTopic> = {
       `● **id:** Cadena alfanumérica única en minúsculas (ej: 'restobar', 'carribar', 'logistica').\n` +
       `● **name:** Nombre comercial oficial del sistema (ej: 'Restobar 2026 POS').\n` +
       `● **subtitle:** Subtítulo técnico en mayúsculas (ej: 'PUNTO DE VENTA & COMANDERAS OFFLINE').\n` +
-      `● **category:** Uno de los dominios perimetrales: 'gastronomia' | 'clasificados' | 'inmuebles' | 'musica' | 'prensa'.\n` +
+      `● **category:** Uno de los 6 dominios perimetrales: 'gastronomia' | 'comercio' | 'eventos' | 'inmuebles' | 'servicios' | 'medios'.\n` +
+      `● **Catálogo Actual (11 Soluciones Activas):** Restobar 2026 POS, Nexora Club & Carribar Pass, Prensa & Medios Soberano, Auténtico Tributo Live, Nexora Clasificados, Inmuebles Verificados, Nexora Stock & Retail 2026, Nexora Turnos & Citas Express, Nexora Hotel & Cabañas Desk, Nexora Flota & Encomiendas, Nexora Caja Fuerte & Auditoría.\n` +
       `● **priceUsd / priceArs:** Valores duales para cotización en tiempo real. Si es comunitario o gratuito, ambos valores son 0.\n` +
       `● **slaOrBadge:** Métrica visual destacada (ej: '< 2MS LATENCY', 'ANTI-FRAUDE', '0% COMISIÓN').\n` +
       `● **slaColor:** Clases CSS de Tailwind para color de insignia.\n` +

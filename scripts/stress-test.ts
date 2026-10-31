@@ -16,12 +16,25 @@ import { generatePresencialLicense, getLicenseLifecycle, buildNotificationTempla
 import { generateNoraResponse, SYSTEMS_CATALOG } from '../src/lib/noraEngine';
 import { generateQrSvgString } from '../src/lib/qrCode';
 import { generateCopilotResponse, COPILOT_KNOWLEDGE_BASE } from '../src/lib/noraCopilot';
+import { runSilentOfflineLicenseRevalidation } from '../src/lib/offlineSync';
 
-const SYSTEMS = ['restobar', 'carribar', 'clasificados', 'inmuebles', 'autentico', 'prensa'];
+const SYSTEMS = [
+  'restobar',
+  'carribar',
+  'clasificados',
+  'inmuebles',
+  'autentico',
+  'prensa',
+  'retail',
+  'turnos',
+  'hotel',
+  'flota',
+  'cajafuerte'
+];
 
 async function runStressTest() {
   console.log('╔══════════════════════════════════════════════════════════════════╗');
-  console.log('║       NEXORA ONE ENGINE — SUITE DE ESTRÉS Y VERIFICACIÓN        ║');
+  console.log('║       NEXORA ONE — SUITE DE ESTRÉS Y VERIFICACIÓN (11 SISTEMAS)  ║');
   console.log('╚══════════════════════════════════════════════════════════════════╝\n');
 
   let passedTests = 0;
@@ -192,9 +205,9 @@ async function runStressTest() {
   );
 
   // ──────────────────────────────────────────────────────────────────
-  // TEST 6: Cobertura de los 6 Sistemas en Catálogo
+  // TEST 6: Cobertura de los 11 Sistemas en Catálogo
   // ──────────────────────────────────────────────────────────────────
-  console.log('\n[6/7] Verificando Catálogo de los 6 Sistemas y Metadatos...');
+  console.log('\n[6/8] Verificando Catálogo Completo de los 11 Sistemas y Metadatos...');
   let catalogValid = true;
   for (const sysId of SYSTEMS) {
     const sys = SYSTEMS_CATALOG[sysId];
@@ -203,12 +216,12 @@ async function runStressTest() {
       break;
     }
   }
-  assert(catalogValid, 'Catálogo Bilingüe Completo (6 Sistemas)', 'Todos los sistemas cuentan con metadata ES/EN');
+  assert(catalogValid && SYSTEMS.length === 11, 'Catálogo Bilingüe Completo (11 Sistemas)', 'Las 11 soluciones cuentan con metadata completa ES/EN');
 
   // ──────────────────────────────────────────────────────────────────
   // TEST 7: Nora Copilot Operativo del Backoffice
   // ──────────────────────────────────────────────────────────────────
-  console.log('\n[7/7] Evaluando Motor Operativo de Nora Copilot para el Dashboard...');
+  console.log('\n[7/8] Evaluando Motor Operativo de Nora Copilot para el Dashboard...');
   const copilotTopicsCount = Object.keys(COPILOT_KNOWLEDGE_BASE).length;
   assert(copilotTopicsCount >= 6, 'Base de Conocimiento de Nora Copilot', `${copilotTopicsCount} fichas operativas cargadas`);
 
@@ -224,6 +237,32 @@ async function runStressTest() {
     copilotOfflineResp.includes('iniciar-nexora-local.bat') || copilotOfflineResp.includes('dist-offline'),
     'Guía de Empaquetado Local Offline',
     'Detalla el despliegue con doble clic .bat'
+  );
+
+  // ──────────────────────────────────────────────────────────────────
+  // TEST 8: Revalidación Silenciosa Offline y Tolerancia Cero Caídas
+  // ──────────────────────────────────────────────────────────────────
+  console.log('\n[8/8] Evaluando Arquitectura de Revalidación Silenciosa Offline...');
+  const sampleLicenses = SYSTEMS.map((s, idx) => ({
+    id: `lic_sample_${idx}`,
+    key: `NX-PRE-TEST${idx}-${s.toUpperCase().slice(0, 4)}-30D`,
+    client: `Client ${s}`,
+    whatsapp: '+5493786414533',
+    email: `client@${s}.nexoraone.com`,
+    systemId: s,
+    systemName: SYSTEMS_CATALOG[s]?.name || s,
+    status: 'active' as const,
+    startDate: new Date().toISOString().split('T')[0],
+    expires: new Date(Date.now() + 25 * 86400000).toISOString().split('T')[0],
+    graceLimit: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+    assignedSystems: [s]
+  }));
+
+  const revalResult = runSilentOfflineLicenseRevalidation(sampleLicenses);
+  assert(
+    revalResult.revalidatedCount === 11,
+    'Revalidación Silenciosa Desconectada (11 Sistemas)',
+    `11/11 licencias operativas con continuidad local (${revalResult.message})`
   );
 
   // ──────────────────────────────────────────────────────────────────
