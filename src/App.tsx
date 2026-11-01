@@ -32,6 +32,9 @@ export interface SystemItem {
   targetAudience: string;
   tags: string[];
   active: boolean;
+  demoUrl?: string;
+  downloadUrl?: string;
+  isDesktopOnly?: boolean;
 }
 
 export interface PaymentMethod {
@@ -136,7 +139,9 @@ const INITIAL_SYSTEMS: SystemItem[] = [
     description: 'Terminal POS reactiva para bares y restaurantes. Cero caídas de salón con base local y comanderas térmicas directas.',
     targetAudience: 'Dueños gastronómicos que pierden facturación por fallas de conexión o demoras en comanderas en horas pico.',
     tags: ['ESC/POS Térmico', 'SQLite Local', 'WebSockets Offline', 'Win / Mac / Linux'],
-    active: true
+    active: true,
+    demoUrl: 'https://nexora-store-app.vercel.app/?pwa=true',
+    isDesktopOnly: false
   },
   {
     id: 'carribar',
@@ -150,7 +155,9 @@ const INITIAL_SYSTEMS: SystemItem[] = [
     description: 'Control de despachos rápidos, comandas por código QR, pases de barra y cobro dinámico offline para food trucks y predios gastronómicos.',
     targetAudience: 'Organizadores de festivales, predios gastronómicos y carribars que precisan facturar y despachar a máxima velocidad sin depender de internet.',
     tags: ['QR Express', 'Offline Sync', 'ESC/POS Portátil', 'Wallet Fan'],
-    active: true
+    active: true,
+    demoUrl: 'https://nexora-store-app.vercel.app/?pwa=true',
+    isDesktopOnly: false
   },
   {
     id: 'prensa',
@@ -164,7 +171,10 @@ const INITIAL_SYSTEMS: SystemItem[] = [
     description: 'CMS descentralizado con sindicación remota continua conectada a portal productivo. Distribución ultra liviana en WebP con soberanía editorial total.',
     targetAudience: 'Medios independientes, radios y portales comunitarios que buscan control total de sus artículos sin censura algorítmica ni dependencias externas.',
     tags: ['CMS Ultra Liviano', 'Syndication Feed', 'Soberanía Editorial', 'PWA Noticias'],
-    active: true
+    active: true,
+    demoUrl: 'https://nexora-news.vercel.app',
+    downloadUrl: 'https://nexora-news.vercel.app',
+    isDesktopOnly: false
   },
   {
     id: 'autentico',
@@ -178,7 +188,9 @@ const INITIAL_SYSTEMS: SystemItem[] = [
     description: 'Sincronizador para conciertos en vivo: pantallas HDMI 4K, letras y setlist sin requerir internet. Boletería directa, streaming y gestión para artistas.',
     targetAudience: 'Bandas, artistas y directores técnicos de espectáculos que no pueden depender de conectividad Wi-Fi durante el show.',
     tags: ['4K HDMI', 'LAN Sockets', 'Portal Fan PWA', 'Cero Latencia'],
-    active: true
+    active: true,
+    demoUrl: 'https://nexora-store-app.vercel.app/?pwa=true',
+    isDesktopOnly: false
   },
   {
     id: 'clasificados',
@@ -192,7 +204,9 @@ const INITIAL_SYSTEMS: SystemItem[] = [
     description: 'Marketplace comunitario de compra-venta directa de rodados y artículos sin pasarelas intermedias retenedoras.',
     targetAudience: 'Comerciantes y particulares cansados de comisiones abusivas y retenciones de fondos.',
     tags: ['Compresión WebP', 'WhatsApp Direct', 'PWA 3MB', 'Nora Copywriter'],
-    active: true
+    active: true,
+    demoUrl: 'https://nexora-store-app.vercel.app/?pwa=true',
+    isDesktopOnly: false
   },
   {
     id: 'inmuebles',
@@ -206,7 +220,9 @@ const INITIAL_SYSTEMS: SystemItem[] = [
     description: 'Catálogo inmobiliario con trazabilidad criptográfica. Registro catastral libre con mapas precisos y emisión local de contratos validados en PDF.',
     targetAudience: 'Propietarios e inquilinos que buscan operaciones directas sin costos ocultos de publicación.',
     tags: ['PDF Engine Local', 'GeoJSON Mapping', 'Anti-Fraude', 'Contratos Validados'],
-    active: true
+    active: true,
+    demoUrl: 'https://nexora-store-app.vercel.app/?pwa=true',
+    isDesktopOnly: false
   },
   {
     id: 'retail',
@@ -220,7 +236,9 @@ const INITIAL_SYSTEMS: SystemItem[] = [
     description: 'Punto de venta comercial, control de stock y lector de códigos offline. Lectura instantánea con pistola USB/Bluetooth y arqueo multidepósito.',
     targetAudience: 'Comercios minoristas, ferreterías, almacenes y minimercados que precisan facturar sin interrupciones por corte de internet.',
     tags: ['Lector Códigos', 'Control Stock', 'Offline Local', 'Ticket Térmico'],
-    active: true
+    active: true,
+    demoUrl: 'https://nexora-store-app.vercel.app/?demo=retail',
+    isDesktopOnly: true
   },
   {
     id: 'turnos',
@@ -234,7 +252,9 @@ const INITIAL_SYSTEMS: SystemItem[] = [
     description: 'Agendamiento autónomo para clínicas y consultorios. Reserva local, sincronización por WhatsApp y confirmaciones automáticas sin intermediarios.',
     targetAudience: 'Médicos, odontólogos, centros de estética, peluquerías y consultorios independientes que requieren turnero directo.',
     tags: ['WhatsApp Bot', 'Agenda Local', 'Recordatorios', 'Sin Comisiones'],
-    active: true
+    active: true,
+    demoUrl: 'https://nexora-store-app.vercel.app/?pwa=true',
+    isDesktopOnly: false
   },
   {
     id: 'hotel',
@@ -248,7 +268,9 @@ const INITIAL_SYSTEMS: SystemItem[] = [
     description: 'Check-in local, reservas y administración hotelera sin intermediarios. Cuadrícula de ocupación, cobro en mostrador y gestión de cabañas desconectada de OTAs.',
     targetAudience: 'Hoteles boutique, complejos de cabañas, hosterías y administradores turísticos que rechazan comisiones abusivas de portales externos.',
     tags: ['Check-in Local', 'Plano Tarifario', 'Cero OTAs', 'Calendario Offline'],
-    active: true
+    active: true,
+    demoUrl: 'https://nexora-store-app.vercel.app/?pwa=true',
+    isDesktopOnly: false
   },
   {
     id: 'flota',
@@ -262,7 +284,9 @@ const INITIAL_SYSTEMS: SystemItem[] = [
     description: 'Ruteo logístico, despachos y control perimetral de paquetería. Manifiesto de carga, hojas de ruta offline y firma de entrega digital en mano.',
     targetAudience: 'Empresas de logística urbana, distribuidoras, expresos y cooperativas de transporte de encomiendas.',
     tags: ['Ruteo Offline', 'Firma Digital', 'Paquetería', 'Manifiesto de Carga'],
-    active: true
+    active: true,
+    demoUrl: 'https://nexora-store-app.vercel.app/?demo=flota',
+    isDesktopOnly: true
   },
   {
     id: 'cajafuerte',
@@ -276,7 +300,9 @@ const INITIAL_SYSTEMS: SystemItem[] = [
     description: 'Arqueo ciego de sucursales, control de turnos y prevención de fugas. Auditoría criptográfica estricta de efectivo, transferencias y comprobantes.',
     targetAudience: 'Franquicias, comercios con múltiples turnos de cajeros y locales con alta circulación de dinero físico que demandan trazabilidad absoluta.',
     tags: ['Arqueo Ciego', 'Control Fugas', 'Auditoría Criptográfica', 'Multi-Turno'],
-    active: true
+    active: true,
+    demoUrl: 'https://nexora-store-app.vercel.app/?demo=cajafuerte',
+    isDesktopOnly: true
   }
 ];
 
@@ -389,6 +415,7 @@ export default function App() {
   // --- MODAL DE CAPTURA PÚBLICA (LEAD / DEMO 15 DÍAS) ---
   const [isTrialModalOpen, setIsTrialModalOpen] = useState(false);
   const [selectedTrialSystem, setSelectedTrialSystem] = useState<SystemItem | null>(null);
+  const [desktopNoticeSystem, setDesktopNoticeSystem] = useState<SystemItem | null>(null);
   const [leadName, setLeadName] = useState('');
   const [leadBusiness, setLeadBusiness] = useState('');
   const [leadWhatsapp, setLeadWhatsapp] = useState('+54 ');
@@ -536,10 +563,58 @@ export default function App() {
     return () => { isMounted = false; };
   }, []);
 
-  // --- CONTROL DE RUTA OCULTA (#admin) Y PIN SOBERANO ---
+  // --- NAVEGACIÓN Y ACCESO DIRECTO A DEMOS REALES (SIN BUCLES) ---
+  const handleOpenTrialModal = (sys: SystemItem) => {
+    setSelectedTrialSystem(sys);
+    setLeadName('');
+    setLeadBusiness('');
+    setLeadWhatsapp('+54 ');
+    setLeadEmail('');
+    setTrialResult(null);
+    setCopiedKey(false);
+    setIsTrialModalOpen(true);
+  };
+
+  const handleAccessDemo = (sys: SystemItem) => {
+    // Si es Prensa & Medios Soberano, abrir la instancia operativa oficial
+    if (sys.id === 'prensa') {
+      window.open('https://nexora-news.vercel.app', '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    // Si es sistema exclusivo de escritorio/mostrador y el visitante está en un móvil
+    const isMobileDevice = typeof window !== 'undefined' && (window.innerWidth < 768 || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent));
+    if (sys.isDesktopOnly && isMobileDevice) {
+      setDesktopNoticeSystem(sys);
+      return;
+    }
+
+    // Si tiene demoUrl funcional
+    if (sys.demoUrl && sys.demoUrl.startsWith('http')) {
+      window.open(sys.demoUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    // Alternativa: abrir modal de prueba con clave criptográfica
+    handleOpenTrialModal(sys);
+  };
+
+  // --- CONTROL DE RUTA OCULTA (#admin), DEMOS DIRECTAS (#demo-) Y PIN SOBERANO ---
   useEffect(() => {
     const handleHash = () => {
-      if (window.location.hash === '#admin') {
+      const hash = window.location.hash;
+
+      // Interceptar hashes directos #demo-[id] para evitar bucle a home
+      if (hash.startsWith('#demo-')) {
+        const sysId = hash.replace('#demo-', '');
+        const target = systems.find(s => s.id === sysId) || INITIAL_SYSTEMS.find(s => s.id === sysId);
+        if (target) {
+          handleAccessDemo(target);
+          return;
+        }
+      }
+
+      if (hash === '#admin') {
         if (IS_PUBLIC_ONLY) {
           window.location.hash = '';
           return;
@@ -1566,17 +1641,6 @@ export default function App() {
   };
 
   // --- FORMULARIO DE CAPTURA PÚBLICA (LEAD / DEMO 15 DÍAS) ---
-  const handleOpenTrialModal = (sys: SystemItem) => {
-    setSelectedTrialSystem(sys);
-    setLeadName('');
-    setLeadBusiness('');
-    setLeadWhatsapp('+54 ');
-    setLeadEmail('');
-    setTrialResult(null);
-    setCopiedKey(false);
-    setIsTrialModalOpen(true);
-  };
-
   const handleSubmitTrialLead = async (e: FormEvent) => {
     e.preventDefault();
     if (!leadName.trim() || !leadWhatsapp.trim() || !leadEmail.trim() || !selectedTrialSystem) return;
@@ -2997,20 +3061,33 @@ export default function App() {
                         ))}
                       </div>
 
-                      <div className="pt-2 flex items-center gap-2">
+                      <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                        {/* ACCEDER O PROBAR DEMO DIRECTA */}
                         <button
+                          type="button"
+                          onClick={() => handleAccessDemo(sys)}
+                          className="py-2 px-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-white font-mono font-bold text-xs transition flex items-center justify-center gap-1.5"
+                          title="Acceder a la demostración operativa del sistema"
+                        >
+                          <span>🚀 Acceder / Demo</span>
+                          <span className="text-[#00f2fe]">↗</span>
+                        </button>
+
+                        <button
+                          type="button"
                           onClick={() => handleOpenTrialModal(sys)}
                           className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-[#00f2fe] to-[#00b4d8] text-slate-950 font-bold text-xs hover:brightness-110 shadow-[0_0_15px_-3px_rgba(0,242,254,0.3)] transition-all flex items-center justify-center gap-1.5"
                         >
-                          <span>Probar 15 Días</span>
-                          <span className="text-[10px] font-mono opacity-80">● Sin Tarjeta</span>
+                          <span>Clave 15D</span>
+                          <span className="text-[10px] font-mono opacity-80">● Gratis</span>
                         </button>
+
                         {sys.priceUsd > 0 && (
                           <a
                             href={`https://wa.me/5493786414533?text=${encodeURIComponent(`Hola Nexora One, deseo información sobre la licencia de ${sys.name}`)}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="py-2 px-3 rounded-xl bg-[#090b0e] border border-white/10 hover:border-[#00f2fe]/40 text-slate-200 text-xs font-semibold font-mono transition flex items-center gap-1"
+                            className="py-2 px-3 rounded-xl bg-[#090b0e] border border-white/10 hover:border-[#00f2fe]/40 text-slate-200 text-xs font-semibold font-mono transition flex items-center justify-center gap-1"
                           >
                             <span>Adquirir</span>
                             <span className="text-[#00f2fe]">→</span>
@@ -3321,7 +3398,9 @@ export default function App() {
                     ? `${trialResult.clientName} de (${trialResult.businessName})`
                     : trialResult.clientName;
 
-                  const demoUrl = typeof window !== 'undefined' ? `${window.location.origin}/#demo-${selectedTrialSystem.id}` : `https://nexoraone.com/#demo-${selectedTrialSystem.id}`;
+                  const demoUrl = selectedTrialSystem.id === 'prensa'
+                    ? 'https://nexora-news.vercel.app'
+                    : (selectedTrialSystem.demoUrl || `${typeof window !== 'undefined' ? window.location.origin : 'https://nexoraone.com'}/?demo=${selectedTrialSystem.id}`);
                   const plantillawa = `Estimado/a ${saludoCliente}:
 
 Le damos la bienvenida a Nexora One.
@@ -3343,6 +3422,17 @@ Nexora One — Arquitectura Soberana`;
 
                   return (
                     <div className="space-y-2.5 pt-1">
+                      {demoUrl && (
+                        <a
+                          href={demoUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#00f2fe]/20 to-[#00b4d8]/20 border border-[#00f2fe]/50 text-[#00f2fe] hover:bg-[#00f2fe]/30 text-xs font-bold font-mono transition flex items-center justify-center gap-2 text-center"
+                        >
+                          <span>🚀 Abrir Demo en Vivo de {selectedTrialSystem.name} ↗</span>
+                        </a>
+                      )}
+
                       <a
                         href={waHref}
                         target="_blank"
@@ -3384,6 +3474,74 @@ Nexora One — Arquitectura Soberana`;
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* MODAL ARQUITECTURA PERIMETRAL / DESKTOP ONLY */}
+      {desktopNoticeSystem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+          <div className="w-full max-w-md rounded-3xl bg-[#141822] border border-cyan-500/40 p-6 sm:p-7 shadow-[0_0_60px_rgba(0,242,254,0.25)] space-y-5 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-[#090b0e] border border-cyan-400/40 mx-auto flex items-center justify-center text-2xl shadow-[0_0_20px_rgba(0,242,254,0.3)]">
+              🖥️
+            </div>
+
+            <div className="space-y-1.5">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+                ARQUITECTURA PERIMETRAL LOCAL
+              </span>
+              <h3 className="text-lg font-bold text-white font-mono">
+                {desktopNoticeSystem.name}
+              </h3>
+              <p className="text-xs text-slate-300 leading-relaxed pt-1">
+                Este sistema opera con motor nativo de escritorio (Windows / Linux) para impresoras térmicas ESC/POS, lectores de código de barra y SQLite offline sin cortes por internet.
+              </p>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-[#090b0e] border border-white/10 text-left text-xs font-mono text-slate-300 space-y-1.5">
+              <div className="flex items-center gap-2 text-[#00f2fe]">
+                <span>✓</span>
+                <span>Instalador local (.exe / script perimetral)</span>
+              </div>
+              <div className="flex items-center gap-2 text-[#00f2fe]">
+                <span>✓</span>
+                <span>Base SQLite aislada con cero dependencia de la nube</span>
+              </div>
+              <div className="flex items-center gap-2 text-emerald-400">
+                <span>✓</span>
+                <span>Listo para terminales de mostrador y cajas offline</span>
+              </div>
+            </div>
+
+            <div className="space-y-2.5 pt-1">
+              {desktopNoticeSystem.demoUrl && (
+                <a
+                  href={desktopNoticeSystem.demoUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full py-2.5 px-4 rounded-xl bg-[#00f2fe] hover:bg-[#00d0dc] text-slate-950 text-xs font-bold font-mono transition flex items-center justify-center gap-2"
+                >
+                  <span>🌐 Ver Simulación Web Interactiva ↗</span>
+                </a>
+              )}
+
+              <a
+                href={`https://wa.me/5493786414533?text=${encodeURIComponent(`Hola Nexora One, deseo recibir el instalador de escritorio y demostración asistida para ${desktopNoticeSystem.name}.`)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="w-full py-2.5 px-4 rounded-xl bg-[#25D366] hover:bg-[#20ba5a] text-slate-950 text-xs font-bold font-mono transition flex items-center justify-center gap-2"
+              >
+                <span>📲 Solicitar Instalador a mi WhatsApp</span>
+              </a>
+
+              <button
+                type="button"
+                onClick={() => setDesktopNoticeSystem(null)}
+                className="w-full py-2 rounded-xl bg-[#090b0e] border border-white/10 text-slate-400 hover:text-white text-xs font-mono transition"
+              >
+                Cerrar
+              </button>
+            </div>
           </div>
         </div>
       )}
