@@ -345,6 +345,18 @@ export default function App() {
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [copiedQrLink, setCopiedQrLink] = useState<'nav' | 'pwa' | null>(null);
 
+  // --- MENÚ HAMBURGUESA MÓVIL ---
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handleNavClick = (hash: string) => {
+    setIsMobileMenuOpen(false);
+    setIsPortalOpen(false);
+    const element = document.querySelector(hash);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   // --- DETECCIÓN E INSTALADOR PWA INTELIGENTE (?install=pwa) ---
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showPwaInstallModal, setShowPwaInstallModal] = useState(false);
@@ -961,6 +973,10 @@ export default function App() {
     let prevMousePos = { x: 0, y: 0 };
 
     const onPointerDown = (e: PointerEvent) => {
+      // En dispositivos móviles (< 768px) o gestos táctiles, no interceptar para permitir scroll vertical nativo
+      if (e.pointerType === 'touch' || window.innerWidth < 768) {
+        return;
+      }
       isDragging = true;
       prevMousePos = { x: e.clientX, y: e.clientY };
     };
@@ -1755,18 +1771,27 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#090b0e] text-[#f1f5f9] font-sans antialiased selection:bg-[#00f2fe]/30 selection:text-[#00f2fe] flex flex-col">
 
-      {/* HEADER PERSISTENTE */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#090b0e]/85 border-b border-white/10 px-4 py-3 sm:px-6">
+      {/* HEADER PERSISTENTE CON MENÚ HAMBURGUESA RESPONSIVO */}
+      <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#090b0e]/90 border-b border-white/10 px-4 py-3 sm:px-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => { setIsPortalOpen(false); window.location.hash = ''; }}>
+          {/* LOGO OFICIAL */}
+          <div
+            className="flex items-center gap-3 cursor-pointer"
+            onClick={() => {
+              setIsPortalOpen(false);
+              setIsMobileMenuOpen(false);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          >
             <img
               src="/brand/logo-full.png?v=2026"
               alt="Nexora One Engine"
-              className="h-10 w-auto object-contain mix-blend-screen hover:opacity-90 transition"
+              className="h-8 sm:h-10 w-auto object-contain mix-blend-screen hover:opacity-90 transition"
             />
           </div>
 
-          <nav className="hidden lg:flex items-center gap-6 text-sm text-slate-400 font-medium">
+          {/* NAVEGACIÓN EN ESCRITORIO (md:flex) */}
+          <nav className="hidden md:flex items-center gap-6 text-sm text-slate-400 font-medium">
             <a href="#ecosistema" onClick={() => setIsPortalOpen(false)} className="hover:text-white transition">{tr.nav.ecosystem}</a>
             <a href="#nosotros" onClick={() => setIsPortalOpen(false)} className="hover:text-white transition">{tr.nav.about}</a>
             <a href="#casos" onClick={() => setIsPortalOpen(false)} className="hover:text-white transition">{tr.nav.cases}</a>
@@ -1774,7 +1799,8 @@ export default function App() {
             <a href="#licencias" onClick={() => setIsPortalOpen(false)} className="hover:text-white transition">{tr.nav.licenses}</a>
           </nav>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          {/* CONTROLES EN ESCRITORIO (md:flex) */}
+          <div className="hidden md:flex items-center gap-2 sm:gap-3">
             {/* SELECTOR REACTIVO DE IDIOMA (ES | EN) */}
             <div className="flex items-center bg-[#141822] p-1 rounded-xl border border-white/10 text-xs font-mono">
               <button
@@ -1803,26 +1829,152 @@ export default function App() {
               title={tr.nav.mobileAccess}
             >
               <span className="text-sm">📱</span>
-              <span className="hidden sm:inline">{tr.nav.mobileAccess}</span>
-              <span className="sm:hidden">QR</span>
+              <span>{tr.nav.mobileAccess}</span>
             </button>
 
             <a
               href="#appstore"
-              className="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-[#00f2fe] to-[#00b4d8] text-[#090b0e] font-bold text-xs hover:brightness-110 shadow-[0_0_20px_-3px_rgba(0,242,254,0.35)] transition-all flex items-center gap-2"
+              className="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-[#00f2fe] to-[#00b4d8] text-[#090b0e] font-bold text-xs hover:brightness-110 shadow-[0_0_20px_-3px_rgba(0,242,254,0.35)] transition-all flex items-center gap-2 cursor-pointer"
             >
               <span>{tr.nav.explore}</span>
             </a>
+
             {isPortalOpen && isAdminAuthenticated && (
               <button
                 onClick={handleCloseAdmin}
-                className="px-3 py-1.5 rounded-lg bg-red-500/20 border border-red-500/40 text-red-300 font-mono text-xs hover:bg-red-500/30 transition flex items-center gap-1.5"
+                className="px-3 py-1.5 rounded-lg bg-red-500/20 border border-red-500/40 text-red-300 font-mono text-xs hover:bg-red-500/30 transition flex items-center gap-1.5 cursor-pointer"
               >
                 <span>{tr.nav.closeAdmin}</span>
               </button>
             )}
           </div>
+
+          {/* BOTÓN HAMBURGUESA EXCLUSIVO PARA MÓVILES (md:hidden) */}
+          <div className="flex md:hidden items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="p-2.5 rounded-xl bg-[#141822] border border-white/15 text-slate-200 hover:text-cyan-400 hover:border-cyan-400/50 transition flex items-center justify-center cursor-pointer shadow-md"
+              aria-label="Abrir Menú de Navegación"
+            >
+              {isMobileMenuOpen ? (
+                <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
+
+        {/* CAJÓN DESPLEGABLE MÓVIL (MOBILE DRAWER) */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden border-t border-white/10 mt-3 pt-3 pb-5 px-3 space-y-4 bg-[#070b12]/95 backdrop-blur-2xl rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.8)] border border-cyan-500/20">
+            {/* ENLACES DE SALTO SUAVE */}
+            <nav className="flex flex-col space-y-1 text-sm font-medium">
+              <a
+                href="#ecosistema"
+                onClick={() => handleNavClick('#ecosistema')}
+                className="px-4 py-2.5 rounded-xl hover:bg-white/5 text-slate-300 hover:text-white transition flex items-center justify-between cursor-pointer"
+              >
+                <span>{tr.nav.ecosystem}</span>
+                <span className="text-[11px] text-slate-500 font-mono">01</span>
+              </a>
+              <a
+                href="#nosotros"
+                onClick={() => handleNavClick('#nosotros')}
+                className="px-4 py-2.5 rounded-xl hover:bg-white/5 text-slate-300 hover:text-white transition flex items-center justify-between cursor-pointer"
+              >
+                <span>{tr.nav.about}</span>
+                <span className="text-[11px] text-slate-500 font-mono">02</span>
+              </a>
+              <a
+                href="#casos"
+                onClick={() => handleNavClick('#casos')}
+                className="px-4 py-2.5 rounded-xl hover:bg-white/5 text-slate-300 hover:text-white transition flex items-center justify-between cursor-pointer"
+              >
+                <span>{tr.nav.cases}</span>
+                <span className="text-[11px] text-slate-500 font-mono">03</span>
+              </a>
+              <a
+                href="#appstore"
+                onClick={() => handleNavClick('#appstore')}
+                className="px-4 py-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/25 text-cyan-300 font-bold transition flex items-center justify-between cursor-pointer"
+              >
+                <span>{tr.nav.appstore}</span>
+                <span className="text-[11px] text-cyan-400 font-mono font-bold">11 Sistemas</span>
+              </a>
+              <a
+                href="#licencias"
+                onClick={() => handleNavClick('#licencias')}
+                className="px-4 py-2.5 rounded-xl hover:bg-white/5 text-slate-300 hover:text-white transition flex items-center justify-between cursor-pointer"
+              >
+                <span>{tr.nav.licenses}</span>
+                <span className="text-[11px] text-slate-500 font-mono">05</span>
+              </a>
+            </nav>
+
+            {/* SELECTOR DE IDIOMA Y BOTONES DE ACCIÓN */}
+            <div className="pt-3 border-t border-white/10 space-y-3">
+              <div className="flex items-center justify-between px-2">
+                <span className="text-xs font-mono text-slate-400">Idioma / Language:</span>
+                <div className="flex items-center bg-[#141822] p-1 rounded-xl border border-white/10 text-xs font-mono">
+                  <button
+                    type="button"
+                    onClick={() => handleSetLang('es')}
+                    className={`px-3 py-1 rounded-lg transition font-bold ${lang === 'es' ? 'bg-[#00f2fe] text-slate-950 shadow-[0_0_12px_rgba(0,242,254,0.4)]' : 'text-slate-400 hover:text-white'}`}
+                  >
+                    ES
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSetLang('en')}
+                    className={`px-3 py-1 rounded-lg transition font-bold ${lang === 'en' ? 'bg-[#00f2fe] text-slate-950 shadow-[0_0_12px_rgba(0,242,254,0.4)]' : 'text-slate-400 hover:text-white'}`}
+                  >
+                    EN
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  setIsQrModalOpen(true);
+                }}
+                className="w-full py-2.5 px-4 rounded-xl bg-[#141822] hover:bg-[#1a202c] border border-cyan-500/30 text-cyan-300 font-mono text-xs font-bold transition flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(0,242,254,0.15)] cursor-pointer"
+              >
+                <span className="text-sm">📱</span>
+                <span>{tr.nav.mobileAccess}</span>
+              </button>
+
+              <a
+                href="#appstore"
+                onClick={() => handleNavClick('#appstore')}
+                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#00f2fe] to-[#00b4d8] text-[#090b0e] font-bold text-xs hover:brightness-110 shadow-[0_0_20px_rgba(0,242,254,0.35)] transition flex items-center justify-center gap-2 cursor-pointer text-center"
+              >
+                <span>{tr.nav.explore}</span>
+                <span>→</span>
+              </a>
+
+              {isPortalOpen && isAdminAuthenticated && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    handleCloseAdmin();
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl bg-red-500/20 border border-red-500/40 text-red-300 font-mono text-xs hover:bg-red-500/30 transition flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <span>{tr.nav.closeAdmin}</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </header>
 
       {/* VISTA A: PANEL ADMINISTRATIVO CMS (SOLO CON AUTENTICACIÓN SOBERANA) */}
@@ -2782,12 +2934,16 @@ export default function App() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-              <div className="lg:col-span-5 rounded-2xl bg-[#141822] border border-white/10 p-4 sticky top-20 shadow-2xl">
+              <div className="lg:col-span-5 rounded-2xl bg-[#141822] border border-white/10 p-4 lg:sticky lg:top-20 shadow-2xl">
                 <div className="flex justify-between pb-2 border-b border-white/10 text-xs font-mono">
                   <span className="text-white">MOTOR 3D INTERACTIVO</span>
                   <span className="text-[#00f2fe]">ROTACIÓN 360°</span>
                 </div>
-                <div ref={globeMountRef} className="w-full h-80 bg-[#090b0e] rounded-xl my-2 cursor-grab active:cursor-grabbing"></div>
+                <div
+                  ref={globeMountRef}
+                  className="w-full h-64 sm:h-72 md:h-80 max-h-[42vh] md:max-h-none bg-[#090b0e] rounded-xl my-2 cursor-grab active:cursor-grabbing pointer-events-none md:pointer-events-auto touch-pan-y"
+                  style={{ touchAction: 'pan-y' }}
+                ></div>
                 <p className="text-[11px] text-slate-400 text-center font-mono">
                   Simulación de red perimetral independiente sin dependencias externas.
                 </p>
