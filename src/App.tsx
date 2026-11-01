@@ -345,6 +345,11 @@ export default function App() {
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [copiedQrLink, setCopiedQrLink] = useState<'nav' | 'pwa' | null>(null);
 
+  // --- DETECCIÓN E INSTALADOR PWA INTELIGENTE (?install=pwa) ---
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showPwaInstallModal, setShowPwaInstallModal] = useState(false);
+  const [isStandaloneApp, setIsStandaloneApp] = useState(false);
+
   // --- MODAL ALTA PRESENCIAL / MOSTRADOR ---
   const [isPresencialModalOpen, setIsPresencialModalOpen] = useState(false);
   const [presencialClient, setPresencialClient] = useState('');
@@ -559,6 +564,49 @@ export default function App() {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isAdminAuthenticated]);
+
+  // --- DETECCIÓN DE PWA Y MANEJADOR DE INSTALACIÓN (?install=pwa) ---
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        if (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true) {
+          setIsStandaloneApp(true);
+        }
+
+        const handleBeforeInstall = (e: Event) => {
+          e.preventDefault();
+          setDeferredPrompt(e);
+        };
+        window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+
+        const searchParams = new URLSearchParams(window.location.search);
+        if (
+          searchParams.get('install') === 'pwa' ||
+          searchParams.get('mode') === 'standalone' ||
+          searchParams.get('pwa') === 'true'
+        ) {
+          setShowPwaInstallModal(true);
+        }
+
+        return () => {
+          window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+        };
+      }
+    } catch { }
+  }, []);
+
+  const handleTriggerPwaInstall = async () => {
+    if (deferredPrompt) {
+      try {
+        await deferredPrompt.prompt();
+        const choiceResult = await deferredPrompt.userChoice;
+        if (choiceResult && choiceResult.outcome === 'accepted') {
+          setShowPwaInstallModal(false);
+        }
+      } catch { }
+      setDeferredPrompt(null);
+    }
+  };
 
   // Three.js Mount (Globo 3D fotorrealista satélite estilo Google Earth)
   useEffect(() => {
@@ -3186,9 +3234,8 @@ Nexora One — Arquitectura Soberana`;
 
       {/* MODAL DUAL QR DE ACCESO RÁPIDO Y DESCARGA PWA MÓVIL */}
       {isQrModalOpen && (() => {
-        const originUrl = typeof window !== 'undefined' ? window.location.origin : 'https://nexora-one-engine.vercel.app';
-        const mobileNavUrl = originUrl;
-        const pwaUrl = `${originUrl}/?pwa=true`;
+        const mobileNavUrl = 'https://tinyurl.com/nexora-one';
+        const pwaUrl = 'https://nexora-store-app.vercel.app/?install=pwa';
 
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
@@ -3223,11 +3270,20 @@ Nexora One — Arquitectura Soberana`;
                     {tr.qrModal.qr1Title}
                   </h4>
                   <div
-                    className="w-48 h-48 rounded-xl bg-[#050b14] p-2 flex items-center justify-center border border-white/10"
+                    className="w-52 h-52 rounded-2xl bg-white p-3 flex items-center justify-center shadow-[0_0_35px_rgba(0,242,254,0.35)] border-2 border-cyan-400"
                     dangerouslySetInnerHTML={{
-                      __html: generateQrSvgString(mobileNavUrl, { size: 180, fgColor: '#00f2fe', bgColor: '#050b14' })
+                      __html: generateQrSvgString(mobileNavUrl, {
+                        size: 184,
+                        fgColor: '#000000',
+                        bgColor: '#ffffff',
+                        margin: 2,
+                        errorCorrectionLevel: 'M'
+                      })
                     }}
                   />
+                  <div className="text-[10px] font-mono text-cyan-400 select-all font-semibold break-all">
+                    {mobileNavUrl}
+                  </div>
                   <p className="text-[11px] text-slate-400 leading-relaxed">
                     {tr.qrModal.qr1Desc}
                   </p>
@@ -3238,9 +3294,9 @@ Nexora One — Arquitectura Soberana`;
                       setCopiedQrLink('nav');
                       setTimeout(() => setCopiedQrLink(null), 2000);
                     }}
-                    className="w-full py-2 rounded-xl bg-[#141822] hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white font-mono text-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="w-full py-2.5 rounded-xl bg-[#141822] hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white font-mono text-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
                   >
-                    <span>{copiedQrLink === 'nav' ? '✓ Copiado' : tr.qrModal.copyNav}</span>
+                    <span>{copiedQrLink === 'nav' ? '✓ Copiado al Portapapeles' : tr.qrModal.copyNav}</span>
                   </button>
                 </div>
 
@@ -3253,11 +3309,20 @@ Nexora One — Arquitectura Soberana`;
                     {tr.qrModal.qr2Title}
                   </h4>
                   <div
-                    className="w-48 h-48 rounded-xl bg-[#050b14] p-2 flex items-center justify-center border border-white/10"
+                    className="w-52 h-52 rounded-2xl bg-white p-3 flex items-center justify-center shadow-[0_0_35px_rgba(16,185,129,0.35)] border-2 border-emerald-400"
                     dangerouslySetInnerHTML={{
-                      __html: generateQrSvgString(pwaUrl, { size: 180, fgColor: '#10b981', bgColor: '#050b14' })
+                      __html: generateQrSvgString(pwaUrl, {
+                        size: 184,
+                        fgColor: '#000000',
+                        bgColor: '#ffffff',
+                        margin: 2,
+                        errorCorrectionLevel: 'M'
+                      })
                     }}
                   />
+                  <div className="text-[10px] font-mono text-emerald-400 select-all font-semibold break-all">
+                    {pwaUrl}
+                  </div>
                   <p className="text-[11px] text-slate-400 leading-relaxed">
                     {tr.qrModal.qr2Desc}
                   </p>
@@ -3268,9 +3333,9 @@ Nexora One — Arquitectura Soberana`;
                       setCopiedQrLink('pwa');
                       setTimeout(() => setCopiedQrLink(null), 2000);
                     }}
-                    className="w-full py-2 rounded-xl bg-[#141822] hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white font-mono text-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="w-full py-2.5 rounded-xl bg-[#141822] hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white font-mono text-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
                   >
-                    <span>{copiedQrLink === 'pwa' ? '✓ Copiado' : tr.qrModal.copyPwa}</span>
+                    <span>{copiedQrLink === 'pwa' ? '✓ Copiado al Portapapeles' : tr.qrModal.copyPwa}</span>
                   </button>
                 </div>
               </div>
@@ -3288,6 +3353,61 @@ Nexora One — Arquitectura Soberana`;
           </div>
         );
       })()}
+
+      {/* MODAL DE ASISTENCIA E INSTALACIÓN PWA (?install=pwa) */}
+      {showPwaInstallModal && !isStandaloneApp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+          <div className="w-full max-w-md rounded-3xl bg-[#141822] border border-emerald-500/50 p-6 sm:p-7 shadow-[0_0_60px_rgba(16,185,129,0.35)] space-y-5 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-[#090b0e] border border-emerald-400/50 mx-auto flex items-center justify-center p-2.5 shadow-[0_0_25px_rgba(16,185,129,0.3)]">
+              <img src="/brand/logo-full.png" alt="Nexora One" className="w-full h-full object-contain" />
+            </div>
+
+            <div className="space-y-1">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                INSTALADOR APP SOBERANA (PWA)
+              </span>
+              <h3 className="text-lg font-bold text-white font-mono">
+                Instalar Nexora One en tu Dispositivo
+              </h3>
+              <p className="text-xs text-slate-300 leading-relaxed pt-1">
+                Obtén acceso directo de pantalla completa con funcionamiento offline garantizado y sin intermediarios ni tiendas externas.
+              </p>
+            </div>
+
+            {deferredPrompt ? (
+              <button
+                type="button"
+                onClick={handleTriggerPwaInstall}
+                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-400 to-teal-500 text-slate-950 font-mono font-bold text-sm shadow-[0_0_20px_rgba(16,185,129,0.4)] hover:brightness-110 transition flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>➕</span>
+                <span>Instalar Ahora en la Pantalla de Inicio</span>
+              </button>
+            ) : (
+              <div className="p-4 rounded-xl bg-[#090b0e] border border-white/10 text-left space-y-2 text-xs font-mono text-slate-300">
+                <div className="text-cyan-300 font-bold flex items-center gap-1.5">
+                  <span>📱</span>
+                  <span>Instrucciones para instalar:</span>
+                </div>
+                <div className="space-y-1.5 text-[11px] text-slate-400">
+                  <p><span className="text-white font-semibold">En iPhone / Safari:</span> Tocá el botón <span className="text-cyan-400">Compartir ⎋</span> en la barra inferior y seleccioná <span className="text-emerald-400">"Agregar a Inicio ➕"</span>.</p>
+                  <p><span className="text-white font-semibold">En Android / Chrome:</span> Tocá el menú <span className="text-cyan-400">⋮</span> (arriba a la derecha) y seleccioná <span className="text-emerald-400">"Instalar aplicación"</span> o "Agregar a pantalla principal".</p>
+                </div>
+              </div>
+            )}
+
+            <div className="pt-2 border-t border-white/10 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setShowPwaInstallModal(false)}
+                className="text-xs font-mono text-slate-400 hover:text-white transition py-1 px-4 cursor-pointer"
+              >
+                Continuar navegando en la web →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL ALTA PRESENCIAL / MOSTRADOR */}
       {isPresencialModalOpen && (
