@@ -384,7 +384,7 @@ const INITIAL_SYSTEMS: SystemItem[] = [
     tags: ['OLT / NAP Monitor', 'Geolocalización GPS', 'Portal Abonados', 'NOC Automatizado'],
     active: true,
     status: 'active',
-    demoUrl: 'https://nora-itu-core.vercel.app',
+    demoUrl: 'https://nora-isp.vercel.app/portal',
     trialPrefix: 'ISP-15D-',
     isDesktopOnly: false
   },
@@ -816,7 +816,7 @@ export default function App() {
 
     // Si es Nora ISP, abrir la nube oficial en pestaña nueva
     if (sys.id === 'nora-isp') {
-      window.open(sys.demoUrl || 'https://nora-itu-core.vercel.app', '_blank', 'noopener,noreferrer');
+      window.open(sys.demoUrl || 'https://nora-isp.vercel.app/portal', '_blank', 'noopener,noreferrer');
       return;
     }
 
