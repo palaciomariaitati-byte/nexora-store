@@ -4455,9 +4455,9 @@ Nexora One — Arquitectura Soberana`;
 
       {/* CHAT FLOTANTE NORA ITU - EXCLUSIVO PARA VISITANTES EN EL SITIO PÚBLICO */}
       {!(isPortalOpen && isAdminAuthenticated) && (
-        <div className="fixed bottom-10 right-6 sm:bottom-12 sm:right-10 z-40 flex flex-col items-end">
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
           {isNoraChatOpen && (
-            <div className="w-80 sm:w-96 rounded-2xl bg-[#141822] border border-[#00f2fe]/30 shadow-2xl mb-3 overflow-hidden flex flex-col h-[440px]">
+            <div className="w-80 sm:w-96 rounded-2xl bg-[#141822] border border-[#00f2fe]/30 shadow-2xl mb-4 overflow-hidden flex flex-col h-[440px]">
               <div className="bg-[#0e1117] p-3 flex justify-between items-center border-b border-white/10">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -4493,13 +4493,36 @@ Nexora One — Arquitectura Soberana`;
             </div>
           )}
 
-          <button
-            onClick={() => setIsNoraChatOpen(!isNoraChatOpen)}
-            className="p-3.5 rounded-2xl bg-gradient-to-br from-[#00f2fe] to-[#00b4d8] text-slate-950 shadow-[0_0_25px_rgba(0,242,254,0.4)] hover:scale-105 transition-all flex items-center gap-2 font-bold text-xs cursor-pointer"
-          >
-            <span>Nora Itu AI</span>
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-          </button>
+          <div className="relative group flex items-center">
+            {/* Tooltip flotante a la izquierda */}
+            <div className="pointer-events-none absolute right-[calc(100%+12px)] opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-out z-50 whitespace-nowrap">
+              <div className="bg-slate-950/90 backdrop-blur-md text-white border border-cyan-400/30 text-xs font-semibold px-3 py-1.5 rounded-xl shadow-xl shadow-cyan-950/50 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                <span>Hablar con Nora</span>
+              </div>
+            </div>
+
+            {/* Disparador Circular con Avatar Oficial */}
+            <button
+              onClick={() => setIsNoraChatOpen(!isNoraChatOpen)}
+              className="relative w-[60px] h-[60px] rounded-full border-2 border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.45)] hover:shadow-[0_0_28px_rgba(34,211,238,0.65)] hover:scale-105 transition-all duration-300 cursor-pointer overflow-visible flex items-center justify-center p-0.5 bg-slate-950 focus:outline-none"
+              aria-label="Hablar con Nora"
+            >
+              <div className="w-full h-full rounded-full overflow-hidden bg-slate-900">
+                <img
+                  src="/nora-avatar.png"
+                  alt="Nora Itu"
+                  className="w-full h-full object-cover rounded-full select-none"
+                />
+              </div>
+
+              {/* Indicador de estado online con ping sutil */}
+              <div className="absolute bottom-0 right-0 flex items-center justify-center">
+                <span className="absolute w-3.5 h-3.5 bg-emerald-400 rounded-full opacity-75 animate-ping"></span>
+                <span className="relative w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-slate-900"></span>
+              </div>
+            </button>
+          </div>
         </div>
       )}
 
