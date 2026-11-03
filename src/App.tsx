@@ -22,7 +22,13 @@ const IS_PUBLIC_ONLY = APP_MODE === 'public';
 export interface SystemItem {
   id: string;
   name: string;
+  nameEn?: string;
   subtitle: string;
+  subtitleEn?: string;
+  slaOrBadgeEn?: string;
+  descriptionEn?: string;
+  targetAudienceEn?: string;
+  tagsEn?: string[];
   category: 'gastronomia' | 'comercio' | 'eventos' | 'inmuebles' | 'servicios' | 'medios' | 'clasificados' | 'musica' | 'prensa' | 'telecom' | 'construccion';
   slaOrBadge: string;
   slaColor: string;
@@ -125,6 +131,187 @@ interface DbLicense {
   grace_limit?: string;
   graceLimit?: string;
 }
+
+
+// Diccionario complementario bilingüe de sistemas para visualización UI
+const SYSTEM_I18N: Record<string, {
+  nameEn: string;
+  subtitleEn: string;
+  slaOrBadgeEn: string;
+  descriptionEn: string;
+  targetAudienceEn: string;
+  tagsEn: string[];
+}> = {
+  "restobar": {
+    "nameEn": "Restobar 2026 POS",
+    "subtitleEn": "SOVEREIGN HOSPITALITY POS & TICKETING",
+    "slaOrBadgeEn": "100% SLA",
+    "descriptionEn": "Reactive point-of-sale terminal for restaurants and bars. Zero dining-room downtime with local database and direct thermal kitchen order printers.",
+    "targetAudienceEn": "Hospitality owners losing revenue due to cloud connection drops or kitchen ticketing lag during rush hours.",
+    "tagsEn": [
+      "Thermal ESC/POS",
+      "Local SQLite",
+      "Offline WebSockets",
+      "Win / Mac / Linux"
+    ]
+  },
+  "carribar": {
+    "nameEn": "Nexora Club & Carribar Pass",
+    "subtitleEn": "FOOD TRUCK CONTROL & MOBILE ACCESS",
+    "slaOrBadgeEn": "EVENT PASS",
+    "descriptionEn": "High-throughput order dispatch, QR passes, bar queue settlement and offline closed-loop wallets for food trucks and festival hubs.",
+    "targetAudienceEn": "Festival organizers, food truck parks, and high-velocity venues requiring instant billing without internet connection.",
+    "tagsEn": [
+      "QR Express",
+      "Offline Sync",
+      "Portable ESC/POS",
+      "Fan Wallet"
+    ]
+  },
+  "prensa": {
+    "nameEn": "Nexora Independent Press",
+    "subtitleEn": "DECENTRALIZED EDITORIAL CMS & SYNDICATION",
+    "slaOrBadgeEn": "Coming Soon v2.0 - Direct Inquiry Only",
+    "descriptionEn": "Perimeter CMS with remote edge syndication for media publishers. Ultra-lightweight distribution with complete editorial sovereignty.",
+    "targetAudienceEn": "Independent investigative journalists and community newsrooms seeking zero censorship and zero third-party dependencies.",
+    "tagsEn": [
+      "Ultra-Light CMS",
+      "Syndication Feed",
+      "Editorial Sovereignty",
+      "PWA News"
+    ]
+  },
+  "nora-isp": {
+    "nameEn": "Nora ISP Core & FTTH Cloud",
+    "subtitleEn": "FTTH MANAGEMENT, NAPS & LIVE CREWS",
+    "slaOrBadgeEn": "MISSION CRITICAL ISP",
+    "descriptionEn": "End-to-end suite for ISPs and telecom operators: FTTH network mapping, NAP monitoring, live field technician GPS dispatch, and subscriber self-care portal.",
+    "targetAudienceEn": "Internet Service Providers (ISPs), telecom cooperatives, and cable operators seeking autonomous NOC and AI client triage.",
+    "tagsEn": [
+      "OLT / NAP Monitor",
+      "Live GPS Tracking",
+      "Subscriber Portal",
+      "Automated NOC"
+    ]
+  },
+  "crm-obras": {
+    "nameEn": "Nexora Works & Architecture CRM",
+    "subtitleEn": "ARCHITECTURE, CONSTRUCTION & CCyCN LEGAL FILES",
+    "slaOrBadgeEn": "360° SITE TRACKING",
+    "descriptionEn": "Sovereign suite for architecture studios and construction contractors: metric computing, digital site logbook, labor certifications, and CCyCN legal compliance with geotagged photo proof.",
+    "targetAudienceEn": "Licensed architects, real estate developers, and field directors requiring technical, financial, and legal traceability on site.",
+    "tagsEn": [
+      "Estimating & Budgets",
+      "Labor Certifications",
+      "Digital Site Log",
+      "CCyCN Legal Audit"
+    ]
+  },
+  "autentico": {
+    "nameEn": "Auténtico Tributo Live",
+    "subtitleEn": "LIVE STAGE SYNC & 4K HDMI ENGINE",
+    "slaOrBadgeEn": "< 10MS SYNC",
+    "descriptionEn": "Master live stage sync hub: zero-latency (<10ms) 4K HDMI video playback, dynamic teleprompter, and automated cueing without internet dependence.",
+    "targetAudienceEn": "Tribute acts, stage production companies, and touring engineers requiring deterministic local performance.",
+    "tagsEn": [
+      "4K HDMI",
+      "LAN Sockets",
+      "Fan Portal PWA",
+      "Zero Latency"
+    ]
+  },
+  "clasificados": {
+    "nameEn": "Nexora Classifieds P2P",
+    "subtitleEn": "P2P COMMUNITY MARKETPLACE",
+    "slaOrBadgeEn": "0% COMMISSION",
+    "descriptionEn": "Decentralized neighborhood marketplace for vehicle and goods exchange without predatory escrow fees or funds retention.",
+    "targetAudienceEn": "Merchants and local communities requiring direct peer-to-peer commerce with 0% intermediary commission.",
+    "tagsEn": [
+      "WebP Compression",
+      "Direct WhatsApp",
+      "3MB PWA",
+      "Nora Copywriter"
+    ]
+  },
+  "inmuebles": {
+    "nameEn": "Verified Sovereign Properties",
+    "subtitleEn": "INDEPENDENT REAL ESTATE REGISTRY",
+    "slaOrBadgeEn": "ANTI-FRAUD",
+    "descriptionEn": "Unrestricted cadastral ledger featuring precise GPS coordinates and cryptographic anti-fraud PDF lease generation.",
+    "targetAudienceEn": "Landlords and prospective tenants seeking direct, transparent real estate negotiations without brokerage fee inflation.",
+    "tagsEn": [
+      "Local PDF Engine",
+      "GeoJSON Mapping",
+      "Anti-Fraud",
+      "Validated Contracts"
+    ]
+  },
+  "retail": {
+    "nameEn": "Nexora Stock & Retail 2026",
+    "subtitleEn": "COMMERCIAL POS & OFFLINE INVENTORY",
+    "slaOrBadgeEn": "< 2MS SCAN",
+    "descriptionEn": "Commercial point of sale, offline barcode reader, multi-warehouse inventory control, and zero downtime during ISP failures.",
+    "targetAudienceEn": "Retail stores, hardware shops, and mini-markets requiring resilient, offline checkout.",
+    "tagsEn": [
+      "Barcode Scanner",
+      "Inventory Control",
+      "Offline Local",
+      "Thermal Receipt"
+    ]
+  },
+  "turnos": {
+    "nameEn": "Nexora Appointments Express",
+    "subtitleEn": "AUTONOMOUS SCHEDULING FOR PRACTICES",
+    "slaOrBadgeEn": "ZERO QUEUES",
+    "descriptionEn": "Autonomous appointment scheduling for clinics and practices. Local reservation database, WhatsApp notifications, and automated reminders.",
+    "targetAudienceEn": "Healthcare professionals, dentists, aesthetics centers, and independent practices requiring zero-commission booking.",
+    "tagsEn": [
+      "WhatsApp Bot",
+      "Local Calendar",
+      "Automated Reminders",
+      "Zero Commissions"
+    ]
+  },
+  "hotel": {
+    "nameEn": "Nexora Hotel & Lodge Desk",
+    "subtitleEn": "LOCAL CHECK-IN & INDEPENDENT PMS",
+    "slaOrBadgeEn": "SOVEREIGN PMS",
+    "descriptionEn": "Front-desk PMS, visual room grid, guest check-in/out, and direct booking independent of predatory OTAs.",
+    "targetAudienceEn": "Boutique hotels, cabin resorts, and independent vacation rentals seeking full operational autonomy.",
+    "tagsEn": [
+      "Local Check-in",
+      "Rate Calendar",
+      "Zero OTAs",
+      "Offline Grid"
+    ]
+  },
+  "flota": {
+    "nameEn": "Nexora Fleet & Parcel Logistics",
+    "subtitleEn": "LOGISTICS ROUTING & PACKAGE TRACKING",
+    "slaOrBadgeEn": "REAL-TIME DISPATCH",
+    "descriptionEn": "Perimeter fleet dispatch, delivery manifest routing, package barcode tracking, and offline digital hand-delivery confirmation.",
+    "targetAudienceEn": "Urban logistics carriers, local distributors, and courier freight services needing robust edge tracking.",
+    "tagsEn": [
+      "Offline Routing",
+      "Digital Signature",
+      "Parcel Tracking",
+      "Cargo Manifest"
+    ]
+  },
+  "cajafuerte": {
+    "nameEn": "Nexora SafeBox & Vault Audit",
+    "subtitleEn": "BLIND RECONCILIATION & LEAKAGE CONTROL",
+    "slaOrBadgeEn": "TOTAL SHIELD",
+    "descriptionEn": "Blind shift closures, multi-terminal cash balancing, and cryptographic anti-tamper audit logs against internal loss.",
+    "targetAudienceEn": "Franchises and multi-shift cashier businesses demanding absolute operational traceability.",
+    "tagsEn": [
+      "Blind Reconciliation",
+      "Leakage Control",
+      "Cryptographic Audit",
+      "Multi-Shift"
+    ]
+  }
+};
 
 // --- CATÁLOGO DETERMINISTA LOCAL OFFLINE-FIRST (11 SOLUCIONES ACTIVAS) ---
 const INITIAL_SYSTEMS: SystemItem[] = [
@@ -3002,28 +3189,28 @@ export default function App() {
           <section id="appstore" className="space-y-6 pt-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end border-b border-white/10 pb-4 gap-4">
               <div>
-                <span className="text-xs font-mono text-[#00f2fe]">CATÁLOGO SOBERANO DE PRODUCCIÓN</span>
-                <h2 className="text-2xl font-bold text-white mt-0.5">Sistemas Listos para Producción</h2>
+                <span className="text-xs font-mono text-[#00f2fe]">{tr.appstore.tag}</span>
+                <h2 className="text-2xl font-bold text-white mt-0.5">{tr.appstore.title}</h2>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <input
                   type="text"
-                  placeholder="Buscar en catálogo..."
+                  placeholder={tr.appstore.searchPlaceholder}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="bg-[#141822] border border-white/10 rounded-xl px-3 py-1 text-xs text-white focus:outline-none focus:border-[#00f2fe] w-48"
                 />
                 <div className="flex flex-wrap items-center gap-1 bg-[#141822] p-1 rounded-xl border border-white/10 text-xs font-mono">
                   {([
-                    { id: 'all', label: 'Todos' },
-                    { id: 'telecom', label: 'Telecom & ISP' },
-                    { id: 'gastronomia', label: 'Gastronomía' },
-                    { id: 'comercio', label: 'Comercio' },
-                    { id: 'construccion', label: 'Obras & CRM' },
-                    { id: 'eventos', label: 'Eventos' },
-                    { id: 'inmuebles', label: 'Inmuebles' },
-                    { id: 'servicios', label: 'Servicios' },
-                    { id: 'medios', label: 'Medios' },
+                    { id: 'all', label: tr.appstore.categories.all },
+                    { id: 'telecom', label: tr.appstore.categories.telecom },
+                    { id: 'gastronomia', label: tr.appstore.categories.gastronomia },
+                    { id: 'comercio', label: tr.appstore.categories.comercio },
+                    { id: 'construccion', label: tr.appstore.categories.construccion },
+                    { id: 'eventos', label: tr.appstore.categories.eventos },
+                    { id: 'inmuebles', label: tr.appstore.categories.inmuebles },
+                    { id: 'servicios', label: tr.appstore.categories.servicios },
+                    { id: 'medios', label: tr.appstore.categories.medios },
                   ] as const).map((tab) => (
                     <button
                       key={tab.id}
@@ -3036,7 +3223,7 @@ export default function App() {
                   ))}
                 </div>
                 <span className="px-3 py-1 rounded-full bg-[#141822] text-[#00f2fe] font-mono text-xs border border-white/10">
-                  {filteredSystems.length} ACTIVOS
+                  {filteredSystems.length} {lang === 'en' ? 'ACTIVE' : 'ACTIVOS'}
                 </span>
               </div>
             </div>
@@ -3044,8 +3231,8 @@ export default function App() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
               <div className="lg:col-span-5 rounded-2xl bg-[#141822] border border-white/10 p-4 lg:sticky lg:top-20 shadow-2xl">
                 <div className="flex justify-between pb-2 border-b border-white/10 text-xs font-mono">
-                  <span className="text-white">MOTOR 3D INTERACTIVO</span>
-                  <span className="text-[#00f2fe]">ROTACIÓN 360°</span>
+                  <span className="text-white">{tr.appstore.globeTitle}</span>
+                  <span className="text-[#00f2fe]">{lang === 'en' ? '360° ROTATION' : 'ROTACIÓN 360°'}</span>
                 </div>
                 <div
                   ref={globeMountRef}
@@ -3053,52 +3240,69 @@ export default function App() {
                   style={{ touchAction: 'pan-y' }}
                 ></div>
                 <p className="text-[11px] text-slate-400 text-center font-mono">
-                  Simulación de red perimetral independiente sin dependencias externas.
+                  {lang === 'en' ? 'Independent perimeter mesh simulation with zero external dependencies.' : 'Simulación de red perimetral independiente sin dependencias externas.'}
                 </p>
               </div>
 
               <div className="lg:col-span-7 flex flex-col gap-4">
                 {filteredSystems.map(sys => {
                   const isOpen = openAccordionId === sys.id;
+                  const i18nMeta = SYSTEM_I18N[sys.id];
+                  const displayName = (lang === 'en' && (sys.nameEn || i18nMeta?.nameEn)) ? (sys.nameEn || i18nMeta?.nameEn) : sys.name;
+                  const displaySubtitle = (lang === 'en' && (sys.subtitleEn || i18nMeta?.subtitleEn)) ? (sys.subtitleEn || i18nMeta?.subtitleEn) : sys.subtitle;
+                  const displaySla = (lang === 'en' && (sys.slaOrBadgeEn || i18nMeta?.slaOrBadgeEn)) ? (sys.slaOrBadgeEn || i18nMeta?.slaOrBadgeEn) : sys.slaOrBadge;
+                  const displayDescription = (lang === 'en' && (sys.descriptionEn || i18nMeta?.descriptionEn)) ? (sys.descriptionEn || i18nMeta?.descriptionEn) : sys.description;
+                  const displayAudience = (lang === 'en' && (sys.targetAudienceEn || i18nMeta?.targetAudienceEn)) ? (sys.targetAudienceEn || i18nMeta?.targetAudienceEn) : sys.targetAudience;
+                  const displayTags = (lang === 'en' && (sys.tagsEn || i18nMeta?.tagsEn)) ? (sys.tagsEn || i18nMeta?.tagsEn) : sys.tags;
+
                   return (
                     <article key={sys.id} className="p-5 rounded-2xl bg-[#141822] border border-white/10 space-y-3 shadow-md">
                       <div className="flex justify-between items-start">
                         <div>
                           <div className="flex items-center gap-2">
-                            <h3 className="text-base font-bold text-white">{sys.name}</h3>
-                            <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${sys.slaColor}`}>{sys.slaOrBadge}</span>
+                            <h3 className="text-base font-bold text-white">{displayName}</h3>
+                            <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${sys.slaColor}`}>{displaySla}</span>
                           </div>
-                          <span className="text-[11px] font-mono text-slate-400">{sys.subtitle}</span>
+                          <span className="text-[11px] font-mono text-slate-400">{displaySubtitle}</span>
                         </div>
                         <div className="text-right">
-                          <span className="text-xs font-mono font-bold text-[#00f2fe] bg-[#00f2fe]/10 border border-[#00f2fe]/30 px-2 py-0.5 rounded">
-                            {sys.priceUsd > 0 ? `$${sys.priceUsd} USD/mes` : '100% GRATIS'}
-                          </span>
-                          {sys.priceArs > 0 && (
-                            <span className="block text-[10px] font-mono text-slate-400 mt-0.5">~${sys.priceArs.toLocaleString('es-AR')} ARS</span>
+                          {/* PRECIO CONTEXTUAL: EN INGLES SOLO USD; EN ESPAÑOL ARS CON USD */}
+                          {lang === 'en' ? (
+                            <span className="text-xs font-mono font-bold text-[#00f2fe] bg-[#00f2fe]/10 border border-[#00f2fe]/30 px-2 py-0.5 rounded">
+                              {sys.priceUsd > 0 ? `$${sys.priceUsd} USD/mo` : '100% FREE'}
+                            </span>
+                          ) : (
+                            <>
+                              <span className="text-xs font-mono font-bold text-[#00f2fe] bg-[#00f2fe]/10 border border-[#00f2fe]/30 px-2 py-0.5 rounded">
+                                {sys.priceArs > 0 ? `$${sys.priceArs.toLocaleString('es-AR')} ARS/mes` : (sys.priceUsd > 0 ? `$${sys.priceUsd} USD/mes` : '100% GRATIS')}
+                              </span>
+                              {sys.priceUsd > 0 && sys.priceArs > 0 && (
+                                <span className="block text-[10px] font-mono text-slate-400 mt-0.5">(~$${sys.priceUsd} USD ref.)</span>
+                              )}
+                            </>
                           )}
                         </div>
                       </div>
 
-                      <p className="text-xs text-slate-300 leading-relaxed">{sys.description}</p>
+                      <p className="text-xs text-slate-300 leading-relaxed">{displayDescription}</p>
 
                       <div className="rounded-xl bg-[#0e1117] border border-white/5 overflow-hidden">
                         <button
                           onClick={() => setOpenAccordionId(isOpen ? null : sys.id)}
-                          className="w-full p-2.5 flex justify-between text-xs font-mono text-[#00f2fe] font-bold"
+                          className="w-full p-2.5 flex justify-between text-xs font-mono text-[#00f2fe] font-bold cursor-pointer"
                         >
-                          <span>¿A QUIÉN LE RESUELVE EL DÍA?</span>
+                          <span>{tr.appstore.targetTitle || (lang === 'en' ? 'WHO DOES THIS SOLVE FOR?' : '¿A QUIÉN LE RESUELVE EL DÍA?')}</span>
                           <span>{isOpen ? '▲' : '▼'}</span>
                         </button>
                         {isOpen && (
                           <div className="p-3 text-xs text-slate-400 bg-[#090b0e]/70 border-t border-white/5">
-                            {sys.targetAudience}
+                            {displayAudience}
                           </div>
                         )}
                       </div>
 
                       <div className="flex flex-wrap gap-1.5 pt-1">
-                        {sys.tags.map((t, idx) => (
+                        {displayTags.map((t, idx) => (
                           <span key={idx} className="px-2 py-0.5 rounded-lg bg-[#0e1117] border border-white/5 text-[10px] font-mono text-slate-400">
                             {t}
                           </span>
@@ -3110,30 +3314,34 @@ export default function App() {
                         <button
                           type="button"
                           onClick={() => handleAccessDemo(sys)}
-                          className="py-2 px-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-white font-mono font-bold text-xs transition flex items-center justify-center gap-1.5"
-                          title="Acceder a la demostración operativa del sistema"
+                          className="py-2 px-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-white font-mono font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
+                          title={lang === 'en' ? 'Access system live demonstration' : 'Acceder a la demostración operativa del sistema'}
                         >
-                          <span>{sys.id === 'nora-isp' ? '🌐 Ver Caso de Éxito / Solicitar Demo' : '🚀 Acceder / Demo'}</span>
+                          <span>
+                            {sys.id === 'nora-isp' 
+                              ? (lang === 'en' ? '🌐 View Case Study / Request Demo' : '🌐 Ver Caso de Éxito / Solicitar Demo') 
+                              : (lang === 'en' ? '🚀 Access / Demo' : '🚀 Acceder / Demo')}
+                          </span>
                           <span className="text-[#00f2fe]">↗</span>
                         </button>
 
                         <button
                           type="button"
                           onClick={() => handleOpenTrialModal(sys)}
-                          className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-[#00f2fe] to-[#00b4d8] text-slate-950 font-bold text-xs hover:brightness-110 shadow-[0_0_15px_-3px_rgba(0,242,254,0.3)] transition-all flex items-center justify-center gap-1.5"
+                          className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-[#00f2fe] to-[#00b4d8] text-slate-950 font-bold text-xs hover:brightness-110 shadow-[0_0_15px_-3px_rgba(0,242,254,0.3)] transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                         >
-                          <span>Clave 15D</span>
-                          <span className="text-[10px] font-mono opacity-80">● Gratis</span>
+                          <span>{lang === 'en' ? 'Free 15-Day Key' : 'Clave 15D'}</span>
+                          <span className="text-[10px] font-mono opacity-80">{lang === 'en' ? '● Free' : '● Gratis'}</span>
                         </button>
 
                         {sys.priceUsd > 0 && (
                           <a
-                            href={`https://wa.me/5493786414533?text=${encodeURIComponent(`Hola Nexora One, deseo información sobre la licencia de ${sys.name}`)}`}
+                            href={`https://wa.me/5493786414533?text=${encodeURIComponent(lang === 'en' ? `Hello Nexora One, I would like information regarding the license for ${displayName}` : `Hola Nexora One, deseo información sobre la licencia de ${displayName}`)}`}
                             target="_blank"
                             rel="noreferrer"
                             className="py-2 px-3 rounded-xl bg-[#090b0e] border border-white/10 hover:border-[#00f2fe]/40 text-slate-200 text-xs font-semibold font-mono transition flex items-center justify-center gap-1"
                           >
-                            <span>Adquirir</span>
+                            <span>{lang === 'en' ? 'Get License' : 'Adquirir'}</span>
                             <span className="text-[#00f2fe]">→</span>
                           </a>
                         )}
@@ -4498,7 +4706,7 @@ Nexora One — Arquitectura Soberana`;
             <div className="pointer-events-none absolute right-[calc(100%+12px)] opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-out z-50 whitespace-nowrap">
               <div className="bg-slate-950/90 backdrop-blur-md text-white border border-cyan-400/30 text-xs font-semibold px-3 py-1.5 rounded-xl shadow-xl shadow-cyan-950/50 flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
-                <span>Hablar con Nora</span>
+                <span>{lang === 'en' ? 'Chat with Nora' : 'Hablar con Nora'}</span>
               </div>
             </div>
 

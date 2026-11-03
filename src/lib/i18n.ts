@@ -67,9 +67,15 @@ export interface Translations {
     searchPlaceholder: string;
     categories: {
       all: string;
+      telecom: string;
       gastronomia: string;
-      clasificados: string;
+      comercio: string;
+      construccion: string;
+      eventos: string;
       inmuebles: string;
+      servicios: string;
+      medios: string;
+      clasificados: string;
       musica: string;
       prensa: string;
     };
@@ -243,9 +249,15 @@ export const TRANSLATIONS: Record<Language, Translations> = {
       searchPlaceholder: 'Buscar en catálogo...',
       categories: {
         all: 'Todos',
+        telecom: 'Telecom & ISP',
         gastronomia: 'Gastronomía',
-        clasificados: 'Clasificados',
+        comercio: 'Comercio',
+        construccion: 'Obras & CRM',
+        eventos: 'Eventos',
         inmuebles: 'Inmuebles',
+        servicios: 'Servicios',
+        medios: 'Medios',
+        clasificados: 'Clasificados',
         musica: 'Música & Show',
         prensa: 'Prensa',
       },
@@ -417,9 +429,15 @@ export const TRANSLATIONS: Record<Language, Translations> = {
       searchPlaceholder: 'Search catalog...',
       categories: {
         all: 'All',
+        telecom: 'Telecom & ISP',
         gastronomia: 'Hospitality',
-        clasificados: 'Classifieds',
+        comercio: 'Commerce',
+        construccion: 'Construction & CRM',
+        eventos: 'Events & Stage',
         inmuebles: 'Real Estate',
+        servicios: 'Services & Clinics',
+        medios: 'Media & Press',
+        clasificados: 'Classifieds',
         musica: 'Music & Stage',
         prensa: 'Press & Media',
       },

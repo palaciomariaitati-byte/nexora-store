@@ -237,16 +237,16 @@ export async function generateNoraResponse(
         `● **Complimentary 15-Day Trial:** Full access to any enterprise suite with zero credit card required.\n` +
         `● **Deterministic 30 + 5 Lifecycle:** Each cycle provides 30 days of continuous operation followed by a 5-day sovereign grace buffer (+5 days) guaranteeing zero operational cutoff while settling accounts.\n\n` +
         `● **Enterprise Pricing Tiers (Sovereign Solutions):**\n` +
-        `  - Nora ISP Core & FTTH Cloud: $180 USD/mo (~$280,000 ARS)\n` +
-        `  - Nexora Obras & CRM Corporativo: $95 USD/mo (~$148,000 ARS)\n` +
-        `  - Restobar 2026 POS: $65 USD/mo (~$101,725 ARS)\n` +
-        `  - Nexora Club & Carribar Pass: $150 USD/mo (~$235,000 ARS)\n` +
-        `  - Auténtico Tributo Live: $120 USD/mo (~$185,000 ARS)\n` +
-        `  - Nexora Stock & Retail 2026: $55 USD/mo (~$85,000 ARS)\n` +
-        `  - Nexora Turnos & Citas Express: $40 USD/mo (~$62,000 ARS)\n` +
-        `  - Nexora Hotel & Cabañas Desk: $85 USD/mo (~$132,000 ARS)\n` +
-        `  - Nexora Flota & Encomiendas: $90 USD/mo (~$140,000 ARS)\n` +
-        `  - Nexora Caja Fuerte & Auditoría: $70 USD/mo (~$108,000 ARS)\n` +
+        `  - Nora ISP Core & FTTH Cloud: $180 USD/mo\n` +
+        `  - Nexora Obras & CRM Corporativo: $95 USD/mo\n` +
+        `  - Restobar 2026 POS: $65 USD/mo\n` +
+        `  - Nexora Club & Carribar Pass: $150 USD/mo\n` +
+        `  - Auténtico Tributo Live: $120 USD/mo\n` +
+        `  - Nexora Stock & Retail 2026: $55 USD/mo\n` +
+        `  - Nexora Turnos & Citas Express: $40 USD/mo\n` +
+        `  - Nexora Hotel & Cabañas Desk: $85 USD/mo\n` +
+        `  - Nexora Flota & Encomiendas: $90 USD/mo\n` +
+        `  - Nexora Caja Fuerte & Auditoría: $70 USD/mo\n` +
         `  - Nexora Clasificados & Inmuebles Verificados: 100% Free Sovereign Utilities.\n` +
         `  - Prensa & Medios Soberano: Coming Soon v2.0 (Direct Inquiry Only).\n\n` +
         `● **Direct Settlement Rails (0% Intermediary Fee):**\n` +
