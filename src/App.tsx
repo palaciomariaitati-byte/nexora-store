@@ -42,6 +42,7 @@ export interface SystemItem {
   demoUrl?: string;
   downloadUrl?: string;
   isDesktopOnly?: boolean;
+  trialPrefix?: string;
 }
 
 export interface PaymentMethod {
@@ -328,7 +329,9 @@ const INITIAL_SYSTEMS: SystemItem[] = [
     targetAudience: 'Dueños gastronómicos que pierden facturación por fallas de conexión o demoras en comanderas en horas pico.',
     tags: ['ESC/POS Térmico', 'SQLite Local', 'WebSockets Offline', 'Win / Mac / Linux'],
     active: true,
-    demoUrl: 'https://nexora-store-app.vercel.app/?pwa=true',
+    demoUrl: '/demo/restobar',
+    downloadUrl: '/downloads/nexora-restobar-pos-2026.zip',
+    trialPrefix: 'RESTO-15D-',
     isDesktopOnly: false
   },
   {
@@ -344,7 +347,9 @@ const INITIAL_SYSTEMS: SystemItem[] = [
     targetAudience: 'Organizadores de festivales, predios gastronómicos y carribars que precisan facturar y despachar a máxima velocidad sin depender de internet.',
     tags: ['QR Express', 'Offline Sync', 'ESC/POS Portátil', 'Wallet Fan'],
     active: true,
-    demoUrl: 'https://nexora-store-app.vercel.app/?pwa=true',
+    demoUrl: 'https://nexora-club-pay.vercel.app',
+    downloadUrl: '/downloads/nexora-carribar-pass-setup.zip',
+    trialPrefix: 'CARRIBAR-15D-',
     isDesktopOnly: false
   },
   {
@@ -379,12 +384,13 @@ const INITIAL_SYSTEMS: SystemItem[] = [
     tags: ['OLT / NAP Monitor', 'Geolocalización GPS', 'Portal Abonados', 'NOC Automatizado'],
     active: true,
     status: 'active',
-    demoUrl: 'https://nora-isp.vercel.app/portal',
+    demoUrl: 'https://nora-itu-core.vercel.app',
+    trialPrefix: 'ISP-15D-',
     isDesktopOnly: false
   },
   {
     id: 'crm-obras',
-    name: 'Nexora Obras & CRM Corporativo',
+    name: 'CRM Valen Arq (Obras & Construcción)',
     subtitle: 'ARQUITECTURA, CONSTRUCCIÓN & EXPEDIENTES CCyCN',
     category: 'construccion',
     slaOrBadge: 'SEGUIMIENTO 360°',
@@ -396,7 +402,9 @@ const INITIAL_SYSTEMS: SystemItem[] = [
     tags: ['Cómputo & Presupuesto', 'Certificaciones UOCRA', 'Libro de Obra Digital', 'Auditoría CCyCN'],
     active: true,
     status: 'active',
-    demoUrl: 'https://nexora-store-app.vercel.app/?demo=obras',
+    demoUrl: '/demo/valen-arq',
+    downloadUrl: '/downloads/nexora-crm-valen-arq.zip',
+    trialPrefix: 'ARQ-15D-',
     isDesktopOnly: true
   },
   {
@@ -639,6 +647,7 @@ export default function App() {
   const [isTrialModalOpen, setIsTrialModalOpen] = useState(false);
   const [selectedTrialSystem, setSelectedTrialSystem] = useState<SystemItem | null>(null);
   const [desktopNoticeSystem, setDesktopNoticeSystem] = useState<SystemItem | null>(null);
+  const [interactiveDemoSystem, setInteractiveDemoSystem] = useState<SystemItem | null>(null);
   const [leadName, setLeadName] = useState('');
   const [leadBusiness, setLeadBusiness] = useState('');
   const [leadWhatsapp, setLeadWhatsapp] = useState('+54 ');
@@ -799,9 +808,15 @@ export default function App() {
   };
 
   const handleAccessDemo = (sys: SystemItem) => {
-    // Si es Nora ISP, abrir el portal de caso de éxito en pestaña nueva
+    // Si tiene ruta interactiva local (/demo/...) abrir modal de simulación guiada
+    if (sys.demoUrl && sys.demoUrl.startsWith('/demo/')) {
+      setInteractiveDemoSystem(sys);
+      return;
+    }
+
+    // Si es Nora ISP, abrir la nube oficial en pestaña nueva
     if (sys.id === 'nora-isp') {
-      window.open('https://nora-isp.vercel.app/portal', '_blank', 'noopener,noreferrer');
+      window.open(sys.demoUrl || 'https://nora-itu-core.vercel.app', '_blank', 'noopener,noreferrer');
       return;
     }
 
@@ -818,7 +833,7 @@ export default function App() {
       return;
     }
 
-    // Si tiene demoUrl funcional
+    // Si tiene demoUrl externa directa
     if (sys.demoUrl && sys.demoUrl.startsWith('http')) {
       window.open(sys.demoUrl, '_blank', 'noopener,noreferrer');
       return;
@@ -1882,7 +1897,8 @@ export default function App() {
     const graceObj = new Date(today.getTime() + 20 * 24 * 60 * 60 * 1000);
     const graceDate = graceObj.toISOString().split('T')[0];
     const hex = Math.random().toString(16).substring(2, 6).toUpperCase();
-    const trialKey = `NX-TRIAL-${hex}-${selectedTrialSystem.id.toUpperCase()}-15D`;
+    const prefix = selectedTrialSystem.trialPrefix || `NX-TRIAL-${selectedTrialSystem.id.toUpperCase()}-15D-`;
+    const trialKey = `${prefix}${hex}`;
 
     const newLic: CorporateLicense = {
       id: `lic_trial_${Date.now()}`,
@@ -2828,8 +2844,8 @@ export default function App() {
                       <div key={idx} className={`flex flex-col ${m.sender === 'user' ? 'items-end' : 'items-start'}`}>
                         <div
                           className={`p-3.5 rounded-2xl max-w-[90%] sm:max-w-[80%] whitespace-pre-wrap leading-relaxed shadow-lg ${m.sender === 'user'
-                              ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-bold'
-                              : 'bg-[#141822] text-slate-200 border border-cyan-500/20'
+                            ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-bold'
+                            : 'bg-[#141822] text-slate-200 border border-cyan-500/20'
                             }`}
                         >
                           {m.text}
@@ -3309,42 +3325,66 @@ export default function App() {
                         ))}
                       </div>
 
-                      <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                        {/* ACCEDER O PROBAR DEMO DIRECTA */}
-                        <button
-                          type="button"
-                          onClick={() => handleAccessDemo(sys)}
-                          className="py-2 px-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-white font-mono font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
-                          title={lang === 'en' ? 'Access system live demonstration' : 'Acceder a la demostración operativa del sistema'}
-                        >
-                          <span>
-                            {sys.id === 'nora-isp' 
-                              ? (lang === 'en' ? '🌐 View Case Study / Request Demo' : '🌐 Ver Caso de Éxito / Solicitar Demo') 
-                              : (lang === 'en' ? '🚀 Access / Demo' : '🚀 Acceder / Demo')}
-                          </span>
-                          <span className="text-[#00f2fe]">↗</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleOpenTrialModal(sys)}
-                          className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-[#00f2fe] to-[#00b4d8] text-slate-950 font-bold text-xs hover:brightness-110 shadow-[0_0_15px_-3px_rgba(0,242,254,0.3)] transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                        >
-                          <span>{lang === 'en' ? 'Free 15-Day Key' : 'Clave 15D'}</span>
-                          <span className="text-[10px] font-mono opacity-80">{lang === 'en' ? '● Free' : '● Gratis'}</span>
-                        </button>
-
-                        {sys.priceUsd > 0 && (
-                          <a
-                            href={`https://wa.me/5493786414533?text=${encodeURIComponent(lang === 'en' ? `Hello Nexora One, I would like information regarding the license for ${displayName}` : `Hola Nexora One, deseo información sobre la licencia de ${displayName}`)}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="py-2 px-3 rounded-xl bg-[#090b0e] border border-white/10 hover:border-[#00f2fe]/40 text-slate-200 text-xs font-semibold font-mono transition flex items-center justify-center gap-1"
+                      <div className="pt-2 flex flex-col gap-2">
+                        {/* BOTONERA PRINCIPAL: DEMO + CLAVE 15D */}
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                          {/* ACCEDER O PROBAR DEMO DIRECTA */}
+                          <button
+                            type="button"
+                            onClick={() => handleAccessDemo(sys)}
+                            className="py-2 px-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-white font-mono font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer flex-1"
+                            title={lang === 'en' ? 'Access system live demonstration' : 'Acceder a la demostración operativa del sistema'}
                           >
-                            <span>{lang === 'en' ? 'Get License' : 'Adquirir'}</span>
-                            <span className="text-[#00f2fe]">→</span>
-                          </a>
-                        )}
+                            <span>
+                              {sys.id === 'nora-isp'
+                                ? (lang === 'en' ? '🌐 Cloud NOC / Demo' : '🌐 Cloud NOC / Demo')
+                                : (lang === 'en' ? '🚀 Interactive Demo' : '🚀 Ver Demo')}
+                            </span>
+                            <span className="text-[#00f2fe]">↗</span>
+                          </button>
+
+                          {/* CLAVE DE EVALUACIÓN 15 DÍAS */}
+                          <button
+                            type="button"
+                            onClick={() => handleOpenTrialModal(sys)}
+                            className="py-2 px-3 rounded-xl bg-gradient-to-r from-[#00f2fe] to-[#00b4d8] text-slate-950 font-bold text-xs hover:brightness-110 shadow-[0_0_15px_-3px_rgba(0,242,254,0.3)] transition-all flex items-center justify-center gap-1.5 cursor-pointer flex-1"
+                          >
+                            <span>{lang === 'en' ? 'Key 15D' : 'Clave 15D'}</span>
+                            <span className="text-[10px] font-mono opacity-80">{lang === 'en' ? '● Free' : '● Gratis'}</span>
+                          </button>
+                        </div>
+
+                        {/* BOTONERA SECUNDARIA: DESCARGA INSTALADOR / DEPLOY CLOUD + ADQUIRIR */}
+                        <div className="flex items-center gap-2">
+                          {sys.downloadUrl ? (
+                            <a
+                              href={sys.downloadUrl}
+                              download
+                              className="flex-1 py-1.5 px-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 font-mono text-[11px] font-semibold transition flex items-center justify-center gap-1.5"
+                              title={lang === 'en' ? 'Download offline sovereign installer' : 'Descargar instalador soberano offline (zip)'}
+                            >
+                              <span>⬇</span>
+                              <span>{lang === 'en' ? 'Download Setup' : 'Descargar Setup'}</span>
+                            </a>
+                          ) : (
+                            <div className="flex-1 py-1.5 px-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 font-mono text-[11px] font-medium text-center flex items-center justify-center gap-1.5">
+                              <span>☁</span>
+                              <span>{lang === 'en' ? 'Cloud PWA / Server Deploy' : 'Cloud PWA / Servidor'}</span>
+                            </div>
+                          )}
+
+                          {sys.priceUsd > 0 && (
+                            <a
+                              href={`https://wa.me/5493786414533?text=${encodeURIComponent(lang === 'en' ? `Hello Nexora One, I would like information regarding the license for ${displayName}` : `Hola Nexora One, deseo información sobre la licencia de ${displayName}`)}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="py-1.5 px-3 rounded-xl bg-[#090b0e] border border-white/10 hover:border-[#00f2fe]/40 text-slate-200 text-[11px] font-semibold font-mono transition flex items-center justify-center gap-1"
+                            >
+                              <span>{lang === 'en' ? 'Buy' : 'Comprar'}</span>
+                              <span className="text-[#00f2fe]">→</span>
+                            </a>
+                          )}
+                        </div>
                       </div>
                     </article>
                   );
@@ -3704,12 +3744,26 @@ Nexora One — Arquitectura Soberana`;
                         <span>💬 Contactar Asistencia Oficial (+54 9 3786 414533)</span>
                       </a>
 
+                      {selectedTrialSystem.downloadUrl ? (
+                        <a
+                          href={selectedTrialSystem.downloadUrl}
+                          download
+                          className="w-full py-2.5 px-4 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-xs font-mono font-bold transition flex items-center justify-center gap-2 text-center"
+                        >
+                          <span>⬇ Descargar Instalador Oficial {selectedTrialSystem.name} (.zip)</span>
+                        </a>
+                      ) : (
+                        <div className="w-full py-2 px-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 font-mono text-[11px] text-center">
+                          ☁ Solución Cloud PWA — Acceso instantáneo por navegador y despliegue en servidor
+                        </div>
+                      )}
+
                       <button
                         type="button"
                         onClick={handleDownloadTrialKit}
                         className="w-full py-2 px-3 rounded-lg text-slate-400 hover:text-[#00f2fe] text-[11px] font-mono transition flex items-center justify-center gap-1 cursor-pointer"
                       >
-                        <span>⬇ Descargar también copia local en formato .json</span>
+                        <span>⬇ Descargar también credencial de inducción en formato .json</span>
                       </button>
                     </div>
                   );
@@ -3726,6 +3780,134 @@ Nexora One — Arquitectura Soberana`;
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* MODAL INTERACTIVO DE DEMO GUIADA (RESTOBAR & VALEN ARQ) */}
+      {interactiveDemoSystem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+          <div className="w-full max-w-2xl rounded-3xl bg-[#141822] border border-[#00f2fe]/40 p-6 sm:p-8 shadow-[0_0_60px_rgba(0,242,254,0.3)] space-y-6">
+            <div className="flex items-center justify-between pb-4 border-b border-white/10">
+              <div className="flex items-center gap-3">
+                <span className="w-10 h-10 rounded-xl bg-[#00f2fe]/10 border border-[#00f2fe]/30 flex items-center justify-center text-xl">
+                  {interactiveDemoSystem.id === 'restobar' ? '🍽️' : '🏛️'}
+                </span>
+                <div>
+                  <h3 className="text-lg font-bold text-white font-mono flex items-center gap-2">
+                    {interactiveDemoSystem.name}
+                    <span className="px-2 py-0.5 rounded text-[10px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                      LIVE SIMULATION
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-400">{interactiveDemoSystem.subtitle}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setInteractiveDemoSystem(null)}
+                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            {interactiveDemoSystem.id === 'restobar' ? (
+              <div className="space-y-4">
+                <div className="p-4 rounded-2xl bg-[#090b0e] border border-white/10 space-y-3">
+                  <div className="flex justify-between items-center text-xs font-mono">
+                    <span className="text-[#00f2fe] font-bold">Módulo de Comandas & Salón Offline</span>
+                    <span className="text-emerald-400 font-bold">● SQLite WAL Local Activo</span>
+                  </div>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    El sistema opera con base de datos perimetral SQLite en modo WAL, garantizando cero latencia en salón aún ante caída total del servicio de internet de fibra o 4G.
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-2">
+                    <div className="p-2.5 rounded-xl bg-white/5 border border-white/5 text-center">
+                      <span className="block text-[10px] text-slate-400">Mesas Activas</span>
+                      <strong className="text-sm font-mono text-white">18 / 24</strong>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-white/5 border border-white/5 text-center">
+                      <span className="block text-[10px] text-slate-400">Comanderas LAN</span>
+                      <strong className="text-sm font-mono text-emerald-400">2 Conectadas</strong>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-white/5 border border-white/5 text-center col-span-2 sm:col-span-1">
+                      <span className="block text-[10px] text-slate-400">Tiempo de Ticket</span>
+                      <strong className="text-sm font-mono text-[#00f2fe]">&lt; 12ms</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-start gap-3">
+                  <span className="text-xl">💡</span>
+                  <div className="text-xs space-y-1">
+                    <strong className="text-cyan-300 block">Flujo de Producción 2-Clics</strong>
+                    <p className="text-slate-300">
+                      Descargue el paquete de instalación para desplegar la terminal en su computadora con <code className="text-[#00f2fe] font-mono">INICIAR_RESTOBAR.bat</code> o solicite su Clave de Evaluación de 15 días.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="p-4 rounded-2xl bg-[#090b0e] border border-white/10 space-y-3">
+                  <div className="flex justify-between items-center text-xs font-mono">
+                    <span className="text-[#00f2fe] font-bold">Libro de Órdenes & Patologías Forenses</span>
+                    <span className="text-emerald-400 font-bold">● Modo Soberano Desconectado</span>
+                  </div>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Inspección fotográfica de grietas, fisuras y humedades en paramentos. Si la obra carece de conectividad 4G en sótano o losa, el sistema almacena la evidencia localmente sin arrojar error 500 y asienta el libro diario.
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-2">
+                    <div className="p-2.5 rounded-xl bg-white/5 border border-white/5 text-center">
+                      <span className="block text-[10px] text-slate-400">Obras en Monitoreo</span>
+                      <strong className="text-sm font-mono text-white">4 Proyectos</strong>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-white/5 border border-white/5 text-center">
+                      <span className="block text-[10px] text-slate-400">Certificados CAC</span>
+                      <strong className="text-sm font-mono text-emerald-400">Al Día</strong>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-white/5 border border-white/5 text-center col-span-2 sm:col-span-1">
+                      <span className="block text-[10px] text-slate-400">Auditoría CCyCN</span>
+                      <strong className="text-sm font-mono text-[#00f2fe]">100% Blindado</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-start gap-3">
+                  <span className="text-xl">📐</span>
+                  <div className="text-xs space-y-1">
+                    <strong className="text-emerald-300 block">Arquitectura Soberana para el Estudio</strong>
+                    <p className="text-slate-300">
+                      Incluye runner desatendido <code className="text-emerald-300 font-mono">INICIAR_CRM.bat</code> con base SQLite WAL y generación de contratos y pericias en Word (.docx) y PDF oficial.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
+              {interactiveDemoSystem.downloadUrl && (
+                <a
+                  href={interactiveDemoSystem.downloadUrl}
+                  download
+                  className="flex-1 py-3 px-4 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 font-bold font-mono text-xs transition flex items-center justify-center gap-2"
+                >
+                  <span>⬇ Descargar Instalador Completo (.zip)</span>
+                </a>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  const targetSys = interactiveDemoSystem;
+                  setInteractiveDemoSystem(null);
+                  handleOpenTrialModal(targetSys);
+                }}
+                className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-[#00f2fe] to-[#00b4d8] text-slate-950 font-bold text-xs hover:brightness-110 shadow-[0_0_20px_rgba(0,242,254,0.3)] transition flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>🔑 Generar Clave de Evaluación 15D</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -4630,11 +4812,10 @@ Nexora One — Arquitectura Soberana`;
                 <button
                   type="button"
                   onClick={() => setNewSysActive(!newSysActive)}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
-                    newSysActive
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition ${newSysActive
                       ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
                       : 'bg-red-500/20 text-red-300 border border-red-500/40'
-                  }`}
+                    }`}
                 >
                   {newSysActive ? 'SÍ (Activo)' : 'NO (Pausado)'}
                 </button>
