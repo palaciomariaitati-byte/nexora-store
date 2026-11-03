@@ -23,7 +23,7 @@ export interface SystemItem {
   id: string;
   name: string;
   subtitle: string;
-  category: 'gastronomia' | 'comercio' | 'eventos' | 'inmuebles' | 'servicios' | 'medios' | 'clasificados' | 'musica' | 'prensa';
+  category: 'gastronomia' | 'comercio' | 'eventos' | 'inmuebles' | 'servicios' | 'medios' | 'clasificados' | 'musica' | 'prensa' | 'telecom' | 'construccion';
   slaOrBadge: string;
   slaColor: string;
   priceUsd: number;
@@ -32,6 +32,7 @@ export interface SystemItem {
   targetAudience: string;
   tags: string[];
   active: boolean;
+  status?: 'active' | 'coming_soon' | 'en_refactorizacion' | 'deprecated';
   demoUrl?: string;
   downloadUrl?: string;
   isDesktopOnly?: boolean;
@@ -164,17 +165,52 @@ const INITIAL_SYSTEMS: SystemItem[] = [
     name: 'Prensa & Medios Soberano',
     subtitle: 'CMS EDITORIAL SOBERANO & DIFUSIÓN',
     category: 'medios',
-    slaOrBadge: 'PUBLISHER LIBRE',
-    slaColor: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/30',
+    slaOrBadge: 'Próximamente v2.0 - Solo bajo consulta',
+    slaColor: 'text-amber-400 bg-amber-500/10 border-amber-500/30',
     priceUsd: 45,
     priceArs: 70000,
-    description: 'CMS descentralizado con sindicación remota continua conectada a portal productivo. Distribución ultra liviana en WebP con soberanía editorial total.',
-    targetAudience: 'Medios independientes, radios y portales comunitarios que buscan control total de sus artículos sin censura algorítmica ni dependencias externas.',
+    description: 'CMS perimetral con sindicación remota para medios informativos. Distribución ultra liviana con soberanía editorial total.',
+    targetAudience: 'Medios independientes y periodistas que buscan control total sin dependencias centralizadas.',
     tags: ['CMS Ultra Liviano', 'Syndication Feed', 'Soberanía Editorial', 'PWA Noticias'],
-    active: true,
+    active: false,
+    status: 'coming_soon',
     demoUrl: 'https://nexora-news.vercel.app',
     downloadUrl: 'https://nexora-news.vercel.app',
     isDesktopOnly: false
+  },
+  {
+    id: 'nora-isp',
+    name: 'Nora ISP Core & FTTH Cloud',
+    subtitle: 'GESTIÓN FTTH, NAPS & CUADRILLAS EN VIVO',
+    category: 'telecom',
+    slaOrBadge: 'ISP MISSION CRITICAL',
+    slaColor: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/30',
+    priceUsd: 180,
+    priceArs: 280000,
+    description: 'Sistema integral para ISPs y cableoperadores: gestión de red FTTH, monitoreo de cajas NAP, geolocalización de cuadrillas técnicas en vivo y portal de autogestión de abonados.',
+    targetAudience: 'Proveedores de internet (ISPs), cooperativas de telecomunicaciones y cableoperadores que buscan automatizar NOC, cuadrillas y atención con IA.',
+    tags: ['OLT / NAP Monitor', 'Geolocalización GPS', 'Portal Abonados', 'NOC Automatizado'],
+    active: true,
+    status: 'active',
+    demoUrl: 'https://nora-isp.vercel.app/portal',
+    isDesktopOnly: false
+  },
+  {
+    id: 'crm-obras',
+    name: 'Nexora Obras & CRM Corporativo',
+    subtitle: 'ARQUITECTURA, CONSTRUCCIÓN & EXPEDIENTES CCyCN',
+    category: 'construccion',
+    slaOrBadge: 'SEGUIMIENTO 360°',
+    slaColor: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30',
+    priceUsd: 95,
+    priceArs: 148000,
+    description: 'Suite soberana para estudios de arquitectura y empresas constructoras. Cómputo métrico, libro de obras digital, certificación de avances UOCRA y gestión legal CCyCN con evidencia fotográfica georreferenciada.',
+    targetAudience: 'Arquitectos colegiados, desarrolladores inmobiliarios y contratistas que precisan trazabilidad técnica, financiera y legal de cada obra sin caídas de red.',
+    tags: ['Cómputo & Presupuesto', 'Certificaciones UOCRA', 'Libro de Obra Digital', 'Auditoría CCyCN'],
+    active: true,
+    status: 'active',
+    demoUrl: 'https://nexora-store-app.vercel.app/?demo=obras',
+    isDesktopOnly: true
   },
   {
     id: 'autentico',
@@ -576,6 +612,12 @@ export default function App() {
   };
 
   const handleAccessDemo = (sys: SystemItem) => {
+    // Si es Nora ISP, abrir el portal de caso de éxito en pestaña nueva
+    if (sys.id === 'nora-isp') {
+      window.open('https://nora-isp.vercel.app/portal', '_blank', 'noopener,noreferrer');
+      return;
+    }
+
     // Si es Prensa & Medios Soberano, abrir la instancia operativa oficial
     if (sys.id === 'prensa') {
       window.open('https://nexora-news.vercel.app', '_blank', 'noopener,noreferrer');
@@ -2974,8 +3016,10 @@ export default function App() {
                 <div className="flex flex-wrap items-center gap-1 bg-[#141822] p-1 rounded-xl border border-white/10 text-xs font-mono">
                   {([
                     { id: 'all', label: 'Todos' },
+                    { id: 'telecom', label: 'Telecom & ISP' },
                     { id: 'gastronomia', label: 'Gastronomía' },
                     { id: 'comercio', label: 'Comercio' },
+                    { id: 'construccion', label: 'Obras & CRM' },
                     { id: 'eventos', label: 'Eventos' },
                     { id: 'inmuebles', label: 'Inmuebles' },
                     { id: 'servicios', label: 'Servicios' },
@@ -3069,7 +3113,7 @@ export default function App() {
                           className="py-2 px-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-white font-mono font-bold text-xs transition flex items-center justify-center gap-1.5"
                           title="Acceder a la demostración operativa del sistema"
                         >
-                          <span>🚀 Acceder / Demo</span>
+                          <span>{sys.id === 'nora-isp' ? '🌐 Ver Caso de Éxito / Solicitar Demo' : '🚀 Acceder / Demo'}</span>
                           <span className="text-[#00f2fe]">↗</span>
                         </button>
 

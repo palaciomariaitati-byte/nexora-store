@@ -99,15 +99,37 @@ export const SYSTEMS_CATALOG: Record<string, SystemInfo> = {
     audienceEn: 'Tribute acts, stage production companies, and touring engineers requiring deterministic local performance.',
   },
   prensa: {
-    name: 'Prensa & Medios Soberano',
+    name: 'Prensa & Medios Soberano (Próximamente v2.0)',
     usd: 45,
     ars: 70000,
     category: 'CMS Editorial Descentralizado',
-    summary: 'Publicación periodística perimetral con compresión WebP y distribución de contenidos informativos sin censura externa.',
+    summary: 'Publicación periodística perimetral (en refactorización para despliegue v2.0 - disponible únicamente bajo consulta institucional).',
     audience: 'Medios de comunicación independientes, periodistas y portales de noticias comunitarios.',
-    nameEn: 'Nexora Independent Press',
-    summaryEn: 'Perimeter editorial CMS featuring native WebP optimization, edge caching, and censorship-resistant news publishing.',
+    nameEn: 'Nexora Independent Press (Coming Soon v2.0)',
+    summaryEn: 'Perimeter editorial CMS currently undergoing v2.0 modernization. Available upon direct institutional consultation.',
     audienceEn: 'Independent investigative journalists, local newspapers, and decentralized publishing houses.',
+  },
+  'nora-isp': {
+    name: 'Nora ISP Core & FTTH Cloud',
+    usd: 180,
+    ars: 280000,
+    category: 'Telecomunicaciones & Infraestructura',
+    summary: 'Sistema integral para ISPs y cableoperadores: gestión de red FTTH, monitoreo de cajas NAP, geolocalización de cuadrillas técnicas en vivo y portal de autogestión de abonados.',
+    audience: 'Proveedores de internet (ISPs), cooperativas de telecomunicaciones y cableoperadores que buscan automatizar NOC, cuadrillas y atención con IA.',
+    nameEn: 'Nora ISP Core & FTTH Cloud',
+    summaryEn: 'Mission-critical ISP & FTTH management core: NAP box monitoring, live GPS technician dispatch, and subscriber self-service portal.',
+    audienceEn: 'ISPs, telecom cooperatives, and cable operators seeking autonomous NOC operations and AI-powered billing.',
+  },
+  'crm-obras': {
+    name: 'Nexora Obras & CRM Corporativo',
+    usd: 95,
+    ars: 148000,
+    category: 'Construcción & Obras Civiles',
+    summary: 'Suite soberana para estudios de arquitectura y empresas constructoras. Cómputo métrico, libro de obras digital, certificación de avances UOCRA y gestión legal CCyCN con evidencia fotográfica georreferenciada.',
+    audience: 'Arquitectos colegiados, empresas constructoras, desarrolladores y directores de obra que demandan trazabilidad técnica, contable y jurídica.',
+    nameEn: 'Nexora Works & Architecture CRM',
+    summaryEn: 'Sovereign construction management and architectural CRM: metric computing, digital site log, labor certifications, and CCyCN legal compliance with geotagged photo proof.',
+    audienceEn: 'Registered architects, construction firms, developers, and field directors requiring deterministic job-site tracking.',
   },
   retail: {
     name: 'Nexora Stock & Retail 2026',
@@ -214,17 +236,19 @@ export async function generateNoraResponse(
       return `Allow me to outline our commercial structure and direct settlement channels:\n\n` +
         `● **Complimentary 15-Day Trial:** Full access to any enterprise suite with zero credit card required.\n` +
         `● **Deterministic 30 + 5 Lifecycle:** Each cycle provides 30 days of continuous operation followed by a 5-day sovereign grace buffer (+5 days) guaranteeing zero operational cutoff while settling accounts.\n\n` +
-        `● **Enterprise Pricing Tiers (11 Sovereign Solutions):**\n` +
+        `● **Enterprise Pricing Tiers (Sovereign Solutions):**\n` +
+        `  - Nora ISP Core & FTTH Cloud: $180 USD/mo (~$280,000 ARS)\n` +
+        `  - Nexora Obras & CRM Corporativo: $95 USD/mo (~$148,000 ARS)\n` +
         `  - Restobar 2026 POS: $65 USD/mo (~$101,725 ARS)\n` +
         `  - Nexora Club & Carribar Pass: $150 USD/mo (~$235,000 ARS)\n` +
         `  - Auténtico Tributo Live: $120 USD/mo (~$185,000 ARS)\n` +
-        `  - Prensa & Medios Soberano: $45 USD/mo (~$70,000 ARS)\n` +
         `  - Nexora Stock & Retail 2026: $55 USD/mo (~$85,000 ARS)\n` +
         `  - Nexora Turnos & Citas Express: $40 USD/mo (~$62,000 ARS)\n` +
         `  - Nexora Hotel & Cabañas Desk: $85 USD/mo (~$132,000 ARS)\n` +
         `  - Nexora Flota & Encomiendas: $90 USD/mo (~$140,000 ARS)\n` +
         `  - Nexora Caja Fuerte & Auditoría: $70 USD/mo (~$108,000 ARS)\n` +
-        `  - Nexora Clasificados & Inmuebles Verificados: 100% Free Sovereign Utilities.\n\n` +
+        `  - Nexora Clasificados & Inmuebles Verificados: 100% Free Sovereign Utilities.\n` +
+        `  - Prensa & Medios Soberano: Coming Soon v2.0 (Direct Inquiry Only).\n\n` +
         `● **Direct Settlement Rails (0% Intermediary Fee):**\n` +
         `  1. Bank Transfer (ARS): CBU ${paymentDetails.cbu} | Alias: ${paymentDetails.alias}\n` +
         `  2. USDT TRC-20: \`${paymentDetails.usdtTron}\`\n` +
@@ -406,17 +430,19 @@ export async function generateNoraResponse(
     return `Con el mayor de los gustos le detallo nuestro modelo comercial y canales de cobro directo:\n\n` +
       `● **Período de Evaluación Gratuita:** Dispone de una prueba de 15 días continuos sin requerir tarjeta de crédito en cualquiera de nuestras suites.\n` +
       `● **Ciclo Operativo:** Cada licencia cubre 30 días de servicio ininterrumpido más 5 días de gracia operativa (+5 días adicionales) para regularizar su ciclo sin interrupción de su negocio.\n\n` +
-      `● **Aranceles vigentes (Catálogo Completo de 11 Soluciones):**\n` +
+      `● **Aranceles vigentes (Catálogo Oficial de Soluciones):**\n` +
+      `  - Nora ISP Core & FTTH Cloud: $180 USD (~$280.000 ARS)\n` +
+      `  - Nexora Obras & CRM Corporativo: $95 USD (~$148.000 ARS)\n` +
       `  - Restobar 2026 POS: $65 USD (~$101.725 ARS)\n` +
       `  - Nexora Club & Carribar Pass: $150 USD (~$235.000 ARS)\n` +
       `  - Auténtico Tributo Live: $120 USD (~$185.000 ARS)\n` +
-      `  - Prensa & Medios Soberano: $45 USD (~$70.000 ARS)\n` +
       `  - Nexora Stock & Retail 2026: $55 USD (~$85.000 ARS)\n` +
       `  - Nexora Turnos & Citas Express: $40 USD (~$62.000 ARS)\n` +
       `  - Nexora Hotel & Cabañas Desk: $85 USD (~$132.000 ARS)\n` +
       `  - Nexora Flota & Encomiendas: $90 USD (~$140.000 ARS)\n` +
       `  - Nexora Caja Fuerte & Auditoría: $70 USD (~$108.000 ARS)\n` +
-      `  - Nexora Clasificados e Inmuebles Verificados: 100% Gratuitos y Comunitarios.\n\n` +
+      `  - Nexora Clasificados e Inmuebles Verificados: 100% Gratuitos y Comunitarios.\n` +
+      `  - Prensa & Medios Soberano: Próximamente v2.0 (Solo bajo consulta).\n\n` +
       `● **Canales Oficiales de Cobro Directo (Sin comisiones intermedias):**\n` +
       `  1. Transferencia Bancaria (ARS): CBU ${paymentDetails.cbu} | Alias: ${paymentDetails.alias} | Titular: ${paymentDetails.titular}\n` +
       `  2. Mercado Pago: ${paymentDetails.mercadopago}\n` +
@@ -498,13 +524,33 @@ export async function generateNoraResponse(
       `● **Garantía:** Validación documental anti-fraude, visor de parcelas por coordenadas geográficas y generación inmediata de contratos en formato PDF sin costo de suscripción. Totalmente libre de comisiones ocultas.`;
   }
 
-  // 8. Prensa / Medios / Noticias
+  // 8. Nora ISP Core & FTTH Cloud
+  if (msg.includes('isp') || msg.includes('ftth') || msg.includes('fibra') || msg.includes('olt') || msg.includes('nap') || msg.includes('cuadrilla') || msg.includes('telecom')) {
+    const s = SYSTEMS_CATALOG['nora-isp'];
+    return `Para proveedores de internet y telecomunicaciones, nuestra suite troncal es **${s.name}**:\n\n` +
+      `● **Propósito:** ${s.summary}\n` +
+      `● **A quién resuelve el día:** ${s.audience}\n` +
+      `● **Capacidades Críticas:** Auditoría en tiempo real de potencias ópticas OLT/NAP, despacho con mapa satelital GPS de cuadrillas técnicas y portal de autogestión de abonados con cobranzas e IA integrada.\n` +
+      `● **Inversión:** $${s.usd} USD / mes (~$${s.ars.toLocaleString('es-AR')} ARS).\n\n` +
+      `Puede acceder a una demostración en vivo de su portal institucional en: https://nora-isp.vercel.app/portal`;
+  }
+
+  // 8b. Nexora Obras & CRM Corporativo
+  if (msg.includes('obra') || msg.includes('arquitect') || msg.includes('construc') || msg.includes('uocra') || msg.includes('crm') || msg.includes('ccycn') || msg.includes('expediente')) {
+    const s = SYSTEMS_CATALOG['crm-obras'];
+    return `Para empresas constructoras y estudios de arquitectura, implementamos **${s.name}**:\n\n` +
+      `● **Propósito:** ${s.summary}\n` +
+      `● **A quién resuelve el día:** ${s.audience}\n` +
+      `● **Prestaciones Clave:** Cómputo métrico y presupuesto dinámico, libro de obra digital con geolocalización de fotos, certificaciones de quincena UOCRA y blindaje legal según CCyCN.\n` +
+      `● **Inversión:** $${s.usd} USD / mes (~$${s.ars.toLocaleString('es-AR')} ARS).`;
+  }
+
+  // 8c. Prensa / Medios / Noticias
   if (msg.includes('prensa') || msg.includes('noticia') || msg.includes('medio') || msg.includes('periodis') || msg.includes('diario') || msg.includes('portal')) {
     const s = SYSTEMS_CATALOG.prensa;
-    return `Para empresas periodísticas y redacciones independientes, contamos con **${s.name}**:\n\n` +
+    return `Para empresas periodísticas y medios informativos, **${s.name}** se encuentra actualmente en fase de modernización hacia su versión 2.0 (disponible bajo consulta institucional previa):\n\n` +
       `● **Propósito:** ${s.summary}\n` +
-      `● **Soberanía:** Difusión sin algoritmos de censura, renderizado estático de ultra velocidad y base de datos descentralizada.\n` +
-      `● **Inversión:** $${s.usd} USD / mes (~$${s.ars.toLocaleString('es-AR')} ARS).`;
+      `● **Soberanía:** Difusión sin algoritmos de censura, renderizado estático de ultra velocidad y base de datos descentralizada.`;
   }
 
   // 8b. Comercio / Retail / Stock 2026
