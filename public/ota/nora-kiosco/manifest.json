@@ -1,0 +1,11 @@
+{
+  "systemId": "nora-kiosco-iberasoft",
+  "version": "1.2.0",
+  "releaseDate": "2026-11-19",
+  "changelog": "Pasarela Brubank integrada con copia de Alias/CBU en un clic, corrección de scroll en cupón y auto-actualizador OTA perimetral.",
+  "files": {
+    "public/app.js": "https://nexora-store-app.vercel.app/ota/nora-kiosco/app.js",
+    "public/styles.css": "https://nexora-store-app.vercel.app/ota/nora-kiosco/styles.css",
+    "public/index.html": "https://nexora-store-app.vercel.app/ota/nora-kiosco/index.html"
+  }
+}

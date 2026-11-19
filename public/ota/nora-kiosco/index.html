@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nora AI + IberáSoft POS | Tren Agéntico Nexora One (Kioscos 2026)</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <!-- BANNER MODO CELULAR DEL DUEÑO -->
+  <div class="duenio-banner">
+    📱 MODO SUPERVISIÓN Y CARGA REMOTA DEL DUEÑO ACTIVO — Conectado en tiempo real al Kiosco e IberáSoft POS
+  </div>
+
+  <!-- BANNER DE LICENCIA EN PERÍODO DE GRACIA (+5 DÍAS) -->
+  <div id="licencia-grace-banner" class="grace-alert-banner" style="display:none;">
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="font-size:1.6rem;">⚠️</span>
+        <div>
+          <div style="font-weight:700; color:#fef08a; font-size:0.95rem;">AVISO DE SUSCRIPCIÓN EN PERÍODO DE GRACIA (+5 DÍAS)</div>
+          <div id="grace-banner-text" style="font-size:0.82rem; color:#fecaca;">
+            La fecha límite de renovación venció. Quedan <strong id="grace-dias-restantes">5</strong> días antes de la suspensión automática del servicio.
+          </div>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <button class="btn" onclick="abrirModalPagoLicencia()" style="background:linear-gradient(90deg, #6366f1, #a855f7); color:#fff; font-weight:700; border:none; box-shadow:0 4px 15px rgba(168,85,247,0.4);">
+          ⚡ Pagar con Brubank / Nexora Pay
+        </button>
+        <button class="btn btn-secondary" onclick="abrirModalPagoLicencia()">
+          📋 Ver CBU / Alias
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CABECERA PRINCIPAL -->
+  <header class="top-header">
+    <div class="brand-block">
+      <div class="ibera-gear-badge" title="Conector Agéntico IberáSoft">⚙️</div>
+      <div class="brand-title">
+        <h1>Nora COO <span style="color:#f59e0b;">× IberáSoft POS</span></h1>
+        <p id="ibera-status-sub">Tren Agéntico Nexora One Engine • Kioscos & Maxikioscos</p>
+      </div>
+    </div>
+
+    <div class="header-pills">
+      <span id="pill-licencia" class="pill pill-emerald" style="cursor:pointer;" onclick="abrirModalPagoLicencia()" title="Click para ver estado del abono y link de pago">
+        🟢 Licencia: Al Día
+      </span>
+      <span id="pill-turno-operario" class="pill pill-emerald">👤 Turno: Cargando...</span>
+      <span id="pill-caja-efectivo" class="pill pill-amber">💵 Caja: $0</span>
+      <span id="pill-faltantes-top" class="pill pill-red">🚨 Faltantes: 0</span>
+      <button class="btn btn-primary" onclick="cambiarTab('tab-whatsapp')">
+        📲 Ver QR WhatsApp & Celular
+      </button>
+      <button id="btn-switch-rol" class="btn btn-secondary" onclick="toggleRolVista()">
+        📱 Cambiar a Vista Celular Dueño
+      </button>
+    </div>
+  </header>
+
+  <!-- BARRA DE COMANDOS Y VOZ DE NORA -->
+  <section class="nora-bar">
+    <div class="nora-avatar">🎙️ NORA COO</div>
+    <div id="nora-speech-text" class="nora-speech-box">
+      "Hola equipo. Estoy conectada al catálogo de IberáSoft, controlando límites mínimos, recepción de facturas y la caja del turno."
+    </div>
+    <div class="nora-input-group">
+      <input
+        type="text"
+        id="nora-command-input"
+        placeholder="Ej: 'Soy Martín', '¿Qué faltantes hay?', '¿Cómo está la caja?'"
+        style="flex:1;"
+        onkeydown="if(event.key==='Enter') enviarComandoNora()"
+      />
+      <button class="btn btn-primary" onclick="enviarComandoNora()">Hablar</button>
+      <button class="btn btn-secondary" id="btn-mic-voz" onclick="iniciarReconocimientoVoz()" title="Hablar por micrófono">🎤 Voz</button>
+    </div>
+  </section>
+
+  <!-- PESTAÑAS DE NAVEGACIÓN -->
+  <nav class="nav-tabs">
+    <button class="tab-btn active" data-tab="tab-facturas" onclick="cambiarTab('tab-facturas')">
+      📸 1. Facturas, Remitos & Recepción Parcial
+      <span id="badge-facturas-pend" class="badge-count">0</span>
+    </button>
+    <button class="tab-btn" data-tab="tab-stock" onclick="cambiarTab('tab-stock')">
+      📦 2. Stock IberáSoft, Precios (%) y Faltantes
+      <span id="badge-faltantes" class="badge-count">0</span>
+    </button>
+    <button class="tab-btn" data-tab="tab-caja" onclick="cambiarTab('tab-caja')">
+      💰 3. Caja Diaria & Turnos por Operario
+    </button>
+    <button class="tab-btn" data-tab="tab-contabilidad" onclick="cambiarTab('tab-contabilidad')">
+      📒 4. Libro Diario Contador & Notas de Crédito
+      <span id="badge-nc-pend" class="badge-count">0</span>
+    </button>
+    <button class="tab-btn" data-tab="tab-whatsapp" onclick="cambiarTab('tab-whatsapp')">
+      💬 5. WhatsApp & Celular Remoto Dueño
+    </button>
+    <button class="tab-btn" data-tab="tab-copilot" onclick="cambiarTab('tab-copilot')" style="border-color:#8b5cf6;">
+      🧭 6. Nora Copilot (Guía IberáSoft & Panel)
+      <span id="badge-copilot-count" class="badge-count">7</span>
+    </button>
+  </nav>
+
+  <!-- CONSOLA REMOTA DE DESARROLLADOR NEXORA (SOLO VISIBLE CON ?soporte=nexora) -->
+  <div id="nexora-dev-support-panel" class="container" style="display:none; padding-bottom:0;">
+    <div class="card" style="border: 2px solid #38bdf8; background:#081226;">
+      <div class="card-header">
+        <h2>🛠️ Consola de Soporte Remoto & Actualizaciones OTA — Nexora Developer</h2>
+        <span class="pill pill-emerald">Acceso Remoto al Cliente</span>
+      </div>
+      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:10px;">
+        <div>
+          <label style="font-size:0.75rem; color:#94a3b8;">Clave Maestra Desarrollador</label>
+          <input type="password" id="nexora-master-key" value="NEXORA-MASTER-2026" style="width:100%;" />
+        </div>
+        <div>
+          <label style="font-size:0.75rem; color:#94a3b8;">Archivo a Actualizar en la PC del Cliente (OTA)</label>
+          <input type="text" id="nexora-patch-file" placeholder="Ej: public/app.js o backend/ibera_bridge.js" style="width:100%;" />
+        </div>
+        <div style="display:flex; align-items:flex-end; gap:8px;">
+          <button class="btn btn-primary" onclick="diagnosticarPCClienteRemoto()">🔍 Inspeccionar IberáSoft del Cliente</button>
+          <button class="btn btn-success" onclick="enviarParcheOTACliente()">🚀 Inyectar Actualización OTA</button>
+        </div>
+      </div>
+      <textarea id="nexora-patch-content" rows="4" style="width:100%; font-family:monospace; font-size:0.78rem;" placeholder="Resultados de diagnóstico remoto de la PC del cliente o código a actualizar..."></textarea>
+    </div>
+  </div>
+
+  <!-- CONTENEDOR PRINCIPAL -->
+  <main class="container">
+
+    <!-- =================================================================== -->
+    <!-- TAB 1: LECTURA DE FACTURAS / REMITOS + FILTRO DE MERCADERÍA RECIBIDA -->
+    <!-- =================================================================== -->
+    <section id="tab-facturas" class="tab-panel active">
+      <div class="grid-2">
+        <!-- COLUMNA IZQUIERDA: CAPTURA POR CÁMARA / WHATSAPP / CELULAR -->
+        <div class="card">
+          <div class="card-header">
+            <h2>📸 Capturar Factura o Remito (Cámara Kiosco / WhatsApp / Celular Dueño)</h2>
+            <span class="pill pill-amber">Nexora Vision Engine</span>
+          </div>
+
+          <div class="camera-box">
+            <video id="webcam-video" autoplay playsinline muted></video>
+            <canvas id="webcam-canvas" style="display:none;"></canvas>
+            <img id="img-preview-factura" src="" alt="Previsualización de factura capturada" style="display:none; max-width:100%; max-height:220px; margin:8px auto; border-radius:8px; border:1px solid #f59e0b;" />
+            <div id="camera-placeholder" style="padding:18px 10px; color:#94a3b8;">
+              📷 Enfocá la factura o remito en el momento de la compra con la cámara del kiosco, o subí la foto enviada por WhatsApp.
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:10px;">
+              <button class="btn btn-primary" id="btn-open-cam" onclick="activarCamaraWeb()">🎥 Encender Cámara</button>
+              <button class="btn btn-success" id="btn-snap-cam" style="display:none;" onclick="capturarFotoDeCamara()">📸 Sacar Foto y Leer con Nora</button>
+              <button class="btn btn-danger" id="btn-close-cam" style="display:none;" onclick="detenerCamaraWeb()">⏹️ Apagar Cámara</button>
+              <label class="btn btn-secondary" style="cursor:pointer;">
+                📁 Subir Imagen de Factura / WhatsApp
+                <input type="file" id="file-invoice-input" accept="image/*" capture="environment" style="display:none;" onchange="subirArchivoFactura(event)" />
+              </label>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px;">
+            <div>
+              <label style="font-size:0.78rem; color:#94a3b8; display:block; margin-bottom:4px;">Origen de la Captura</label>
+              <select id="select-origen-factura" style="width:100%;">
+                <option value="CAMARA_KIOSCO">📸 Cámara Mostrador Kiosco</option>
+                <option value="WHATSAPP_OPERADOR">💬 Enviada por WhatsApp del Operador</option>
+                <option value="CELULAR_DUENIO">📱 Cargada desde Celular del Dueño</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:0.78rem; color:#94a3b8; display:block; margin-bottom:4px;">% Margen Ganancia al Subir</label>
+              <input type="number" id="input-margen-captura" value="45" min="0" max="300" style="width:100%;" />
+            </div>
+          </div>
+
+          <div style="background:#0b1120; border:1px solid #1e293b; border-radius:10px; padding:12px;">
+            <div style="font-size:0.8rem; font-weight:700; color:#fbbf24; margin-bottom:8px;">
+              ⚡ Pruebas Instantáneas en 1 Clic (Simulación de Recepción en Mostrador):
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:8px;">
+              <button class="btn btn-secondary" onclick="cargarFacturaPreset('arcor_con_faltante')">
+                🍬 Factura Arcor (Con 1 Producto que NO vino ➔ Nota de Crédito)
+              </button>
+              <button class="btn btn-secondary" onclick="cargarFacturaPreset('coca_cola')">
+                🥤 Factura Coca-Cola FEMSA (Bebidas)
+              </button>
+              <button class="btn btn-secondary" onclick="cargarFacturaPreset('massalin_cigarrillos')">
+                🚬 Factura Massalin (Cigarrillos +15%)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- COLUMNA DERECHA: EXPLICACIÓN DE FLUJO DE APROBACIÓN Y RECEPCIÓN PARCIAL -->
+        <div class="card">
+          <div class="card-header">
+            <h2>🛡️ Control de Recepción: Mercadería que Llegó vs. Faltante (Nota de Crédito)</h2>
+          </div>
+          <p style="font-size:0.87rem; color:#cbd5e1; margin-bottom:12px;">
+            Nora <strong>jamás altera el stock de IberáSoft sin aprobación previa</strong>. Cuando llega un pedido:
+          </p>
+          <ul style="font-size:0.85rem; color:#94a3b8; padding-left:18px; display:flex; flex-direction:column; gap:8px;">
+            <li>
+              <strong style="color:#34d399;">✅ Mercadería que SÍ llegó:</strong> Dejala tildada. Al aprobar, Nora suma las unidades al stock de IberáSoft y actualiza su precio de venta aplicando el <strong>% de margen</strong> configurado.
+            </li>
+            <li>
+              <strong style="color:#f87171;">❌ Mercadería facturada que NO vino:</strong> Destildala (o bajá la cantidad recibida). Nora <strong>la descarta de la subida de stock</strong> para no inflar el inventario y abre automáticamente un reclamo de <strong>Nota de Crédito Pendiente</strong> en el Libro Diario Contable.
+            </li>
+            <li>
+              <strong style="color:#fbbf24;">📱 Intervención Remota:</strong> Tanto el operador del kiosco como el dueño desde su celular ven el mismo borrador en tiempo real y pueden aprobarlo o corregirlo.
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- LISTA DE BORRADORES PENDIENTES DE APROBACIÓN (CON CHECKLIST DE PRODUCTOS RECIBIDOS) -->
+      <div id="contenedor-borradores-facturas"></div>
+
+      <!-- HISTORIAL DE FACTURAS PROCESADAS -->
+      <div class="card">
+        <div class="card-header">
+          <h2>🗂️ Historial de Facturas y Remitos Procesados por Nora</h2>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha / ID</th>
+                <th>Proveedor</th>
+                <th>Comprobante</th>
+                <th>Origen / Operario</th>
+                <th>Total Facturado</th>
+                <th>Ingresado al Stock</th>
+                <th>Faltante (Reclamo NC)</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-historial-facturas"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- TAB 2: STOCK IBERÁSOFT, PRECIOS (%) Y LÍMITES MÍNIMOS (FALTANTES)   -->
+    <!-- =================================================================== -->
+    <section id="tab-stock" class="tab-panel">
+      <!-- PANEL DE ALERTA DE FALTANTES AL TOCAR EL LÍMITE MÍNIMO -->
+      <div class="card" style="border-color: rgba(239, 68, 68, 0.5);">
+        <div class="card-header">
+          <h2>🚨 Informe Automático de Faltantes (Productos que tocaron el Límite Mínimo)</h2>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="enviarInformeFaltantesWhatsApp()">
+              📲 Enviar Informe de Faltantes al WhatsApp del Dueño
+            </button>
+            <button class="btn btn-secondary" onclick="abrirWhatsAppExternoFaltantes()">
+              💬 Compartir por WhatsApp Web / Celular
+            </button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Código IberáSoft</th>
+                <th>Producto</th>
+                <th>Rubro</th>
+                <th>Proveedor Habitual</th>
+                <th>Stock Actual</th>
+                <th>Límite Mínimo</th>
+                <th>Sugerido a Pedir</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-faltantes-minimos"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- CATÁLOGO COMPLETO SINCRONIZADO CON IBERÁSOFT POS -->
+      <div class="card">
+        <div class="card-header">
+          <h2>⚙️ Catálogo de Stock y Precios Sincronizado con IberáSoft POS</h2>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <label class="btn btn-primary" style="cursor:pointer;">
+              📤 Importar Catálogo CSV de IberáSoft
+              <input type="file" accept=".csv,.txt" style="display:none;" onchange="importarCSVIberaSoft(event)" />
+            </label>
+            <a href="/api/iberasoft/lista-actualizada.csv" class="btn btn-success" style="text-decoration:none;">
+              📥 Descargar Planilla CSV para IberáSoft
+            </a>
+            <button class="btn btn-secondary" onclick="escanearConexionIberaSoft()">
+              🔄 Re-Escanear IberáSoft
+            </button>
+            <button class="btn btn-danger" onclick="limpiarTodosLosEjemplos()">
+              🧹 Borrar Datos de Ejemplo (Dejar en Cero)
+            </button>
+          </div>
+        </div>
+
+        <!-- ALTA RÁPIDA DE ARTÍCULO MANUAL -->
+        <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; background:#0b1120; padding:10px; border-radius:8px; border:1px solid #1e293b;">
+          <input type="text" id="new-art-id" placeholder="Código (ej. IB-2050)" style="width:130px;" />
+          <input type="text" id="new-art-nombre" placeholder="Nombre del Producto *" style="flex:1; min-width:180px;" />
+          <input type="text" id="new-art-rubro" placeholder="Rubro (ej. Bebidas)" style="width:130px;" />
+          <input type="number" id="new-art-costo" placeholder="Costo $" style="width:100px;" />
+          <input type="number" id="new-art-margen" placeholder="% Margen" value="45" style="width:90px;" />
+          <input type="number" id="new-art-stock" placeholder="Stock" value="10" style="width:85px;" />
+          <input type="number" id="new-art-min" placeholder="Mínimo" value="5" style="width:85px;" />
+          <button class="btn btn-primary" onclick="crearArticuloManualUI()">➕ Agregar Producto</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Código / EAN</th>
+                <th>Artículo en IberáSoft</th>
+                <th>Rubro / Proveedor</th>
+                <th>Costo Unit.</th>
+                <th>% Margen</th>
+                <th>Precio Venta</th>
+                <th>Stock Actual</th>
+                <th>Límite Mínimo</th>
+                <th>Acciones / Simular Venta Mostrador</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-articulos-iberasoft"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- TAB 3: COORDINACIÓN DE CAJA DIARIA Y TURNOS POR OPERARIO            -->
+    <!-- =================================================================== -->
+    <section id="tab-caja" class="tab-panel">
+      <div class="grid-4" id="stats-caja-cards"></div>
+
+      <div class="grid-2">
+        <!-- APERTURA / MOVIMIENTOS / CIERRE DE TURNO -->
+        <div class="card">
+          <div class="card-header">
+            <h2>🔑 Gestión de Turno y Reconocimiento de Operario</h2>
+          </div>
+          <div id="panel-gestion-turno"></div>
+        </div>
+
+        <!-- MOVIMIENTOS DE CAJA DEL TURNO ACTIVO -->
+        <div class="card">
+          <div class="card-header">
+            <h2>🧾 Movimientos de Caja del Turno Actual</h2>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+            <select id="mov-tipo">
+              <option value="PAGO_PROVEEDOR">💸 Pago a Proveedor por Caja Chica</option>
+              <option value="RETIRO_DUENIO">🏦 Retiro / Alivio de Caja del Dueño</option>
+              <option value="GASTO_OPERATIVO">🧹 Gasto Operativo del Local</option>
+              <option value="INGRESO_EXTRA">➕ Ingreso de Cambio / Fondo Extra</option>
+            </select>
+            <input type="number" id="mov-monto" placeholder="Monto $" style="width:120px;" />
+            <input type="text" id="mov-desc" placeholder="Motivo (ej. Pago hielo / Retiro)" style="flex:1;" />
+            <button class="btn btn-primary" onclick="registrarMovimientoCaja()">Registrar</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Hora</th>
+                  <th>Operario</th>
+                  <th>Tipo</th>
+                  <th>Medio</th>
+                  <th>Detalle</th>
+                  <th>Monto</th>
+                </tr>
+              </thead>
+              <tbody id="tabla-movimientos-caja"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- HISTORIAL DE CIERRES DE TURNO -->
+      <div class="card">
+        <div class="card-header">
+          <h2>🕒 Historial de Turnos (Con cuánto inició, quién operó y con cuánto cerró)</h2>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Apertura / Cierre</th>
+                <th>Operario Reconocido</th>
+                <th>Turno</th>
+                <th>Inició con</th>
+                <th>Ventas Efectivo</th>
+                <th>Ventas MP/Tarjeta</th>
+                <th>Pagos/Retiros</th>
+                <th>Efectivo Esperado</th>
+                <th>Cerró con (Declarado)</th>
+                <th>Diferencia</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-historial-turnos"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- TAB 4: LIBRO DIARIO CONTABLE (CONTADOR) Y NOTAS DE CRÉDITO          -->
+    <!-- =================================================================== -->
+    <section id="tab-contabilidad" class="tab-panel">
+      <!-- PANEL DE RECLAMOS DE NOTAS DE CRÉDITO POR MERCADERÍA NO ENTREGADA -->
+      <div class="card" style="border-color: rgba(245, 158, 11, 0.5);">
+        <div class="card-header">
+          <h2>⚠️ Notas de Crédito Pendientes (Mercadería Facturada que NO Llegó al Kiosco)</h2>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha Reclamo</th>
+                <th>Proveedor</th>
+                <th>Factura Origen</th>
+                <th>Mercadería que NO Vino</th>
+                <th>Importe a Favor ($)</th>
+                <th>Estado / Resolución</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-notas-credito"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- LIBRO DIARIO CONTABLE PARA EL CONTADOR -->
+      <div class="card">
+        <div class="card-header">
+          <h2>📒 Libro Diario Contable Mensual (Listo para Entregar al Contador)</h2>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <a href="/api/contabilidad/libro-diario.csv" class="btn btn-success" style="text-decoration:none;">
+              📥 Descargar Libro Diario Excel (.CSV) para el Contador
+            </a>
+            <button class="btn btn-secondary" onclick="window.print()">
+              🖨️ Imprimir / Guardar PDF Mensual
+            </button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha / Hora</th>
+                <th>Tipo Asiento</th>
+                <th>Comprobante</th>
+                <th>Proveedor / Responsable</th>
+                <th>Concepto y Detalle</th>
+                <th>Neto Gravado</th>
+                <th>IVA 21%</th>
+                <th>DEBE (Ingresos / NC)</th>
+                <th>HABER (Compras)</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-libro-diario"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- TAB 5: PUENTE WHATSAPP QR & ACCESO REMOTO CELULAR DEL DUEÑO         -->
+    <!-- =================================================================== -->
+    <section id="tab-whatsapp" class="tab-panel">
+      <!-- TARJETAS CON LOS 2 CÓDIGOS QR EN VIVO -->
+      <div class="grid-2">
+        <!-- QR 1: ENTRAR AL SISTEMA DESDE EL CELULAR (4G / 5G / WIFI SIN BLOQUEO DE FIREWALL) -->
+        <div class="card" style="border: 2px solid #10b981;">
+          <div class="card-header">
+            <h2>📱 1. QR para Entrar desde tu Celular (4G / 5G / WiFi)</h2>
+            <span id="badge-tunnel-status" class="pill pill-emerald">Túnel HTTPS 4G Activo</span>
+          </div>
+          <p style="font-size:0.85rem; color:#cbd5e1; margin-bottom:12px;">
+            Apuntá la cámara de tu celular a este <strong>Código QR</strong> (o copiá el enlace HTTPS de abajo). Funciona tanto con <strong>Datos Móviles 4G/5G</strong> como con WiFi, sin que el Firewall de Windows te bloquee:
+          </p>
+
+          <div style="display:flex; flex-wrap:wrap; align-items:center; gap:16px; background:#0b1120; border:1px solid #1e293b; padding:14px; border-radius:12px; margin-bottom:14px;">
+            <div style="background:#ffffff; padding:10px; border-radius:10px; display:flex; align-items:center; justify-content:center;">
+              <img id="qr-img-celular-duenio" src="" alt="QR Acceso Celular Dueño" style="width:175px; height:175px; display:block;" />
+            </div>
+            <div style="flex:1; min-width:200px;">
+              <div style="font-size:0.76rem; color:#94a3b8; margin-bottom:4px;">🌐 Enlace Público HTTPS (4G / 5G / WiFi):</div>
+              <div id="link-celular-https" style="font-size:0.95rem; font-weight:800; color:#34d399; word-break:break-all; margin-bottom:10px;">
+                Generando enlace HTTPS seguro...
+              </div>
+              <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:4px;">🏠 Red Local (Solo si el Firewall permite LAN):</div>
+              <div id="link-celular-duenio" style="font-size:0.82rem; color:#94a3b8; word-break:break-all; margin-bottom:10px;"></div>
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button class="btn btn-success" onclick="copiarLinkCelularHTTPS()">📋 Copiar Link para Celular</button>
+                <button class="btn btn-secondary" onclick="enviarLinkCelularPorWhatsApp()">📲 Mandarme el Link a mi WhatsApp</button>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px;">
+            <div>
+              <label style="font-size:0.78rem; color:#94a3b8; display:block; margin-bottom:4px;">Número WhatsApp del Dueño</label>
+              <input type="text" id="cfg-tel-duenio" style="width:100%;" placeholder="+54911..." />
+            </div>
+            <div>
+              <label style="font-size:0.78rem; color:#94a3b8; display:block; margin-bottom:4px;">Redondeo de Precios ($ ARS)</label>
+              <select id="cfg-redondeo" style="width:100%;">
+                <option value="10">Múltiplos de $10 ARS</option>
+                <option value="50">Múltiplos de $50 ARS (Recomendado Kiosco)</option>
+                <option value="100">Múltiplos de $100 ARS</option>
+                <option value="1">Sin redondeo (Exacto)</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="guardarConfiguracionKiosco()">💾 Guardar Configuración</button>
+        </div>
+
+        <!-- QR 2: VINCULACIÓN DE WHATSAPP MULTI-DEVICE REAL (BAILEYS) -->
+        <div class="card" style="border: 2px solid #f59e0b;">
+          <div class="card-header">
+            <h2>💬 2. QR Oficial para Asignar Número de WhatsApp al Kiosco</h2>
+            <span id="badge-wa-qr-status" class="pill pill-amber">Esperando Escaneo</span>
+          </div>
+          <p style="font-size:0.85rem; color:#cbd5e1; margin-bottom:12px;">
+            En el celular que tendrá el número del Kiosco, abrí <strong>WhatsApp ➔ 3 puntitos ➔ Dispositivos vinculados ➔ Vincular un dispositivo</strong> y escaneá este QR ámbar:
+          </p>
+
+          <div style="display:flex; flex-wrap:wrap; align-items:center; gap:16px; background:#0b1120; border:1px solid #1e293b; padding:14px; border-radius:12px; margin-bottom:14px;">
+            <div style="background:#ffffff; padding:10px; border-radius:10px; display:flex; align-items:center; justify-content:center; min-width:195px; min-height:195px;">
+              <img id="qr-img-whatsapp-nora" src="" alt="Generando QR de Dispositivos Vinculados..." style="width:175px; height:175px; display:block;" />
+            </div>
+            <div style="flex:1; min-width:200px;">
+              <div style="font-size:0.78rem; color:#94a3b8;">Estado del Número Asignado al Kiosco:</div>
+              <div id="wa-session-token" style="font-size:0.95rem; font-weight:800; color:#fbbf24; margin:4px 0 12px 0;">
+                Generando QR Oficial de WhatsApp...
+              </div>
+              <div style="font-size:0.79rem; color:#94a3b8; margin-bottom:12px;">
+                • Cualquier <strong>foto de factura</strong> que le manden por WhatsApp a este número, Nora la descarga sola y la procesa con Visión IA.<br/>
+                • Envía alertas reales de faltantes y cierres de caja al WhatsApp del dueño.
+              </div>
+              <div style="display:flex; flex-direction:column; gap:8px;">
+                <button class="btn btn-secondary" onclick="regenerarCodigoQRWhatsApp()">
+                  🔄 Generar Nuevo QR / Cambiar Número Vinculado
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BITÁCORA EN VIVO DE MENSAJES WHATSAPP -->
+      <div class="card">
+        <div class="card-header">
+          <h2>📨 Bitácora en Vivo de Mensajes y Alertas WhatsApp de Nora</h2>
+          <span class="pill pill-emerald">Tiempo Real</span>
+        </div>
+        <div id="whatsapp-feed-list" class="wa-feed"></div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- TAB 6: MODO NORA COPILOT (GUÍA EVOLUTIVA IBERÁSOFT POS + PANEL)     -->
+    <!-- =================================================================== -->
+    <section id="tab-copilot" class="tab-panel">
+      <!-- BUSCADOR Y ASISTENTE PASO A PASO -->
+      <div class="card" style="border: 2px solid #8b5cf6;">
+        <div class="card-header">
+          <div>
+            <h2>🧭 Nora Copilot — Instructora Paso a Paso (IberáSoft POS + Panel Nora)</h2>
+            <p style="font-size:0.8rem; color:#94a3b8;">
+              Modo Blindado de Solo Lectura para Operadores: Guía al empleado sin riesgo de alterar caja, stock ni configuración.
+            </p>
+          </div>
+          <span class="pill pill-emerald">🛡️ Blindaje Nexora One Activo</span>
+        </div>
+
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;">
+          <input
+            type="text"
+            id="copilot-query-input"
+            placeholder="Preguntale a Nora Copilot: '¿Cómo cargo una factura si faltó mercadería?', '¿Cómo importo precios en IberáSoft?', '¿Cómo pongo venta en espera?'"
+            style="flex:1; min-width:260px;"
+            onkeydown="if(event.key==='Enter') consultarNoraCopilot()"
+          />
+          <button class="btn btn-primary" onclick="consultarNoraCopilot()">🧭 Consultar Guía Paso a Paso</button>
+        </div>
+
+        <div id="copilot-answer-box" style="display:none; margin-bottom:12px;"></div>
+      </div>
+
+      <div class="grid-2">
+        <!-- COLUMNA 1: GUÍAS PASO A PASO DEL PANEL DE NORA -->
+        <div class="card">
+          <div class="card-header">
+            <h2>🧠 Guías del Panel de Nora (Con Botón "Llevame ahí")</h2>
+          </div>
+          <div id="lista-guias-nora"></div>
+        </div>
+
+        <!-- COLUMNA 2: GUÍAS PASO A PASO DE IBERÁSOFT POS -->
+        <div class="card">
+          <div class="card-header">
+            <h2>⚙️ Guías Operativas de IberáSoft POS (Escritorio)</h2>
+          </div>
+          <div id="lista-guias-iberasoft"></div>
+        </div>
+      </div>
+
+      <!-- ENTRENADOR EVOLUTIVO BLINDADO (EXCLUSIVO DUEÑO CON PIN MAESTRO 9999) -->
+      <div class="card" style="border-color: rgba(16, 185, 129, 0.45);">
+        <div class="card-header">
+          <div>
+            <h2>🔒 Actualizar Conocimiento de Nora Copilot (Exclusivo Dueño — PIN Maestro)</h2>
+            <p style="font-size:0.8rem; color:#94a3b8;">
+              Enseñale a Nora nuevos procedimientos de IberáSoft o reglas del kiosco por texto o subiendo una captura de pantalla de IberáSoft. Protegido con PIN del Dueño y filtro anti-sabotaje.
+            </p>
+          </div>
+          <span class="pill pill-amber">🔑 Requiere PIN Dueño (Por defecto: 9999)</span>
+        </div>
+
+        <div class="grid-2">
+          <!-- OPCIÓN A: ENSEÑAR POR TEXTO -->
+          <div style="background:#0b1120; padding:14px; border-radius:10px; border:1px solid #1e293b;">
+            <h3 style="font-size:0.92rem; color:#34d399; margin-bottom:10px;">✍️ A. Agregar o Actualizar Guía Manualmente</h3>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
+              <div>
+                <label style="font-size:0.75rem; color:#94a3b8;">PIN Maestro del Dueño</label>
+                <input type="password" id="cop-pin-duenio" placeholder="PIN (ej. 9999)" style="width:100%;" />
+              </div>
+              <div>
+                <label style="font-size:0.75rem; color:#94a3b8;">Sistema a Documentar</label>
+                <select id="cop-sistema" style="width:100%;">
+                  <option value="IBERASOFT_POS">⚙️ IberáSoft POS (Escritorio)</option>
+                  <option value="PANEL_NORA">🧠 Panel Agéntico de Nora</option>
+                </select>
+              </div>
+            </div>
+            <div style="margin-bottom:8px;">
+              <label style="font-size:0.75rem; color:#94a3b8;">Título de la Tarea (ej. "Cómo cerrar lote de Posnet en IberáSoft")</label>
+              <input type="text" id="cop-titulo" placeholder="Título claro para el operador..." style="width:100%;" />
+            </div>
+            <div style="margin-bottom:8px;">
+              <label style="font-size:0.75rem; color:#94a3b8;">Resumen Corto y Palabras Clave</label>
+              <input type="text" id="cop-resumen" placeholder="Explicación breve..." style="width:100%;" />
+            </div>
+            <div style="margin-bottom:10px;">
+              <label style="font-size:0.75rem; color:#94a3b8;">Pasos (Escribí un paso por renglón)</label>
+              <textarea id="cop-pasos" rows="3" style="width:100%;" placeholder="1. Ir al menú Caja en IberáSoft...&#10;2. Seleccionar Cierre de Lote...&#10;3. Guardar comprobante..."></textarea>
+            </div>
+            <button class="btn btn-success" style="width:100%;" onclick="guardarNuevaGuiaCopilot()">
+              💾 Guardar Nuevo Conocimiento en Nora Copilot
+            </button>
+          </div>
+
+          <!-- OPCIÓN B: ENSEÑAR CON FOTO / CAPTURA DE PANTALLA DE IBERÁSOFT -->
+          <div style="background:#0b1120; padding:14px; border-radius:10px; border:1px solid #1e293b;">
+            <h3 style="font-size:0.92rem; color:#fbbf24; margin-bottom:10px;">📸 B. Enseñar a Nora con una Captura o Foto de IberáSoft</h3>
+            <p style="font-size:0.82rem; color:#cbd5e1; margin-bottom:12px;">
+              Sacale una foto a cualquier ventana de <strong>IberáSoft POS</strong>. Nora Vision leerá los botones de esa ventana y armará automáticamente la guía de 3 pasos para tus empleados.
+            </p>
+            <div style="margin-bottom:10px;">
+              <label style="font-size:0.75rem; color:#94a3b8;">¿Sobre qué tarea es la pantalla que vas a subir?</label>
+              <input type="text" id="cop-vision-titulo" placeholder="Ej: Pantalla de Carga de Promociones en IberáSoft" style="width:100%;" />
+            </div>
+            <label class="btn btn-primary" style="width:100%; cursor:pointer;">
+              📷 Subir Foto de Pantalla de IberáSoft y Aprender con IA
+              <input type="file" accept="image/*" style="display:none;" onchange="aprenderPantallaIberaSoftConFoto(event)" />
+            </label>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- PIE INSTITUCIONAL OFICIAL NEXORA ONE: FIRMA DE AUTOR, CONTACTO, QR APP STORE Y DESLINDE DE IA -->
+  <footer class="container" style="padding-top:4px;">
+    <div class="card" style="background:#080c17; border-color:#1e293b; margin-bottom:0;">
+      <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:18px;">
+        <!-- BLOQUE 1: FIRMA CORPORATIVA Y CONTACTO DIRECTO -->
+        <div style="flex:1; min-width:270px;">
+          <div style="font-size:0.74rem; color:#f59e0b; font-weight:700; text-transform:uppercase; letter-spacing:0.8px;">
+            👑 Grupo Nexora • Nexora One Engine | Signature: By Nora
+          </div>
+          <div style="font-size:1rem; font-weight:800; color:#f8fafc; margin:4px 0;">
+            Empresa Desarrolladora: Grupo Nexora / NexoraOne
+          </div>
+          <div style="font-size:0.84rem; color:#cbd5e1; display:flex; flex-wrap:wrap; gap:14px; margin:8px 0;">
+            <a href="https://wa.me/5493786414533" target="_blank" style="color:#34d399; text-decoration:none; font-weight:700;">
+              📞 WhatsApp / Contacto: +54 9 3786 414533
+            </a>
+            <a href="mailto:nexoraone@nexativanews.com.ar" style="color:#38bdf8; text-decoration:none; font-weight:700;">
+              ✉️ nexoraone@nexativanews.com.ar
+            </a>
+            <a href="https://nexora-store-app.vercel.app/" target="_blank" style="color:#fbbf24; text-decoration:none; font-weight:700;">
+              🛍️ Nexora App Store: nexora-store-app.vercel.app
+            </a>
+          </div>
+          <div style="font-size:0.75rem; color:#94a3b8; line-height:1.45; border-top:1px solid #1e293b; padding-top:8px; margin-top:6px;">
+            <strong>© 2026 Grupo Nexora / NexoraOne — Todos los derechos reservados.</strong> Prohibida su copia, ingeniería inversa o redistribución sin licencia comercial activa.<br/>
+            <strong>Deslinde de Responsabilidad Operativa (IA):</strong> Nora opera como un asistente administrativo inteligente desarrollado por Grupo Nexora. Todas las lecturas ópticas de comprobantes, sugerencias de precios, controles de stock y registros del Libro Diario tienen carácter de pre-carga asistida y requieren la verificación y confirmación final del operador de turno, del titular del comercio y de su contador matriculado.
+          </div>
+        </div>
+
+        <!-- BLOQUE 2: CÓDIGOS QR SITIO WEB Y NEXORA APP STORE -->
+        <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap;">
+          <div style="background:#0b1120; border:1px solid #334155; border-radius:10px; padding:10px; text-align:center; width:145px;">
+            <div style="background:#fff; padding:6px; border-radius:8px; display:inline-block;">
+              <img src="https://api.qrserver.com/v1/create-qr-code/?size=110x110&margin=4&data=https%3A%2F%2Fnexora-store-app.vercel.app%2F" alt="QR Nexora App Store" style="width:105px; height:105px; display:block;" />
+            </div>
+            <div style="font-size:0.72rem; font-weight:700; color:#fbbf24; margin-top:6px;">🛍️ Nexora App Store</div>
+            <div style="font-size:0.66rem; color:#94a3b8;">Catálogo de Productos</div>
+          </div>
+
+          <div style="background:#0b1120; border:1px solid #334155; border-radius:10px; padding:10px; text-align:center; width:145px;">
+            <div style="background:#fff; padding:6px; border-radius:8px; display:inline-block;">
+              <img src="https://api.qrserver.com/v1/create-qr-code/?size=110x110&margin=4&data=https%3A%2F%2Fwa.me%2F5493786414533" alt="QR Contacto Oficial Nexora" style="width:105px; height:105px; display:block;" />
+            </div>
+            <div style="font-size:0.72rem; font-weight:700; color:#34d399; margin-top:6px;">💬 Soporte y Ventas</div>
+            <div style="font-size:0.66rem; color:#94a3b8;">+54 9 3786 414533</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL DE INFORMACIÓN Y PAGO DE ABONO / LICENCIA                            -->
+  <!-- ========================================================================= -->
+  <div id="modal-pago-licencia" class="modal-pago" style="display:none;">
+    <div class="modal-pago-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #334155; padding-bottom:12px; margin-bottom:16px;">
+        <h3 style="margin:0; color:#f8fafc; font-size:1.15rem; display:flex; align-items:center; gap:8px;">
+          💳 Estado de Licencia & Abono Mensual
+        </h3>
+        <button onclick="cerrarModalPagoLicencia()" style="background:none; border:none; color:#94a3b8; font-size:1.4rem; cursor:pointer;">✕</button>
+      </div>
+
+      <div style="background:#1e293b; border-radius:10px; padding:14px; margin-bottom:16px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+          <span style="color:#94a3b8; font-size:0.85rem;">ID de Licencia:</span>
+          <strong id="lic-info-id" style="color:#38bdf8;">NX-KIOSCO-2026</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+          <span style="color:#94a3b8; font-size:0.85rem;">Estado:</span>
+          <span id="lic-info-badge" class="pill pill-emerald">🟢 ACTIVA</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+          <span style="color:#94a3b8; font-size:0.85rem;">Fecha de Vencimiento:</span>
+          <strong id="lic-info-venc" style="color:#f8fafc;">--/--/----</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+          <span style="color:#94a3b8; font-size:0.85rem;">Límite de Gracia (+5 Días):</span>
+          <strong id="lic-info-corte" style="color:#f59e0b;">--/--/----</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span style="color:#94a3b8; font-size:0.85rem;">Abono Mensual:</span>
+          <strong id="lic-info-monto" style="color:#34d399; font-size:1.05rem;">$69.750 ARS</strong>
+        </div>
+      </div>
+
+      <!-- TARJETA DIGITAL FINTECH BRUBANK & NEXORA PAY -->
+      <div class="nexora-pay-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:1.4rem;">👑</span>
+            <div>
+              <div style="font-size:0.92rem; font-weight:800; color:#fff; letter-spacing:0.4px;">NEXORA PAY • PUENTE BANCARIO</div>
+              <div style="font-size:0.72rem; color:#d8b4fe;">Transferencias 3.0 • 0% Comisiones Intermedias</div>
+            </div>
+          </div>
+          <span class="brubank-badge">🟣 BANCO BRUBANK S.A.U.</span>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.35); padding:10px 14px; border-radius:10px; margin-bottom:12px; border:1px solid rgba(168,85,247,0.35);">
+          <span style="color:#cbd5e1; font-size:0.85rem;">Monto a Transferir:</span>
+          <span style="font-size:1.35rem; font-weight:800; color:#34d399;" id="lic-card-monto">$69.750 ARS</span>
+        </div>
+
+        <!-- FILA ALIAS CON BOTÓN COPIAR -->
+        <div class="pay-data-row">
+          <div>
+            <div style="font-size:0.7rem; color:#94a3b8; text-transform:uppercase; font-weight:600;">Alias Brubank</div>
+            <div style="font-family:monospace; font-size:1.1rem; font-weight:700; color:#38bdf8;" id="txt-alias-val">javilo29</div>
+          </div>
+          <button class="btn-copy-tag" id="btn-copy-alias" onclick="copiarAlPortapapeles('javilo29', 'btn-copy-alias')">
+            📋 Copiar Alias
+          </button>
+        </div>
+
+        <!-- FILA CBU CON BOTÓN COPIAR -->
+        <div class="pay-data-row">
+          <div>
+            <div style="font-size:0.7rem; color:#94a3b8; text-transform:uppercase; font-weight:600;">CBU Bancario Oficial</div>
+            <div style="font-family:monospace; font-size:0.92rem; font-weight:700; color:#f8fafc;" id="txt-cbu-val">1430001713002240580018</div>
+          </div>
+          <button class="btn-copy-tag" id="btn-copy-cbu" onclick="copiarAlPortapapeles('1430001713002240580018', 'btn-copy-cbu')">
+            📋 Copiar CBU
+          </button>
+        </div>
+
+        <!-- FILA BANCO Y TITULAR -->
+        <div style="display:flex; justify-content:space-between; font-size:0.78rem; color:#cbd5e1; margin-top:8px; padding:0 4px;">
+          <span>Banco: <strong style="color:#d8b4fe;">Brubank S.A.U.</strong></span>
+          <span>Titular: <strong style="color:#f8fafc;">Grupo Nexora / NexoraOne</strong></span>
+        </div>
+      </div>
+
+      <!-- QR INTEROPERABLE TRANSFERENCIAS 3.0 -->
+      <div style="text-align:center; background:#0b1120; border:1px solid #334155; border-radius:12px; padding:12px; margin-bottom:16px;">
+        <div style="font-size:0.76rem; color:#cbd5e1; margin-bottom:8px; font-weight:600;">
+          📲 O escaneá el QR desde Brubank, Modo, Cuenta DNI, BNA, MP o cualquier banco:
+        </div>
+        <div class="qr-transfer-box">
+          <img id="qr-brubank-pago" src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&margin=4&data=1430001713002240580018" alt="QR Transferencia Brubank" style="width:125px; height:125px; display:block;" />
+        </div>
+        <div style="font-size:0.7rem; color:#94a3b8; margin-top:6px;">
+          Acepta transferencias directas inmediatas las 24 horas (0% retención)
+        </div>
+      </div>
+
+      <!-- BOTÓN ENVIAR COMPROBANTE WHATSAPP -->
+      <div style="display:flex; gap:10px;">
+        <a id="lic-btn-wa-comprobante" href="https://wa.me/5493786414533?text=Hola%20Grupo%20Nexora,%20adjunto%20comprobante%20de%20transferencia%20Brubank%20de%20mi%20abono%20mensual%20de%20Kiosco." target="_blank" class="btn btn-primary" style="flex:1; text-align:center; text-decoration:none;">
+          📲 Enviar Comprobante por WhatsApp
+        </a>
+        <button class="btn btn-secondary" onclick="cerrarModalPagoLicencia()">
+          Cerrar
+        </button>
+      </div>
+
+      <!-- REACTIVACIÓN CON CLAVE MAESTRA -->
+      <div style="border-top:1px solid #1e293b; margin-top:16px; padding-top:12px;">
+        <details style="font-size:0.8rem; color:#94a3b8;">
+          <summary style="cursor:pointer; color:#cbd5e1;">Ingresar Clave de Reactivación Manual / Desarrollador</summary>
+          <div style="display:flex; gap:8px; margin-top:8px;">
+            <input type="password" id="input-lic-reactivar-key" placeholder="NEXORA-MASTER-2026" style="flex:1;" />
+            <button class="btn btn-success" onclick="reactivarLicenciaManual()">Reactivar +30D</button>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- OVERLAY BLOQUEANTE DE SERVICIO SUSPENDIDO (CORTE FECHA LÍMITE + 5 DÍAS)    -->
+  <!-- ========================================================================= -->
+  <div id="overlay-licencia-suspendida" class="overlay-suspendido" style="display:none;">
+    <div class="card-suspendido">
+      <div style="font-size:3rem; margin-bottom:10px;">🚫</div>
+      <h2 style="color:#ef4444; margin-bottom:8px; font-size:1.5rem;">
+        Servicio Suspendido por Abono Vencido
+      </h2>
+      <p style="color:#cbd5e1; font-size:0.92rem; line-height:1.5; margin-bottom:18px;">
+        El período de gracia de <strong>5 días</strong> posterior a la fecha de vencimiento ha expirado sin registrarse el abono mensual correspondiente. 
+        Para reanudar la sincronización con IberáSoft, el escáner de facturas por cámara y la asistencia de Nora, transferí el monto a nuestra cuenta de Brubank e informá el comprobante.
+      </p>
+
+      <!-- TARJETA BRUBANK SUSPENDIDA -->
+      <div class="nexora-pay-card" style="text-align:left; margin-bottom:18px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <span style="font-size:0.95rem; font-weight:800; color:#fff;">PAGO DIRECTO VÍA BRUBANK</span>
+          <span class="brubank-badge">🟣 BANCO BRUBANK S.A.U.</span>
+        </div>
+        <div class="pay-data-row">
+          <div>
+            <div style="font-size:0.7rem; color:#94a3b8;">ALIAS BANCARIO:</div>
+            <div style="font-family:monospace; font-size:1.1rem; font-weight:700; color:#38bdf8;">javilo29</div>
+          </div>
+          <button class="btn-copy-tag" id="btn-copy-susp-alias" onclick="copiarAlPortapapeles('javilo29', 'btn-copy-susp-alias')">📋 Copiar Alias</button>
+        </div>
+        <div class="pay-data-row">
+          <div>
+            <div style="font-size:0.7rem; color:#94a3b8;">CBU BANCARIO OFICIAL:</div>
+            <div style="font-family:monospace; font-size:0.92rem; font-weight:700; color:#f8fafc;">1430001713002240580018</div>
+          </div>
+          <button class="btn-copy-tag" id="btn-copy-susp-cbu" onclick="copiarAlPortapapeles('1430001713002240580018', 'btn-copy-susp-cbu')">📋 Copiar CBU</button>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#cbd5e1; margin-top:8px;">
+          <span>Monto: <strong style="color:#34d399;">$69.750 ARS</strong></span>
+          <span>Titular: <strong>Grupo Nexora / NexoraOne</strong></span>
+        </div>
+      </div>
+
+      <!-- BOTONES DE PAGO Y CONTACTO -->
+      <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:20px;">
+        <a id="btn-susp-wa" href="https://wa.me/5493786414533?text=Hola%20Grupo%20Nexora,%20mi%20servicio%20de%20Kiosco%20se%20encuentra%20suspendido,%20adjunto%20comprobante%20de%20transferencia%20Brubank%20para%20reactivaci%C3%B3n." target="_blank" class="btn btn-primary" style="padding:12px; font-weight:600; text-decoration:none;">
+          📲 Informar Transferencia por WhatsApp (+54 9 3786 414533)
+        </a>
+      </div>
+
+      <!-- DESBLOQUEO INMEDIATO CON CLAVE -->
+      <div style="background:#0b1120; border:1px solid #334155; border-radius:10px; padding:14px; text-align:left;">
+        <label style="font-size:0.8rem; color:#94a3b8; display:block; margin-bottom:6px;">
+          ¿Ya tenés un código de reactivación provisto por Nexora?
+        </label>
+        <div style="display:flex; gap:8px;">
+          <input type="password" id="input-susp-key" placeholder="Ingresá clave de reactivación..." style="flex:1;" />
+          <button class="btn btn-success" onclick="desbloquearServicioSuspendido()">Desbloquear</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
