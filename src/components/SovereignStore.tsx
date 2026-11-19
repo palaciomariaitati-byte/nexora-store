@@ -9,7 +9,7 @@ export interface SystemItem {
   name: string;
   version: string;
   subtitle: string;
-  category: 'gastro' | 'p2p' | 'realestate' | 'music';
+  category: 'retail' | 'gastro' | 'p2p' | 'realestate' | 'music';
   priceUsd: string;
   priceArs: string;
   tagline: string;
@@ -19,9 +19,26 @@ export interface SystemItem {
   primaryCtaType: 'amber' | 'emerald' | 'cyan';
   secondaryCta?: string;
   demoUrl?: string;
+  downloadUrl?: string;
 }
 
 const SYSTEMS_DATA: SystemItem[] = [
+  {
+    id: 'nora-sidecar-pos',
+    name: 'Nora AI Sidecar (Kioscos & Lubricentros)',
+    version: 'v2.6 Sidecar',
+    subtitle: 'Administradora Contable & Stock para IberáSoft / Multi-POS',
+    category: 'retail',
+    priceUsd: '$45 USD/mes',
+    priceArs: '~$69.750 ARS',
+    tagline: 'SIN CAMBIAR EL SISTEMA ACTUAL DEL CLIENTE',
+    solutionText: 'Se enlaza al sistema que el comercio ya tiene por costumbre (IberáSoft, Tango, Lince, Excel). Lee facturas por cámara o WhatsApp, filtra mercadería no entregada (Notas de Crédito), actualiza precios por %, vigila límites mínimos, coordina turnos de caja por operario y arma el Libro Diario para el contador.',
+    tags: ['● Conector IberáSoft & Multi-POS', 'Cámara Facturas + Notas Crédito', 'Copilot + WhatsApp QR'],
+    primaryCta: 'Descargar Instalador (.ZIP)',
+    primaryCtaType: 'amber',
+    secondaryCta: 'Guía PDF Incluida',
+    downloadUrl: '/downloads/Nora_Kiosco_IberaSoft_Setup.zip'
+  },
   {
     id: 'restobar-2026',
     name: 'Restobar 2026',
@@ -64,20 +81,6 @@ const SYSTEMS_DATA: SystemItem[] = [
     tags: ['● Geolocalización Libre', 'Filtro Anti-Fraude', 'Exportable PDF/Contrato'],
     primaryCta: 'Explorar Portal Catastral',
     primaryCtaType: 'cyan'
-  },
-  {
-    id: 'autentico-tributo',
-    name: 'Auténtico Tributo',
-    version: 'v2.0 Web',
-    subtitle: 'Live Stage Sync Engine',
-    category: 'music',
-    priceUsd: 'SOVEREIGN LIVE',
-    priceArs: 'Baja latencia',
-    tagline: 'PARA ARTISTAS Y TÉCNICOS',
-    solutionText: 'Gestión integral de shows en vivo con setlist interactivo para fans y sincronización visual para pantalla gigante y teleprompters en tiempo real.',
-    tags: ['● Live Sync WebSockets', 'Portal Fan PWA', 'Stage Screen HDMI 4K'],
-    primaryCta: 'Acceso Oficial a Escenario',
-    primaryCtaType: 'amber'
   }
 ];
 
@@ -86,10 +89,10 @@ export function SovereignStore() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [latency, setLatency] = useState<number>(17);
   const [openAccordions, setOpenAccordions] = useState<Record<string, boolean>>({
+    'nora-sidecar-pos': true,
     'restobar-2026': true,
     'nexora-clasificados': true,
-    'inmuebles-verificados': true,
-    'autentico-tributo': true
+    'inmuebles-verificados': true
   });
 
   const globeContainerRef = useRef<HTMLDivElement>(null);
@@ -397,10 +400,10 @@ export function SovereignStore() {
         <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
           {[
             { id: 'all', label: 'Todos' },
+            { id: 'retail', label: 'Kioscos, Lubricentros & POS' },
             { id: 'gastro', label: 'Gastronomía & Bares' },
             { id: 'p2p', label: 'Clasificados & Autos' },
             { id: 'realestate', label: 'Inmuebles & Catastro' },
-            { id: 'music', label: 'Shows & Eventos' },
           ].map(cat => (
             <button
               key={cat.id}
@@ -473,7 +476,13 @@ export function SovereignStore() {
                     {item.secondaryCta}
                   </button>
                 )}
-                <button className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs text-slate-950 transition ${
+                <button
+                  onClick={() => {
+                    if (item.downloadUrl) {
+                      window.location.href = item.downloadUrl;
+                    }
+                  }}
+                  className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs text-slate-950 transition ${
                   item.primaryCtaType === 'amber' ? 'bg-amber-500 hover:bg-amber-400' :
                   item.primaryCtaType === 'emerald' ? 'bg-emerald-500 hover:bg-emerald-400' :
                   'bg-cyan-500 hover:bg-cyan-400'

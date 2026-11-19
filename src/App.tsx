@@ -208,17 +208,17 @@ const SYSTEM_I18N: Record<string, {
       "CCyCN Legal Audit"
     ]
   },
-  "autentico": {
-    "nameEn": "Auténtico Tributo Live",
-    "subtitleEn": "LIVE STAGE SYNC & 4K HDMI ENGINE",
-    "slaOrBadgeEn": "< 10MS SYNC",
-    "descriptionEn": "Master live stage sync hub: zero-latency (<10ms) 4K HDMI video playback, dynamic teleprompter, and automated cueing without internet dependence.",
-    "targetAudienceEn": "Tribute acts, stage production companies, and touring engineers requiring deterministic local performance.",
+  "nora-sidecar": {
+    "nameEn": "Nora AI Sidecar (Kiosks, Auto Centers & Multi-POS)",
+    "subtitleEn": "CAMERA OCR, PARTIAL RECEIPT & CASH RECONCILIATION WITHOUT ALTERING POS",
+    "slaOrBadgeEn": "PLUG & PLAY POS",
+    "descriptionEn": "Intelligent agentic sidecar for IberáSoft and legacy desktop POS systems: instant invoice OCR via webcam or WhatsApp, automated supplier credit notes for missing items, cashier shift tracking, and 4G owner remote control.",
+    "targetAudienceEn": "Kiosks, convenience stores, automotive centers, and merchants running traditional desktop software who need automation without altering their existing billing habits.",
     "tagsEn": [
-      "4K HDMI",
-      "LAN Sockets",
-      "Fan Portal PWA",
-      "Zero Latency"
+      "Camera Invoice OCR",
+      "IberáSoft Bridge",
+      "Auto Credit Note",
+      "4G Remote Mobile"
     ]
   },
   "clasificados": {
@@ -408,20 +408,22 @@ const INITIAL_SYSTEMS: SystemItem[] = [
     isDesktopOnly: true
   },
   {
-    id: 'autentico',
-    name: 'Auténtico Tributo Live',
-    subtitle: 'LIVE STAGE SYNC & 4K HDMI ENGINE',
-    category: 'eventos',
-    slaOrBadge: '< 10MS SYNC',
-    slaColor: 'text-amber-400 bg-amber-500/10 border-amber-500/30',
-    priceUsd: 120,
-    priceArs: 185000,
-    description: 'Sincronizador para conciertos en vivo: pantallas HDMI 4K, letras y setlist sin requerir internet. Boletería directa, streaming y gestión para artistas.',
-    targetAudience: 'Bandas, artistas y directores técnicos de espectáculos que no pueden depender de conectividad Wi-Fi durante el show.',
-    tags: ['4K HDMI', 'LAN Sockets', 'Portal Fan PWA', 'Cero Latencia'],
+    id: 'nora-sidecar',
+    name: 'Nora AI Sidecar (Kioscos, Lubricentros & Multi-POS)',
+    subtitle: 'OCR CÁMARA, RECEPCIÓN PARCIAL & ARQUEO SIN TOCAR TU FACTURACIÓN',
+    category: 'comercio',
+    slaOrBadge: 'PLUG & PLAY POS',
+    slaColor: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30',
+    priceUsd: 45,
+    priceArs: 69750,
+    description: 'Sidecar agéntico para IberáSoft y sistemas desktop. Lectura de facturas/remitos por cámara o WhatsApp, descarte de faltantes con Nota de Crédito automática para el contador, arqueo por operario y celular remoto del dueño en 4G/WiFi.',
+    targetAudience: 'Kioscos, maxikioscos, minimercados, lubricentros y comercios con software tradicional que necesitan automatización sin cambiar su sistema ni sus hábitos de facturación.',
+    tags: ['OCR Facturas Cámara', 'Puente IberáSoft', 'Nota de Crédito Auto', 'Celular Remoto 4G'],
     active: true,
     demoUrl: 'https://nexora-store-app.vercel.app/?pwa=true',
-    isDesktopOnly: false
+    downloadUrl: '/downloads/Nora_Kiosco_IberaSoft_Setup.zip',
+    trialPrefix: 'NORA-15D-',
+    isDesktopOnly: true
   },
   {
     id: 'clasificados',
@@ -553,16 +555,16 @@ const INITIAL_LICENSES: CorporateLicense[] = [
   },
   {
     id: 'lic_2',
-    key: 'NX-9942-STAGE-LIVE',
+    key: 'NX-9942-KIOSCO-IBERA',
     client: 'Gonzalo Benítez',
-    businessName: 'Producciones Tour 2026',
+    businessName: 'Maxikiosco & Lubricentro San Cayetano',
     whatsapp: '+54 9 3786 51-2290',
-    email: 'escenario@tourlive.com',
-    systemId: 'autentico',
+    email: 'contacto@kioscosancayetano.com.ar',
+    systemId: 'nora-sidecar',
     status: 'grace',
-    startDate: '2026-09-20',
-    expires: '2026-10-20',
-    graceLimit: '2026-10-25'
+    startDate: '2026-10-20',
+    expires: '2026-11-19',
+    graceLimit: '2026-11-24'
   },
   {
     id: 'lic_3',

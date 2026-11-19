@@ -87,16 +87,16 @@ export const SYSTEMS_CATALOG: Record<string, SystemInfo> = {
     summaryEn: 'Unrestricted cadastral ledger featuring precise GPS coordinates and cryptographic anti-fraud PDF lease generation.',
     audienceEn: 'Landlords and prospective tenants seeking direct, transparent real estate negotiations without brokerage fee inflation.',
   },
-  autentico: {
-    name: 'Auténtico Tributo Live',
-    usd: 120,
-    ars: 185000,
-    category: 'Producción Escénica 4K',
-    summary: 'Sincronizador maestro para conciertos en vivo: pantallas HDMI 4K, proyecciones, letras y setlist sin latencia (<10ms).',
-    audience: 'Bandas tributo, productoras de eventos y directores de escenario que no pueden depender del Wi-Fi.',
-    nameEn: 'Auténtico Tributo Live',
-    summaryEn: 'Master live stage sync hub: zero-latency (<10ms) 4K HDMI video playback, dynamic teleprompter, and automated DMX cueing without cloud dependence.',
-    audienceEn: 'Tribute acts, stage production companies, and touring engineers requiring deterministic local performance.',
+  'nora-sidecar': {
+    name: 'Nora AI Sidecar (Kioscos, Lubricentros & Multi-POS)',
+    usd: 45,
+    ars: 69750,
+    category: 'Inteligencia Operativa & Multi-POS',
+    summary: 'Sidecar agéntico autónomo acoplado a IberáSoft y sistemas desktop: escaneo de facturas por cámara/WhatsApp, recepción parcial con Nota de Crédito automática, arqueo por operario y control de faltantes.',
+    audience: 'Kioscos, maxikioscos, lubricentros, almacenes y comercios que usan IberáSoft o sistemas locales.',
+    nameEn: 'Nora AI Sidecar (Kiosks, Auto Centers & Multi-POS)',
+    summaryEn: 'Autonomous agentic sidecar connecting to IberáSoft and desktop POS software: invoice OCR via camera/WhatsApp, partial delivery credit notes, cashier shifts, and low-stock telemetry.',
+    audienceEn: 'Kiosks, automotive service centers, and retail stores running desktop POS systems.',
   },
   prensa: {
     name: 'Prensa & Medios Soberano (Próximamente v2.0)',
@@ -292,21 +292,22 @@ export async function generateNoraResponse(
         `● **Rate:** $${s.usd} USD / month.`;
     }
 
-    // 5. Stage / Music / Auténtico
+    // 5. Kiosco / Lubricentro / POS Sidecar
     if (
-      msg.includes('music') ||
-      msg.includes('tribute') ||
-      msg.includes('concert') ||
-      msg.includes('stage') ||
-      msg.includes('show') ||
-      msg.includes('band') ||
-      msg.includes('hdmi')
+      msg.includes('kiosk') ||
+      msg.includes('kiosco') ||
+      msg.includes('pos') ||
+      msg.includes('invoice') ||
+      msg.includes('receipt') ||
+      msg.includes('stock') ||
+      msg.includes('ibera') ||
+      msg.includes('lubricentro')
     ) {
-      const s = SYSTEMS_CATALOG.autentico;
-      return `For live stage and concert production, we deploy **${s.nameEn || s.name}**:\n\n` +
+      const s = SYSTEMS_CATALOG['nora-sidecar'];
+      return `For kiosks, convenience stores, and automotive service centers using IberáSoft or desktop POS, we recommend **${s.nameEn || s.name}**:\n\n` +
         `● **Specification:** ${s.summaryEn || s.summary}\n` +
-        `● **Reliability:** Hardware-synchronized 4K video, lyrics teleprompter, and latency below 10 milliseconds over local LAN. No Wi-Fi router required.\n` +
-        `● **Rate:** $${s.usd} USD / month.`;
+        `● **Zero Disruptions:** Plugs into your existing desktop POS without modifying billing or customer habits. Includes camera invoice OCR, automatic credit notes for missing goods, and cashier shift control.\n` +
+        `● **Rate:** $${s.usd} USD / month (~$${s.ars.toLocaleString('es-AR')} ARS).`;
     }
 
     // 6. Classifieds / P2P
@@ -488,22 +489,22 @@ export async function generateNoraResponse(
       `Le invitamos a probarlo durante 15 días continuos de forma totalmente gratuita.`;
   }
 
-  // 5. Música / Escenario / Auténtico Tributo
+  // 5. Kiosco / Lubricentro / POS Sidecar
   if (
-    msg.includes('musica') ||
-    msg.includes('tributo') ||
-    msg.includes('concierto') ||
-    msg.includes('show') ||
-    msg.includes('escenario') ||
-    msg.includes('banda') ||
-    msg.includes('hdmi') ||
-    msg.includes('pantalla')
+    msg.includes('kiosco') ||
+    msg.includes('kioscos') ||
+    msg.includes('lubricentro') ||
+    msg.includes('ibera') ||
+    msg.includes('pos') ||
+    msg.includes('factura') ||
+    msg.includes('remito') ||
+    msg.includes('mercaderia')
   ) {
-    const s = SYSTEMS_CATALOG.autentico;
-    return `Para producciones musicales y conciertos en vivo, disponemos de **${s.name}**:\n\n` +
+    const s = SYSTEMS_CATALOG['nora-sidecar'];
+    return `Para kioscos, maxikioscos, lubricentros y comercios con IberáSoft u otro POS de escritorio, le ofrecemos **${s.name}**:\n\n` +
       `● **Propósito:** ${s.summary}\n` +
       `● **A quién resuelve el día:** ${s.audience}\n` +
-      `● **Prestaciones Clave:** Sincronización en red local LAN con menos de 10 milisegundos de latencia. Controla pantallas 4K HDMI, letras y visuales sincronizadas al compás del show sin necesidad de acceso a internet.\n` +
+      `● **Cero Trastornos:** No modifica el sistema de facturación ni la rutina del mostrador. Lee facturas con la cámara o WhatsApp, descuenta lo que no vino generando Nota de Crédito automática para el contador, y envía el reporte diario al celular del dueño.\n` +
       `● **Inversión:** $${s.usd} USD / mes (~$${s.ars.toLocaleString('es-AR')} ARS).`;
   }
 
