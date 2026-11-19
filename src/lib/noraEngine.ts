@@ -241,7 +241,7 @@ export async function generateNoraResponse(
         `  - Nexora Obras & CRM Corporativo: $95 USD/mo\n` +
         `  - Restobar 2026 POS: $65 USD/mo\n` +
         `  - Nexora Club & Carribar Pass: $150 USD/mo\n` +
-        `  - Auténtico Tributo Live: $120 USD/mo\n` +
+        `  - Nora AI Sidecar (Kioscos & Lubricentros): $45 USD/mo (~$69.750 ARS)\n` +
         `  - Nexora Stock & Retail 2026: $55 USD/mo\n` +
         `  - Nexora Turnos & Citas Express: $40 USD/mo\n` +
         `  - Nexora Hotel & Cabañas Desk: $85 USD/mo\n` +
@@ -392,7 +392,7 @@ export async function generateNoraResponse(
     }
 
     // 10. General English Concierge Greeting
-    return `Welcome to Nexora One. Headquartered with pride in Ituzaingó, Corrientes, Argentina, as your Executive Concierge, I am at your service to navigate our sovereign solutions across hospitality (Restobar POS), festivals (Carribar Pass), concert production (Auténtico Live), and decentralized media.\n\n` +
+    return `Welcome to Nexora One. Headquartered with pride in Ituzaingó, Corrientes, Argentina, as your Executive Concierge, I am at your service to navigate our sovereign solutions across hospitality (Restobar POS), festivals (Carribar Pass), retail sidecars (Nora AI Sidecar for Kioscos & IberáSoft), and decentralized media.\n\n` +
       `You may test any product for **15 days completely free**. Direct settlement is available via bank transfer (CBU) or USDT.\n\n` +
       `How may I assist your business infrastructure today?`;
   }
@@ -436,7 +436,7 @@ export async function generateNoraResponse(
       `  - Nexora Obras & CRM Corporativo: $95 USD (~$148.000 ARS)\n` +
       `  - Restobar 2026 POS: $65 USD (~$101.725 ARS)\n` +
       `  - Nexora Club & Carribar Pass: $150 USD (~$235.000 ARS)\n` +
-      `  - Auténtico Tributo Live: $120 USD (~$185.000 ARS)\n` +
+      `  - Nora AI Sidecar (Kioscos, Lubricentros & Multi-POS): $45 USD (~$69.750 ARS)\n` +
       `  - Nexora Stock & Retail 2026: $55 USD (~$85.000 ARS)\n` +
       `  - Nexora Turnos & Citas Express: $40 USD (~$62.000 ARS)\n` +
       `  - Nexora Hotel & Cabañas Desk: $85 USD (~$132.000 ARS)\n` +
@@ -625,7 +625,7 @@ export async function generateNoraResponse(
   }
 
   // 10. Saludo / Respuesta de Cortesía General (Concierge)
-  return `Estimado visitante, es un honor asistirle desde nuestra sede en Ituzaingó, Corrientes, Argentina. En Nexora One le ofrecemos suites soberanas de software para gastronomía (Restobar 2026), food trucks (Carribar Pass), espectáculos (Auténtico Tributo), marketplace (Clasificados), inmuebles verificados y medios informativos.\n\n` +
+  return `Estimado visitante, es un honor asistirle desde nuestra sede en Ituzaingó, Corrientes, Argentina. En Nexora One le ofrecemos suites soberanas de software para gastronomía (Restobar 2026), food trucks (Carribar Pass), kioscos y lubricentros (Nora AI Sidecar), marketplace (Clasificados), inmuebles verificados y medios informativos.\n\n` +
     `Le recuerdo que puede evaluar cualquiera de nuestras soluciones durante **15 días sin cargo** y que contamos con cobro directo por transferencia bancaria (CBU/Alias) y USDT.\n\n` +
     `¿Desea conocer detalles específicos sobre alguna de nuestras herramientas o gestionar una licencia?`;
 }

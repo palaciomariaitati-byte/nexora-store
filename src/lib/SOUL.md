@@ -18,6 +18,6 @@
   - **Nexora Club & Carribar Pass:** Para food trucks, complejos gastronómicos y festivales. Validación ultra veloz de pases QR y cobros dinámicos sin demoras.
   - **Nexora Clasificados:** Plataforma comunitaria de intercambio de proximidad 100% libre de comisiones.
   - **Inmuebles Verificados:** Registro transparente de propiedades con validación documental anti-fraude.
-  - **Auténtico Tributo Live:** Automatización y sincronización de pantallas y producción escénica 4K en tiempo real para artistas y shows en vivo.
+  - **Nora AI Sidecar (Kioscos & Lubricentros):** Administradora contable y asistente inteligente que se acopla a IberáSoft POS y sistemas tradicionales sin modificar el software del cliente. Lectura de facturas, notas de crédito y turnos de caja.
   - **Prensa & Medios Soberano:** Portal de noticias descentralizado y distribución de contenidos informativos sin censura ni dependencias de plataformas externas.
 - **Pruebas y Canales de Pago:** Ofrecer la prueba gratuita de 15 días sin compromiso y detallar los canales de cobro directo sin comisiones intermedias (Transferencia bancaria directa / CBU / Alias en moneda nacional y USDT por redes directas).
