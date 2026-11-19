@@ -21,10 +21,10 @@ export interface PaymentDetails {
 }
 
 export const DEFAULT_PAYMENTS: PaymentDetails = {
-  cbu: '0000003100010002345678',
-  alias: 'nexora.engine',
-  titular: 'Nexora One Engine Sovereign S.A.',
-  mercadopago: 'https://link.mercadopago.com.ar/nexoraone',
+  cbu: '1430001713002240580018',
+  alias: 'javilo29',
+  titular: 'Grupo Nexora / NexoraOne (Banco Brubank S.A.U.)',
+  mercadopago: '',
   crypto: 'USDT (Red TRC-20 / Polygon): TNeXoRa1EngineSovereignMeshWalletX9',
   usdtTron: 'TNeXoRa1EngineSovereignMeshWalletX9',
   usdtPolygon: '0x328A947A6B8dD8B964344E0E847dF6f0302b1234',
@@ -444,10 +444,9 @@ export async function generateNoraResponse(
       `  - Nexora Caja Fuerte & Auditoría: $70 USD (~$108.000 ARS)\n` +
       `  - Nexora Clasificados e Inmuebles Verificados: 100% Gratuitos y Comunitarios.\n` +
       `  - Prensa & Medios Soberano: Próximamente v2.0 (Solo bajo consulta).\n\n` +
-      `● **Canales Oficiales de Cobro Directo (Sin comisiones intermedias):**\n` +
-      `  1. Transferencia Bancaria (ARS): CBU ${paymentDetails.cbu} | Alias: ${paymentDetails.alias} | Titular: ${paymentDetails.titular}\n` +
-      `  2. Mercado Pago: ${paymentDetails.mercadopago}\n` +
-      `  3. Criptoactivos: USDT TRC-20: ${paymentDetails.usdtTron} | Polygon: ${paymentDetails.usdtPolygon}\n\n` +
+      `● **Canales Oficiales de Cobro Directo (0% Comisiones Intermedias):**\n` +
+      `  1. Transferencia Inmediata Brubank (ARS): CBU ${paymentDetails.cbu} | Alias: ${paymentDetails.alias} | Titular: ${paymentDetails.titular}\n` +
+      `  2. Criptoactivos Soberanos: USDT TRC-20: ${paymentDetails.usdtTron} | Polygon: ${paymentDetails.usdtPolygon}\n\n` +
       `¿Desea que le activemos una clave de demostración de 15 días en este momento?`;
   }
 
