@@ -2,11 +2,41 @@
 <html lang="es-AR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nora AI + IberáSoft POS | Tren Agéntico Nexora One (Kioscos 2026)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Nora Kiosco POS | Nexora One</title>
+  
+  <!-- PWA & Mobile Web App Capabilities -->
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#0b0f19" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Nora Kiosco" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" href="/favicon.png" />
+  
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
+  <!-- BANNER FLOTANTE DE INSTALACIÓN PWA EN CELULAR -->
+  <div id="pwa-install-banner" style="display:none; position:fixed; bottom:16px; left:16px; right:16px; max-width:440px; margin:0 auto; background:linear-gradient(135deg, #0f172a, #1e293b); border:1.5px solid #10b981; border-radius:14px; padding:12px 16px; box-shadow:0 10px 30px rgba(0,0,0,0.8), 0 0 20px rgba(16,185,129,0.3); z-index:99999; align-items:center; justify-content:space-between; gap:12px;">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <img src="/icon-192.png" alt="Nora Logo" style="width:42px; height:42px; border-radius:10px; border:1px solid #34d399;" />
+      <div>
+        <div style="font-size:0.88rem; font-weight:800; color:#fff;">Instalar Nora Kiosco</div>
+        <div style="font-size:0.75rem; color:#94a3b8;">Usar como App nativa en tu celular</div>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <button id="btn-pwa-install" class="btn btn-success" style="padding:7px 14px; font-size:0.8rem; font-weight:800; border-radius:8px; cursor:pointer;">
+        📲 Instalar
+      </button>
+      <button onclick="document.getElementById('pwa-install-banner').style.display='none'" style="background:none; border:none; color:#64748b; font-size:1.2rem; cursor:pointer; padding:4px 6px;">
+        ✕
+      </button>
+    </div>
+  </div>
+
   <!-- BANNER MODO CELULAR DEL DUEÑO -->
   <div class="duenio-banner">
     📱 MODO SUPERVISIÓN Y CARGA REMOTA DEL DUEÑO ACTIVO — Conectado en tiempo real al Kiosco e IberáSoft POS
@@ -138,6 +168,15 @@
     <!-- TAB 1: LECTURA DE FACTURAS / REMITOS + FILTRO DE MERCADERÍA RECIBIDA -->
     <!-- =================================================================== -->
     <section id="tab-facturas" class="tab-panel active">
+      <!-- BARRA DE ACCESO RÁPIDO AL CATÁLOGO DEL KIOSCO / LUBRICENTRO -->
+      <div style="background:#0f172a; border:1px solid #334155; border-radius:10px; padding:10px 14px; margin-bottom:12px; display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px;">
+        <span style="font-size:0.85rem; color:#cbd5e1;">📦 <strong>Base de Datos del Local:</strong> 3.308 artículos (Lubricentro y Kiosco) sincronizados</span>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn btn-secondary" onclick="cambiarTab('tab-stock')" style="font-size:0.8rem; padding:6px 12px;">🔍 Ver Stock y Precios</button>
+          <button class="btn btn-primary" onclick="restaurarCatalogoLubricentroUI()" style="font-size:0.8rem; padding:6px 12px;">🔄 Recargar Catálogo Local (3.308)</button>
+        </div>
+      </div>
+
       <div class="grid-2">
         <!-- COLUMNA IZQUIERDA: CAPTURA POR CÁMARA / WHATSAPP / CELULAR -->
         <div class="card">
@@ -294,11 +333,14 @@
             <a href="/api/iberasoft/lista-actualizada.csv" class="btn btn-success" style="text-decoration:none;">
               📥 Descargar Planilla CSV para IberáSoft
             </a>
+            <button class="btn btn-primary" onclick="restaurarCatalogoLubricentroUI()">
+              🔄 Recargar Catálogo Kiosco/Lubricentro (3.308)
+            </button>
             <button class="btn btn-secondary" onclick="escanearConexionIberaSoft()">
               🔄 Re-Escanear IberáSoft
             </button>
             <button class="btn btn-danger" onclick="limpiarTodosLosEjemplos()">
-              🧹 Borrar Datos de Ejemplo (Dejar en Cero)
+              🧹 Vaciar Catálogo (Dejar en Cero)
             </button>
           </div>
         </div>
@@ -483,8 +525,11 @@
             <h2>📱 1. QR para Entrar desde tu Celular (4G / 5G / WiFi)</h2>
             <span id="badge-tunnel-status" class="pill pill-emerald">Túnel HTTPS 4G Activo</span>
           </div>
+          <div style="background:rgba(16,185,129,0.12); border:1px solid #10b981; padding:8px 12px; border-radius:8px; font-size:0.82rem; color:#6ee7b7; margin-bottom:12px;">
+            ⚠️ <strong>ATENCIÓN:</strong> Este QR se escanea con la <strong>CÁMARA DE FOTOS NORMAL DEL CELULAR</strong> (o app lectora de QR), <u>NO con WhatsApp</u>. Abre el panel de control del Kiosco directamente en el navegador del teléfono.
+          </div>
           <p style="font-size:0.85rem; color:#cbd5e1; margin-bottom:12px;">
-            Apuntá la cámara de tu celular a este <strong>Código QR</strong> (o copiá el enlace HTTPS de abajo). Funciona tanto con <strong>Datos Móviles 4G/5G</strong> como con WiFi, sin que el Firewall de Windows te bloquee:
+            Apuntá la cámara normal de tu celular a este <strong>Código QR</strong> (o tocá el enlace HTTPS):
           </p>
 
           <div style="display:flex; flex-wrap:wrap; align-items:center; gap:16px; background:#0b1120; border:1px solid #1e293b; padding:14px; border-radius:12px; margin-bottom:14px;">
@@ -529,11 +574,15 @@
             <h2>💬 2. QR Oficial para Asignar Número de WhatsApp al Kiosco</h2>
             <span id="badge-wa-qr-status" class="pill pill-amber">Esperando Escaneo</span>
           </div>
-          <p style="font-size:0.85rem; color:#cbd5e1; margin-bottom:12px;">
-            En el celular que tendrá el número del Kiosco, abrí <strong>WhatsApp ➔ 3 puntitos ➔ Dispositivos vinculados ➔ Vincular un dispositivo</strong> y escaneá este QR ámbar:
-          </p>
+          <div style="background:rgba(245,158,11,0.12); border:1px solid #f59e0b; padding:8px 12px; border-radius:8px; font-size:0.82rem; color:#fde68a; margin-bottom:12px;">
+            💬 <strong>ESTE ES EL QR PARA WHATSAPP:</strong> Abrí la app de WhatsApp en tu celular ➔ tocá los <strong>3 puntitos (Android)</strong> o <strong>Configuración (iPhone)</strong> ➔ <strong>Dispositivos vinculados</strong> ➔ <strong>Vincular un dispositivo</strong> y escaneá este código.
+          </div>
 
-          <div style="display:flex; flex-wrap:wrap; align-items:center; gap:16px; background:#0b1120; border:1px solid #1e293b; padding:14px; border-radius:12px; margin-bottom:14px;">
+          <!-- Banner cuando ya está vinculado -->
+          <div id="wa-linked-banner" style="display:none; margin-bottom:14px;"></div>
+
+          <!-- Contenedor del QR cuando espera escaneo -->
+          <div id="qr-wa-container" style="display:flex; flex-wrap:wrap; align-items:center; gap:16px; background:#0b1120; border:1px solid #1e293b; padding:14px; border-radius:12px; margin-bottom:14px;">
             <div style="background:#ffffff; padding:10px; border-radius:10px; display:flex; align-items:center; justify-content:center; min-width:195px; min-height:195px;">
               <img id="qr-img-whatsapp-nora" src="" alt="Generando QR de Dispositivos Vinculados..." style="width:175px; height:175px; display:block;" />
             </div>

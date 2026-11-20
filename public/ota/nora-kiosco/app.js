@@ -21,7 +21,43 @@ socket.on('nora:ota-updated', (payload) => {
   mostrarNotificacionOTA(payload);
 });
 
+// =========================================================================
+// REGISTRO DE SERVICE WORKER & INSTALADOR PWA (APP NATIVA EN CELULAR)
+// =========================================================================
+let deferredPwaPrompt = null;
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then((reg) => console.log('✓ ServiceWorker Nora PWA activo:', reg.scope))
+      .catch((err) => console.warn('ServiceWorker error:', err));
+  });
+}
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPwaPrompt = e;
+  const banner = document.getElementById('pwa-install-banner');
+  if (banner) {
+    banner.style.display = 'flex';
+  }
+});
+
 window.addEventListener('DOMContentLoaded', () => {
+  const btnInstall = document.getElementById('btn-pwa-install');
+  if (btnInstall) {
+    btnInstall.addEventListener('click', async () => {
+      const banner = document.getElementById('pwa-install-banner');
+      if (deferredPwaPrompt) {
+        deferredPwaPrompt.prompt();
+        const choice = await deferredPwaPrompt.userChoice;
+        console.log('PWA install outcome:', choice?.outcome);
+        deferredPwaPrompt = null;
+        if (banner) banner.style.display = 'none';
+      }
+    });
+  }
+
   aplicarEstiloRol();
   if (new URLSearchParams(window.location.search).get('soporte') === 'nexora') {
     const devPanel = document.getElementById('nexora-dev-support-panel');
@@ -810,6 +846,22 @@ async function limpiarTodosLosEjemplos() {
   }
 }
 
+async function restaurarCatalogoLubricentroUI() {
+  if (!confirm('¿Querés cargar el catálogo completo del Kiosco y Lubricentro (3.308 artículos con precios y stock de IberáSoft)?')) return;
+  try {
+    const res = await fetch('/api/iberasoft/restaurar-lubricentro', { method: 'POST' });
+    const data = await res.json();
+    if (data.ok) {
+      alert(`✅ ¡Éxito! Se cargaron ${data.totalArticulos} artículos de Lubricentro y Kiosco en la base de datos.`);
+      hablarNora(`Catálogo del local cargado exitosamente. Hay ${data.totalArticulos} productos disponibles.`);
+    } else {
+      alert('Error: ' + data.error);
+    }
+  } catch (err) {
+    alert('Error al conectar con el servidor: ' + err.message);
+  }
+}
+
 async function actualizarArticuloIberaSoft(id, payload) {
   await fetch(`/api/stock/${id}`, {
     method: 'PUT',
@@ -1170,13 +1222,33 @@ function renderWhatsAppYConfig(whatsappFeed, config, localIp, port) {
   // 2. Renderizar el QR Oficial de Dispositivos Vinculados de WhatsApp (Baileys Multi-Device)
   const waBridge = KIOSCO_STATE?.whatsappBridge || {};
   const qrWaImg = document.getElementById('qr-img-whatsapp-nora');
-  if (qrWaImg) {
-    if (waBridge.linked) {
-      // Si ya está vinculado, mostrar QR de confirmación verde
-      const linkedInfo = `WHATSAPP_KIOSCO_VINCULADO:${waBridge.linkedPhone}`;
-      qrWaImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=6&color=065f46&data=${encodeURIComponent(linkedInfo)}`;
-    } else if (waBridge.qrDataUrl) {
-      // QR Criptográfico Real de WhatsApp Multi-Device ("Dispositivos vinculados -> Vincular un dispositivo")
+  const qrWaContainer = document.getElementById('qr-wa-container');
+  const waLinkedBanner = document.getElementById('wa-linked-banner');
+
+  if (waBridge.linked) {
+    if (qrWaContainer) qrWaContainer.style.display = 'none';
+    if (waLinkedBanner) {
+      waLinkedBanner.style.display = 'block';
+      waLinkedBanner.innerHTML = `
+        <div style="background:rgba(16,185,129,0.15); border:1.5px solid #10b981; border-radius:12px; padding:16px; text-align:center;">
+          <div style="font-size:1.8rem; margin-bottom:6px;">✅</div>
+          <div style="font-size:1rem; font-weight:800; color:#34d399;">WhatsApp Vinculado Exitosamente</div>
+          <div style="font-size:0.85rem; color:#e2e8f0; margin:4px 0 10px 0;">
+            Número conectado: <strong>${waBridge.linkedPhone}</strong> (${waBridge.linkedName || 'Kiosco'})
+          </div>
+          <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:12px;">
+            El Kiosco ya está recibiendo mensajes y fotos de facturas automáticamente.
+          </div>
+          <button class="btn btn-warning" onclick="regenerarCodigoQRWhatsApp()" style="background:#f59e0b; color:#0f172a; font-weight:800; padding:8px 16px; border:none; border-radius:8px; cursor:pointer;">
+            🔄 Desvincular y Conectar Otro Número de WhatsApp
+          </button>
+        </div>
+      `;
+    }
+  } else {
+    if (waLinkedBanner) waLinkedBanner.style.display = 'none';
+    if (qrWaContainer) qrWaContainer.style.display = 'flex';
+    if (qrWaImg && waBridge.qrDataUrl) {
       qrWaImg.src = waBridge.qrDataUrl;
     }
   }
