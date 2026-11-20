@@ -44,15 +44,15 @@ export interface SystemInfo {
 
 export const SYSTEMS_CATALOG: Record<string, SystemInfo> = {
   restobar: {
-    name: 'Restobar 2026 POS',
-    usd: 65,
-    ars: 101725,
-    category: 'Gastronomía y Bares',
-    summary: 'Terminal de punto de venta reactiva con base de datos local SQLite y comanderas térmicas directas ESC/POS. Opera con normalidad aún sin internet.',
-    audience: 'Restaurantes, bares y confiterías que precisan facturación y comanda instantánea sin caídas en horas pico.',
-    nameEn: 'Restobar 2026 POS',
-    summaryEn: 'Reactive point-of-sale terminal powered by embedded SQLite and direct ESC/POS thermal printer communication. Zero downtime during internet outages.',
-    audienceEn: 'Restaurants, bistros, and cocktail lounges demanding sub-second ticketing and resilient billing during peak hours.',
+    name: 'Restobar 2026 PRO (Suite Gastronómica Agéntica By Nora)',
+    usd: 50,
+    ars: 45000,
+    category: 'Gastronomía, Bares & Restaurantes',
+    summary: 'Terminal gastronómica soberana con Agente Nora: OCR Multimodal Qwen 3.8 para lectura de facturas con IVA discriminado, WhatsApp Baileys para recepción automática de pedidos delivery a Cocina (KDS) y Caja, comandas y Carta QR en mesas 100% offline.',
+    audience: 'Restaurantes, bares, pizzerías y pubs que precisan automatizar pedidos de WhatsApp, facturas de proveedores y comandas sin comisiones ni caídas de internet.',
+    nameEn: 'Restobar 2026 PRO (Agentic Gastro Suite by Nora)',
+    summaryEn: 'Sovereign culinary POS terminal featuring Nora Agent: Multimodal Qwen 3.8 OCR invoice scanning with tax breakdown, multi-device WhatsApp for delivery order ingestion straight to Kitchen KDS & Cashier, and offline table QR menus.',
+    audienceEn: 'Restaurants, bars, and cocktail lounges demanding sub-second ticketing, WhatsApp order automation, and supplier invoice scanning with zero downtime.',
   },
   carribar: {
     name: 'Nexora Club & Carribar Pass',

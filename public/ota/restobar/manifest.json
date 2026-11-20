@@ -1,0 +1,9 @@
+{
+  "systemId": "restobar-2026",
+  "version": "2026.1.0",
+  "releaseDate": "2026-11-20",
+  "changelog": "Tren Agéntico By Nora con OCR Multimodal Qwen 3.8 (IVA y netos discriminados) + WhatsApp Multi-Device Baileys (pedidos delivery a cocina y caja) + Actualizador OTA Remoto Silencioso sin interrupción al cliente.",
+  "downloadUrl": "https://nexora-store-app.vercel.app/downloads/Suite_Restobar_2026_Setup.zip",
+  "minCompatibleVersion": "2026.0.0",
+  "updateAvailable": true
+}
