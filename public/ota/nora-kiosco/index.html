@@ -68,10 +68,12 @@
   <!-- CABECERA PRINCIPAL -->
   <header class="top-header">
     <div class="brand-block">
-      <div class="ibera-gear-badge" title="Conector Agéntico IberáSoft">⚙️</div>
+      <div class="nxo-logo-wrap" title="Nexora One Engine (NXO)">
+        <img src="/app-logo.png" alt="Nexora One Engine" class="nxo-header-logo" />
+      </div>
       <div class="brand-title">
-        <h1>Nora COO <span style="color:#f59e0b;">× IberáSoft POS</span></h1>
-        <p id="ibera-status-sub">Tren Agéntico Nexora One Engine • Kioscos & Maxikioscos</p>
+        <h1>Nora AI <span style="color:#f59e0b;">× IberáSoft POS</span></h1>
+        <p id="ibera-status-sub">Nexora One Engine (NXO) • Tren Agéntico Kioscos & Lubricentro</p>
       </div>
     </div>
 
@@ -93,20 +95,30 @@
 
   <!-- BARRA DE COMANDOS Y VOZ DE NORA -->
   <section class="nora-bar">
-    <div class="nora-avatar">🎙️ NORA COO</div>
-    <div id="nora-speech-text" class="nora-speech-box">
-      "Hola equipo. Estoy conectada al catálogo de IberáSoft, controlando límites mínimos, recepción de facturas y la caja del turno."
+    <div class="nora-face-badge" onclick="abrirChatNoraModal()" title="Click para abrir Chat en vivo con Nora AI">
+      <div class="nora-avatar-img-wrap">
+        <img src="/nora-avatar-circle.png" class="nora-face-img" alt="Nora AI" />
+        <span class="status-pulse-dot" title="Nora En Línea"></span>
+      </div>
+      <div class="nora-badge-text">
+        <span class="nora-name">NORA AI</span>
+        <span class="nora-tag">Copilot COO</span>
+      </div>
+    </div>
+    <div id="nora-speech-text" class="nora-speech-box" onclick="abrirChatNoraModal()" title="Click para abrir historial de conversación">
+      "Hola equipo. Estoy conectada al catálogo de IberáSoft con 3.308 productos, controlando límites mínimos, recepción de facturas y la caja del turno."
     </div>
     <div class="nora-input-group">
       <input
         type="text"
         id="nora-command-input"
-        placeholder="Ej: 'Soy Martín', '¿Qué faltantes hay?', '¿Cómo está la caja?'"
+        placeholder="Preguntale o pedile algo a Nora (Ej: 'Faltantes', 'Estado de caja', '¿Cómo cargo factura?')..."
         style="flex:1;"
         onkeydown="if(event.key==='Enter') enviarComandoNora()"
       />
-      <button class="btn btn-primary" onclick="enviarComandoNora()">Hablar</button>
+      <button class="btn btn-primary" onclick="enviarComandoNora()">💬 Hablar</button>
       <button class="btn btn-secondary" id="btn-mic-voz" onclick="iniciarReconocimientoVoz()" title="Hablar por micrófono">🎤 Voz</button>
+      <button class="btn btn-chat-trigger" onclick="abrirChatNoraModal()" title="Abrir ventana de Chat con Nora">💬 Chat</button>
     </div>
   </section>
 
@@ -955,6 +967,60 @@
           <input type="password" id="input-susp-key" placeholder="Ingresá clave de reactivación..." style="flex:1;" />
           <button class="btn btn-success" onclick="desbloquearServicioSuspendido()">Desbloquear</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTÓN FLOTANTE CHAT DE NORA -->
+  <div id="btn-chat-flotante" class="floating-nora-chat-btn" onclick="abrirChatNoraModal()" title="Abrir Chat con Nora AI">
+    <img src="/nora-avatar-circle.png" alt="Nora AI" class="floating-nora-img" />
+    <span class="floating-nora-label">Chat Nora</span>
+    <span class="floating-nora-online-dot"></span>
+  </div>
+
+  <!-- MODAL DE CHAT EN VIVO CON NORA AI -->
+  <div id="modal-chat-nora" class="modal-pago" style="display:none;" onclick="if(event.target===this) cerrarChatNoraModal()">
+    <div class="modal-pago-card modal-chat-dialog">
+      <div class="chat-modal-header">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div class="nora-avatar-img-wrap" style="width:44px; height:44px;">
+            <img src="/nora-avatar-circle.png" class="nora-face-img" alt="Nora AI" />
+            <span class="status-pulse-dot"></span>
+          </div>
+          <div>
+            <div style="font-weight:800; font-size:1.05rem; color:#f8fafc; display:flex; align-items:center; gap:8px;">
+              Nora AI <span class="pill pill-emerald" style="font-size:0.68rem; padding:2px 8px;">En Línea • Nexora One</span>
+            </div>
+            <div style="font-size:0.75rem; color:#94a3b8;">Supervisora Agéntica de IberáSoft POS y Caja</div>
+          </div>
+        </div>
+        <button class="btn-close-clean" onclick="cerrarChatNoraModal()">✕</button>
+      </div>
+
+      <!-- CUERPO DEL CHAT -->
+      <div id="chat-stream-container" class="chat-stream-body">
+        <div class="chat-row chat-row-nora">
+          <img src="/nora-avatar-circle.png" class="chat-msg-avatar" alt="Nora" />
+          <div class="chat-bubble chat-bubble-nora">
+            <div class="chat-sender-label">Nora AI</div>
+            ¡Hola! Estoy acá para ayudarte con todo el kiosco y lubricentro. Tengo cargados los 3.308 artículos de IberáSoft, superviso faltantes de stock, registro facturas y controlo la caja del turno. ¿En qué te ayudo?
+          </div>
+        </div>
+      </div>
+
+      <!-- SUGERENCIAS RÁPIDAS -->
+      <div class="chat-quick-tags">
+        <button type="button" class="quick-tag" onclick="enviarSugerenciaChat('¿Qué faltantes de stock hay?')">🚨 Ver faltantes</button>
+        <button type="button" class="quick-tag" onclick="enviarSugerenciaChat('¿Cómo está la caja del turno actual?')">💵 Estado de caja</button>
+        <button type="button" class="quick-tag" onclick="enviarSugerenciaChat('¿Cómo cargo una factura si faltó mercadería?')">📄 Factura parcial</button>
+        <button type="button" class="quick-tag" onclick="enviarSugerenciaChat('¿Cómo pongo una venta en espera en IberáSoft?')">⏸️ Venta en espera</button>
+      </div>
+
+      <!-- FOOTER / INPUT -->
+      <div class="chat-input-bar">
+        <input type="text" id="modal-chat-input" placeholder="Escribile un mensaje o pregunta a Nora..." onkeydown="if(event.key==='Enter') enviarMensajeModalChat()" />
+        <button class="btn btn-secondary" onclick="iniciarReconocimientoVozModalChat()" title="Hablar por micrófono">🎤</button>
+        <button class="btn btn-primary" onclick="enviarMensajeModalChat()">Enviar</button>
       </div>
     </div>
   </div>

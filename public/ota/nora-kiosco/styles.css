@@ -29,7 +29,7 @@ body {
 
 /* TOP HEADER */
 .top-header {
-  background: linear-gradient(90deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+  background: linear-gradient(90deg, #090e1a 0%, #151b33 50%, #090e1a 100%);
   border-bottom: 1px solid var(--border-color);
   padding: 12px 20px;
   display: flex;
@@ -46,6 +46,24 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.nxo-logo-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 14, 28, 0.85);
+  padding: 4px 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+}
+
+.nxo-header-logo {
+  height: 38px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 0 8px rgba(6, 182, 212, 0.5));
 }
 
 .ibera-gear-badge {
@@ -108,15 +126,82 @@ body {
   background: rgba(239, 68, 68, 0.12);
 }
 
-/* NORA VOICE BAR */
+/* NORA VOICE & CHAT BAR */
 .nora-bar {
-  background: rgba(19, 27, 46, 0.95);
+  background: rgba(15, 23, 42, 0.95);
   border-bottom: 1px solid var(--border-color);
-  padding: 10px 20px;
+  padding: 8px 20px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  gap: 12px;
+}
+
+.nora-face-badge {
+  display: flex;
+  align-items: center;
   gap: 10px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(59, 130, 246, 0.15));
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  padding: 4px 10px 4px 5px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.nora-face-badge:hover {
+  border-color: #38bdf8;
+  box-shadow: 0 0 15px rgba(56, 189, 248, 0.35);
+  transform: translateY(-1px);
+}
+
+.nora-avatar-img-wrap {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.nora-face-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid #38bdf8;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
+}
+
+.status-pulse-dot {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #10b981;
+  border: 2px solid #0f172a;
+  box-shadow: 0 0 8px #10b981;
+}
+
+.nora-badge-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.nora-name {
+  font-weight: 800;
+  font-size: 0.82rem;
+  letter-spacing: 0.5px;
+  color: #f8fafc;
+}
+
+.nora-tag {
+  font-size: 0.65rem;
+  color: #38bdf8;
+  font-weight: 600;
+  text-transform: uppercase;
 }
 
 .nora-avatar {
@@ -131,18 +216,41 @@ body {
 .nora-speech-box {
   flex: 1;
   min-width: 240px;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   color: #e2e8f0;
   background: #0b1120;
   padding: 8px 14px;
   border-radius: 8px;
   border: 1px solid #1e293b;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.nora-speech-box:hover {
+  border-color: #38bdf8;
 }
 
 .nora-input-group {
   display: flex;
+  align-items: center;
   gap: 6px;
-  min-width: 280px;
+  min-width: 320px;
+}
+
+.btn-chat-trigger {
+  background: linear-gradient(135deg, #0284c7, #2563eb);
+  color: #fff;
+  border: none;
+  font-weight: 700;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.3);
+}
+
+.btn-chat-trigger:hover {
+  box-shadow: 0 0 15px rgba(56, 189, 248, 0.5);
 }
 
 /* NAVIGATION TABS */
@@ -629,4 +737,257 @@ body.modo-duenio .duenio-banner {
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* ========================================================================= */
+/* BOTÓN FLOTANTE CHAT CON NORA                                              */
+/* ========================================================================= */
+.floating-nora-chat-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  border: 2px solid #38bdf8;
+  border-radius: 999px;
+  padding: 6px 14px 6px 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6), 0 0 20px rgba(56, 189, 248, 0.4);
+  z-index: 9999;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+
+.floating-nora-chat-btn:hover {
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8), 0 0 30px rgba(56, 189, 248, 0.6);
+  border-color: #7dd3fc;
+}
+
+.floating-nora-img {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #00f0ff;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
+}
+
+.floating-nora-label {
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: #f8fafc;
+  letter-spacing: 0.3px;
+}
+
+.floating-nora-online-dot {
+  width: 9px;
+  height: 9px;
+  background: #10b981;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #10b981;
+}
+
+/* ========================================================================= */
+/* MODAL COMPLETO DE CHAT CON NORA AI                                       */
+/* ========================================================================= */
+.modal-chat-dialog {
+  max-width: 680px;
+  width: 100%;
+  height: 82vh;
+  max-height: 720px;
+  display: flex;
+  flex-direction: column;
+  padding: 0 !important;
+  overflow: hidden;
+  border: 1px solid rgba(56, 189, 248, 0.4) !important;
+  background: #090e1a !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(56, 189, 248, 0.25) !important;
+}
+
+.chat-modal-header {
+  padding: 14px 20px;
+  background: linear-gradient(90deg, #0d1527 0%, #17203d 100%);
+  border-bottom: 1px solid #1e293b;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chat-stream-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: radial-gradient(circle at 50% 10%, #0f182c 0%, #060912 100%);
+}
+
+.chat-row {
+  display: flex;
+  gap: 12px;
+  max-width: 88%;
+  animation: fadeInMsg 0.2s ease-out;
+}
+
+@keyframes fadeInMsg {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.chat-row-nora {
+  align-self: flex-start;
+}
+
+.chat-row-user {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.chat-msg-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1.5px solid #38bdf8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+}
+
+.chat-user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: #fff;
+  flex-shrink: 0;
+  border: 1.5px solid #a855f7;
+}
+
+.chat-bubble {
+  padding: 12px 16px;
+  border-radius: 14px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+.chat-bubble-nora {
+  background: #111a2e;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: #f1f5f9;
+  border-top-left-radius: 4px;
+}
+
+.chat-bubble-user {
+  background: linear-gradient(135deg, #1e3a8a, #2563eb);
+  border: 1px solid rgba(96, 165, 250, 0.4);
+  color: #ffffff;
+  border-top-right-radius: 4px;
+}
+
+.chat-sender-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #38bdf8;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.chat-quick-tags {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 8px 18px;
+  background: #0b1120;
+  border-top: 1px solid #1e293b;
+  scrollbar-width: none;
+}
+
+.chat-quick-tags::-webkit-scrollbar {
+  display: none;
+}
+
+.quick-tag {
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid #334155;
+  color: #cbd5e1;
+  font-size: 0.78rem;
+  padding: 5px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.quick-tag:hover {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+
+.chat-input-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  background: #080d18;
+  border-top: 1px solid #1e293b;
+}
+
+.chat-input-bar input {
+  flex: 1;
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.chat-input-bar input:focus {
+  outline: none;
+  border-color: #38bdf8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+}
+
+.btn-close-clean {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.3rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: color 0.2s;
+}
+
+.btn-close-clean:hover {
+  color: #ef4444;
+}
+
+/* COPILOT AVATAR INTEGRATION */
+.copilot-face-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.copilot-nora-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #8b5cf6;
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.4);
 }

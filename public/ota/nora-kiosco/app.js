@@ -1352,13 +1352,72 @@ async function guardarConfiguracionKiosco() {
 }
 
 // =========================================================================
-// 7. INTERACCIÓN POR VOZ Y CHAT CON NORA COO
+// 7. INTERACCIÓN POR VOZ Y CHAT CON NORA COO (CON AVATAR REAL)
 // =========================================================================
+function abrirChatNoraModal() {
+  const modal = document.getElementById('modal-chat-nora');
+  if (modal) {
+    modal.style.display = 'flex';
+    const input = document.getElementById('modal-chat-input');
+    if (input) setTimeout(() => input.focus(), 100);
+    scrollChatStream();
+  }
+}
+
+function cerrarChatNoraModal() {
+  const modal = document.getElementById('modal-chat-nora');
+  if (modal) modal.style.display = 'none';
+}
+
+function scrollChatStream() {
+  const stream = document.getElementById('chat-stream-container');
+  if (stream) stream.scrollTop = stream.scrollHeight;
+}
+
+function appendMensajeChat(remitente, texto) {
+  const stream = document.getElementById('chat-stream-container');
+  if (!stream) return;
+
+  const row = document.createElement('div');
+  row.className = `chat-row ${remitente === 'nora' ? 'chat-row-nora' : 'chat-row-user'}`;
+
+  const hora = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+
+  if (remitente === 'nora') {
+    row.innerHTML = `
+      <img src="/nora-avatar-circle.png" class="chat-msg-avatar" alt="Nora AI" />
+      <div class="chat-bubble chat-bubble-nora">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+          <span class="chat-sender-label">Nora AI</span>
+          <span style="font-size:0.65rem; color:#64748b;">${hora}</span>
+        </div>
+        <div>${texto}</div>
+      </div>
+    `;
+  } else {
+    row.innerHTML = `
+      <div class="chat-user-avatar">👤</div>
+      <div class="chat-bubble chat-bubble-user">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+          <span class="chat-sender-label" style="color:#bfdbfe;">Vos</span>
+          <span style="font-size:0.65rem; color:#cbd5e1;">${hora}</span>
+        </div>
+        <div>${texto}</div>
+      </div>
+    `;
+  }
+
+  stream.appendChild(row);
+  scrollChatStream();
+}
+
 async function enviarComandoNora(textoManual = null) {
   const input = document.getElementById('nora-command-input');
-  const texto = textoManual || input?.value || '';
-  if (!texto.trim()) return;
+  const texto = (textoManual || input?.value || '').trim();
+  if (!texto) return;
   if (!textoManual && input) input.value = '';
+
+  appendMensajeChat('user', texto);
 
   const turno = KIOSCO_STATE?.turnoActivo;
   const res = await fetch('/api/nora/chat', {
@@ -1371,9 +1430,62 @@ async function enviarComandoNora(textoManual = null) {
     })
   });
   const data = await res.json();
-  if (data.spokenResponse) {
-    hablarNora(data.spokenResponse);
+  const resp = data.spokenResponse || 'Listo, registrado en el sistema.';
+  appendMensajeChat('nora', resp);
+  hablarNora(resp);
+}
+
+async function enviarMensajeModalChat() {
+  const input = document.getElementById('modal-chat-input');
+  const texto = (input?.value || '').trim();
+  if (!texto) return;
+  input.value = '';
+
+  appendMensajeChat('user', texto);
+
+  const turno = KIOSCO_STATE?.turnoActivo;
+  const res = await fetch('/api/nora/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      textoUsuario: texto,
+      operarioActual: turno ? turno.operario_nombre : 'Operador',
+      rol: MODO_DUENIO ? 'Dueño Remoto (Celular)' : 'Mostrador Kiosco'
+    })
+  });
+  const data = await res.json();
+  const resp = data.spokenResponse || 'Listo, registrado en el sistema.';
+  appendMensajeChat('nora', resp);
+  hablarNora(resp);
+}
+
+function enviarSugerenciaChat(pregunta) {
+  const input = document.getElementById('modal-chat-input');
+  if (input) input.value = pregunta;
+  enviarMensajeModalChat();
+}
+
+function iniciarReconocimientoVozModalChat() {
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRec) {
+    alert('Tu navegador no soporta reconocimiento de voz. Escribile a Nora en el chat.');
+    return;
   }
+  const rec = new SpeechRec();
+  rec.lang = 'es-AR';
+  rec.interimResults = false;
+  const input = document.getElementById('modal-chat-input');
+  if (input) input.placeholder = '🔴 Escuchando tu voz...';
+
+  rec.onresult = (ev) => {
+    const transcript = ev.results[0][0].transcript;
+    if (input) input.value = transcript;
+    enviarMensajeModalChat();
+  };
+  rec.onend = () => {
+    if (input) input.placeholder = 'Escribile un mensaje o pregunta a Nora...';
+  };
+  rec.start();
 }
 
 function iniciarReconocimientoVoz() {
@@ -1491,27 +1603,36 @@ async function consultarNoraCopilot() {
     box.style.display = 'block';
     if (data.guia) {
       box.innerHTML = `
-        <div class="copilot-guide-card" style="border: 2px solid #f59e0b;">
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-            <strong style="color:#fbbf24;">🧭 Guía Encontrada: ${data.guia.titulo}</strong>
+        <div class="copilot-guide-card" style="border: 2px solid #f59e0b; padding:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:10px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <img src="/nora-avatar-circle.png" class="copilot-nora-thumb" alt="Nora" />
+              <div>
+                <strong style="color:#fbbf24; font-size:1.02rem;">🧭 Guía Paso a Paso: ${data.guia.titulo}</strong>
+                <div style="font-size:0.75rem; color:#94a3b8;">Nora Copilot • Instructora IberáSoft</div>
+              </div>
+            </div>
             ${data.guia.tab_destino ? `
               <button class="btn btn-primary" onclick="irAPantallaYResaltar('${data.guia.tab_destino}', '${data.guia.selector_destacado || ''}')">
                 🎯 Llevame a esa Pantalla y Resaltá el Control
               </button>
             ` : ''}
           </div>
-          <p style="font-size:0.84rem; color:#cbd5e1; margin-top:4px;">${data.guia.resumen}</p>
+          <p style="font-size:0.86rem; color:#cbd5e1; margin-bottom:10px;">${data.guia.resumen}</p>
           <ul class="copilot-step-list">
             ${(data.guia.pasos || []).map((p) => `<li>${p}</li>`).join('')}
           </ul>
-          ${data.respuestaDetallada ? `<div style="margin-top:8px; font-size:0.83rem; color:#a7f3d0;">💡 Nora: ${data.respuestaDetallada}</div>` : ''}
+          ${data.respuestaDetallada ? `<div style="margin-top:10px; font-size:0.85rem; color:#a7f3d0; background:rgba(16,185,129,0.1); padding:8px 12px; border-radius:8px; border:1px solid rgba(16,185,129,0.25);">💡 Nora: ${data.respuestaDetallada}</div>` : ''}
         </div>
       `;
     } else {
       box.innerHTML = `
-        <div class="copilot-guide-card" style="border: 2px solid #8b5cf6;">
-          <strong style="color:#c4b5fd;">🧭 Respuesta de Nora Copilot:</strong>
-          <p style="font-size:0.86rem; color:#e2e8f0; margin-top:6px; white-space:pre-line;">${data.respuestaDetallada || data.spokenResponse}</p>
+        <div class="copilot-guide-card" style="border: 2px solid #8b5cf6; padding:16px;">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+            <img src="/nora-avatar-circle.png" class="copilot-nora-thumb" alt="Nora" />
+            <strong style="color:#c4b5fd; font-size:1rem;">🧭 Respuesta de Nora Copilot:</strong>
+          </div>
+          <p style="font-size:0.88rem; color:#e2e8f0; line-height:1.5; white-space:pre-line;">${data.respuestaDetallada || data.spokenResponse}</p>
         </div>
       `;
     }
