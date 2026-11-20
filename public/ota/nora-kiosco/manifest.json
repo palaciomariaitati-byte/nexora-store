@@ -1,11 +1,14 @@
 {
   "systemId": "nora-kiosco-iberasoft",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "releaseDate": "2026-11-20",
-  "changelog": "Catálogo completo de 3.308 artículos sincronizado, escáner instantáneo de Código QR AFIP para facturas, compresión inteligente de fotos, botones permanentes de stock e instalador a 1 Solo Clic.",
+  "changelog": "Identidad visual oficial: Rostro de Nora AI integrado en barra de comandos, Copilot y nuevo Chat en vivo; Icono oficial NXO (Nexora One Engine) de escritorio (.ico) y logotipo en cabecera.",
   "files": {
     "public/app.js": "https://nexora-store-app.vercel.app/ota/nora-kiosco/app.js",
     "public/styles.css": "https://nexora-store-app.vercel.app/ota/nora-kiosco/styles.css",
-    "public/index.html": "https://nexora-store-app.vercel.app/ota/nora-kiosco/index.html"
+    "public/index.html": "https://nexora-store-app.vercel.app/ota/nora-kiosco/index.html",
+    "public/nora-avatar-circle.png": "https://nexora-store-app.vercel.app/ota/nora-kiosco/nora-avatar-circle.png",
+    "public/nora-avatar.png": "https://nexora-store-app.vercel.app/ota/nora-kiosco/nora-avatar.png",
+    "public/app-logo.png": "https://nexora-store-app.vercel.app/ota/nora-kiosco/app-logo.png"
   }
 }
