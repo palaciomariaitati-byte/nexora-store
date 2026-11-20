@@ -846,14 +846,14 @@ async function limpiarTodosLosEjemplos() {
   }
 }
 
-async function restaurarCatalogoLubricentroUI() {
-  if (!confirm('¿Querés cargar el catálogo completo del Kiosco y Lubricentro (3.308 artículos con precios y stock de IberáSoft)?')) return;
+async function restaurarCatalogoKioscoUI() {
+  if (!confirm('¿Querés cargar el catálogo completo del Kiosco (1.277 artículos con precios y stock de IberáSoft)?')) return;
   try {
-    const res = await fetch('/api/iberasoft/restaurar-lubricentro', { method: 'POST' });
+    const res = await fetch('/api/iberasoft/restaurar-catalogo-kiosco', { method: 'POST' });
     const data = await res.json();
     if (data.ok) {
-      alert(`✅ ¡Éxito! Se cargaron ${data.totalArticulos} artículos de Lubricentro y Kiosco en la base de datos.`);
-      hablarNora(`Catálogo del local cargado exitosamente. Hay ${data.totalArticulos} productos disponibles.`);
+      alert(`✅ ¡Éxito! Se cargaron ${data.totalArticulos} artículos del Kiosco en la base de datos.`);
+      hablarNora(`Catálogo del Kiosco cargado exitosamente. Hay ${data.totalArticulos} productos disponibles.`);
     } else {
       alert('Error: ' + data.error);
     }
@@ -861,6 +861,7 @@ async function restaurarCatalogoLubricentroUI() {
     alert('Error al conectar con el servidor: ' + err.message);
   }
 }
+const restaurarCatalogoLubricentroUI = restaurarCatalogoKioscoUI;
 
 async function actualizarArticuloIberaSoft(id, payload) {
   await fetch(`/api/stock/${id}`, {

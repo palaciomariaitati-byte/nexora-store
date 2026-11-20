@@ -1,8 +1,8 @@
 {
   "systemId": "nora-kiosco-iberasoft",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "releaseDate": "2026-11-20",
-  "changelog": "Identidad visual oficial: Rostro de Nora AI integrado en barra de comandos, Copilot y nuevo Chat en vivo; Icono oficial NXO (Nexora One Engine) de escritorio (.ico) y logotipo en cabecera.",
+  "changelog": "Catálogo exclusivo de Kiosco: 1.277 artículos (golosinas, bebidas, galletitas, almacén, cigarrillos y snacks) con precios y stock de IberáSoft; branding unificado Kiosco POS y acceso directo a 1 Clic.",
   "files": {
     "public/app.js": "https://nexora-store-app.vercel.app/ota/nora-kiosco/app.js",
     "public/styles.css": "https://nexora-store-app.vercel.app/ota/nora-kiosco/styles.css",

@@ -73,7 +73,7 @@
       </div>
       <div class="brand-title">
         <h1>Nora AI <span style="color:#f59e0b;">× IberáSoft POS</span></h1>
-        <p id="ibera-status-sub">Nexora One Engine (NXO) • Tren Agéntico Kioscos & Lubricentro</p>
+        <p id="ibera-status-sub">Nexora One Engine (NXO) • Tren Agéntico Kioscos & Maxikioscos</p>
       </div>
     </div>
 
@@ -180,12 +180,12 @@
     <!-- TAB 1: LECTURA DE FACTURAS / REMITOS + FILTRO DE MERCADERÍA RECIBIDA -->
     <!-- =================================================================== -->
     <section id="tab-facturas" class="tab-panel active">
-      <!-- BARRA DE ACCESO RÁPIDO AL CATÁLOGO DEL KIOSCO / LUBRICENTRO -->
+      <!-- BARRA DE ACCESO RÁPIDO AL CATÁLOGO DEL KIOSCO -->
       <div style="background:#0f172a; border:1px solid #334155; border-radius:10px; padding:10px 14px; margin-bottom:12px; display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px;">
-        <span style="font-size:0.85rem; color:#cbd5e1;">📦 <strong>Base de Datos del Local:</strong> 3.308 artículos (Lubricentro y Kiosco) sincronizados</span>
+        <span style="font-size:0.85rem; color:#cbd5e1;">📦 <strong>Base de Datos del Kiosco:</strong> 1.277 artículos de IberáSoft sincronizados</span>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
           <button class="btn btn-secondary" onclick="cambiarTab('tab-stock')" style="font-size:0.8rem; padding:6px 12px;">🔍 Ver Stock y Precios</button>
-          <button class="btn btn-primary" onclick="restaurarCatalogoLubricentroUI()" style="font-size:0.8rem; padding:6px 12px;">🔄 Recargar Catálogo Local (3.308)</button>
+          <button class="btn btn-primary" onclick="restaurarCatalogoKioscoUI()" style="font-size:0.8rem; padding:6px 12px;">🔄 Recargar Catálogo Kiosco (1.277)</button>
         </div>
       </div>
 
@@ -345,8 +345,8 @@
             <a href="/api/iberasoft/lista-actualizada.csv" class="btn btn-success" style="text-decoration:none;">
               📥 Descargar Planilla CSV para IberáSoft
             </a>
-            <button class="btn btn-primary" onclick="restaurarCatalogoLubricentroUI()">
-              🔄 Recargar Catálogo Kiosco/Lubricentro (3.308)
+            <button class="btn btn-primary" onclick="restaurarCatalogoKioscoUI()">
+              🔄 Recargar Catálogo Kiosco (1.277)
             </button>
             <button class="btn btn-secondary" onclick="escanearConexionIberaSoft()">
               🔄 Re-Escanear IberáSoft
@@ -1003,7 +1003,7 @@
           <img src="/nora-avatar-circle.png" class="chat-msg-avatar" alt="Nora" />
           <div class="chat-bubble chat-bubble-nora">
             <div class="chat-sender-label">Nora AI</div>
-            ¡Hola! Estoy acá para ayudarte con todo el kiosco y lubricentro. Tengo cargados los 3.308 artículos de IberáSoft, superviso faltantes de stock, registro facturas y controlo la caja del turno. ¿En qué te ayudo?
+            ¡Hola! Estoy acá para ayudarte con todo el kiosco. Tengo cargados los 1.277 artículos de IberáSoft (bebidas, golosinas, galletitas, almacén, cigarrillos y snacks), superviso faltantes de stock, registro facturas y controlo la caja del turno. ¿En qué te ayudo?
           </div>
         </div>
       </div>
