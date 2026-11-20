@@ -1,13 +1,21 @@
-{
-  "systemId": "nora-kiosco-iberasoft",
-  "version": "1.3.4",
-  "releaseDate": "2026-11-20",
-  "changelog": "Logo NXO y avatar de Nora integrados inline como Data URL (cero fallos visuales); chat modal responsivo para celular sin recortes de botonera; auto-scroll a borrador de factura y explicacion clara de comprobante.",
-  "files": {
-    "public/app.js": "https://nexora-store-app.vercel.app/ota/nora-kiosco/app.js",
-    "public/styles.css": "https://nexora-store-app.vercel.app/ota/nora-kiosco/styles.css",
-    "public/index.html": "https://nexora-store-app.vercel.app/ota/nora-kiosco/index.html",
-    "public/app-logo.png": "https://nexora-store-app.vercel.app/ota/nora-kiosco/app-logo.png",
-    "public/nora-avatar-circle.png": "https://nexora-store-app.vercel.app/ota/nora-kiosco/nora-avatar-circle.png"
-  }
+﻿{
+    "systemId":  "nora-kiosco-iberasoft",
+    "version":  "1.3.5",
+    "releaseDate":  "2026-11-20",
+    "changelog":  "Lectura de facturas por foto reparada (Vision IA con 5/5 renglones); reinicio remoto automatico con bucle de servidor; link remoto nuevo enviado por WhatsApp tras cada reinicio; iconos PNG binarios corregidos.",
+    "files":  {
+                  "public/nora-avatar-circle.png":  "https://nexora-store-app.vercel.app/ota/nora-kiosco/nora-avatar-circle.png",
+                  "public/favicon.png":  "https://nexora-store-app.vercel.app/ota/nora-kiosco/favicon.png",
+                  "public/icon-512.png":  "https://nexora-store-app.vercel.app/ota/nora-kiosco/icon-512.png",
+                  "backend/whatsapp_baileys_service.js":  "https://nexora-store-app.vercel.app/ota/nora-kiosco/whatsapp_baileys_service.js",
+                  "public/styles.css":  "https://nexora-store-app.vercel.app/ota/nora-kiosco/styles.css",
+                  "INICIAR_SISTEMA_1_CLIC.bat":  "https://nexora-store-app.vercel.app/ota/nora-kiosco/INICIAR_SISTEMA_1_CLIC.bat",
+                  "public/index.html":  "https://nexora-store-app.vercel.app/ota/nora-kiosco/index.html",
+                  "public/icon-192.png":  "https://nexora-store-app.vercel.app/ota/nora-kiosco/icon-192.png",
+                  "public/app-logo.png":  "https://nexora-store-app.vercel.app/ota/nora-kiosco/app-logo.png",
+                  "backend/NORA_SERVIDOR_BUCLE.bat":  "https://nexora-store-app.vercel.app/ota/nora-kiosco/NORA_SERVIDOR_BUCLE.bat",
+                  "backend/jsqr.cjs":  "https://nexora-store-app.vercel.app/ota/nora-kiosco/jsqr.cjs",
+                  "backend/server.js":  "https://nexora-store-app.vercel.app/ota/nora-kiosco/server.js",
+                  "public/app.js":  "https://nexora-store-app.vercel.app/ota/nora-kiosco/app.js"
+              }
 }

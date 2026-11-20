@@ -18,10 +18,9 @@ import { iberaBridge } from './ibera_bridge.js';
 import { noraAgents } from './nora_kiosco_agents.js';
 import { whatsappService } from './whatsapp_baileys_service.js';
 
-dotenv.config();
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, '.env') });
 const PUBLIC_DIR = path.resolve(__dirname, '..', 'public');
 const COMPROBANTES_DIR = path.resolve(__dirname, '..', 'comprobantes_contador');
 const SYNC_DIR = path.resolve(__dirname, '..', 'sincronizacion_iberasoft');
@@ -55,6 +54,39 @@ function getLocalIpAddress() {
 
 let REMOTE_TUNNEL_URL = '';
 let TUNNEL_STATUS = 'INICIANDO_TUNEL_HTTPS';
+let TUNNEL_CHILD = null;
+
+/**
+ * Guarda el link del túnel en disco y lo manda por WhatsApp (al propio número del kiosco y al dueño),
+ * así después de cada reinicio el link nuevo llega solo al celular.
+ */
+function notificarNuevoTunel(url) {
+  try {
+    const dataDir = path.resolve(__dirname, 'data');
+    if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+    fs.writeFileSync(path.join(dataDir, 'ultimo_tunel.txt'), `${url}/?rol=duenio`, 'utf8');
+  } catch (_) { }
+
+  let intentos = 0;
+  const intentar = async () => {
+    intentos++;
+    if (url !== REMOTE_TUNNEL_URL) return; // ya cambió, no mandar link viejo
+    if (whatsappService.linked && typeof whatsappService.enviarAvisoPropioYDuenio === 'function') {
+      const ok = await whatsappService.enviarAvisoPropioYDuenio(
+        `🔗 *Nuevo link de acceso remoto del Kiosco*\nEl sistema se reinició. Usá este enlace para entrar desde el celular:\n${url}/?rol=duenio`
+      );
+      if (ok) return;
+    }
+    if (intentos < 40) setTimeout(intentar, 6000);
+  };
+  setTimeout(intentar, 4000);
+}
+
+function cerrarTunelHijo() {
+  try { if (TUNNEL_CHILD && !TUNNEL_CHILD.killed) TUNNEL_CHILD.kill(); } catch (_) { }
+}
+process.on('exit', cerrarTunelHijo);
+process.on('SIGINT', () => { cerrarTunelHijo(); process.exit(0); });
 const NEXORA_MASTER_KEY = process.env.NEXORA_MASTER_KEY || 'NEXORA-MASTER-2026';
 
 // Conectar callbacks en tiempo real del motor Baileys WhatsApp Multi-Device
@@ -84,14 +116,16 @@ function iniciarTunelRemotoAutomatico(port) {
       windowsHide: true
     });
 
+    TUNNEL_CHILD = cf;
     const parseCfOutput = (chunk) => {
       const txt = chunk.toString();
       const match = txt.match(/https:\/\/[a-zA-Z0-9-]+\.trycloudflare\.com/);
-      if (match && match[0] !== REMOTE_TUNNEL_URL) {
+      if (match && match[0] !== REMOTE_TUNNEL_URL && !match[0].includes('api.trycloudflare')) {
         REMOTE_TUNNEL_URL = match[0];
         TUNNEL_STATUS = 'ACTIVO_CLOUDFLARE_HTTPS';
         console.log(` 📱 [ACCESO CELULAR 4G/WIFI ACTIVO]: ${REMOTE_TUNNEL_URL}/?rol=duenio`);
         broadcastStateUpdate('TUNNEL_READY');
+        notificarNuevoTunel(REMOTE_TUNNEL_URL);
       }
     };
 
@@ -234,7 +268,15 @@ function checkLicenciaActiva(req, res, next) {
 app.post('/api/nora/leer-factura', checkLicenciaActiva, async (req, res) => {
   try {
     const { imageBase64, origen, operarioCaptura, margenPct, presetDemo } = req.body || {};
-    const resultado = await noraAgents.leerFacturaConCamara({
+    let agentsInstance = noraAgents;
+    try {
+      const dyn = await import(`./nora_kiosco_agents.js?v=${Date.now()}`);
+      if (dyn && dyn.noraAgents) {
+        agentsInstance = dyn.noraAgents;
+      }
+    } catch (_) { }
+
+    const resultado = await agentsInstance.leerFacturaConCamara({
       imageBase64,
       origen: origen || 'CAMARA_KIOSCO',
       operarioCaptura: operarioCaptura || 'Operador',
@@ -594,7 +636,7 @@ app.post('/api/nexora-support/diagnostics', (req, res) => {
 });
 
 app.post('/api/nexora-support/apply-patch', (req, res) => {
-  const { masterKey, relativeFilePath, newContent, configUpdates } = req.body || {};
+  const { masterKey, relativeFilePath, newContent, configUpdates, isBase64 } = req.body || {};
   if (masterKey !== NEXORA_MASTER_KEY) {
     return res.status(403).json({ ok: false, error: 'Clave Maestra de Soporte Nexora inválida.' });
   }
@@ -612,7 +654,8 @@ app.post('/api/nexora-support/apply-patch', (req, res) => {
       if (fs.existsSync(safeTarget)) {
         fs.copyFileSync(safeTarget, `${safeTarget}.bak`);
       }
-      fs.writeFileSync(safeTarget, newContent, 'utf8');
+      const dataToWrite = isBase64 ? Buffer.from(newContent, 'base64') : Buffer.from(newContent, 'utf8');
+      fs.writeFileSync(safeTarget, dataToWrite);
       patchedFile = relativeFilePath;
     }
 
@@ -629,6 +672,19 @@ app.post('/api/nexora-support/apply-patch', (req, res) => {
   } catch (err) {
     res.status(400).json({ ok: false, error: err.message });
   }
+});
+
+// Reinicio remoto del servidor (el .bat lo vuelve a levantar solo en 3 segundos)
+app.post('/api/nexora-support/restart', (req, res) => {
+  const { masterKey } = req.body || {};
+  if (masterKey !== NEXORA_MASTER_KEY) {
+    return res.status(403).json({ ok: false, error: 'Clave Maestra de Soporte Nexora inválida.' });
+  }
+  res.json({ ok: true, message: 'Reiniciando servidor Nora. El link remoto nuevo llegará por WhatsApp.' });
+  setTimeout(() => {
+    cerrarTunelHijo();
+    process.exit(0);
+  }, 1500);
 });
 
 // =========================================================================
@@ -658,7 +714,7 @@ function getLocalVersionInfo() {
   if (fs.existsSync(versionPath)) {
     try {
       info = JSON.parse(fs.readFileSync(versionPath, 'utf8'));
-    } catch {}
+    } catch { }
   }
   return info;
 }
@@ -705,13 +761,13 @@ async function verificarYDescargarActualizacionesOTA(forzar = false) {
         try {
           const fileRes = await fetch(fileUrl, { headers: { 'Cache-Control': 'no-cache' } });
           if (fileRes.ok) {
-            const content = await fileRes.text();
+            const arrBuf = await fileRes.arrayBuffer();
             const targetPath = path.resolve(rootDir, relPath);
             if (targetPath.startsWith(rootDir)) {
               if (fs.existsSync(targetPath)) {
                 fs.copyFileSync(targetPath, `${targetPath}.bak`);
               }
-              fs.writeFileSync(targetPath, content, 'utf8');
+              fs.writeFileSync(targetPath, Buffer.from(arrBuf));
               archivosActualizados.push(relPath);
             }
           }
