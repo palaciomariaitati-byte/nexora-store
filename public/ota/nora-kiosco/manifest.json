@@ -1,14 +1,13 @@
 {
   "systemId": "nora-kiosco-iberasoft",
-  "version": "1.3.2",
+  "version": "1.3.4",
   "releaseDate": "2026-11-20",
-  "changelog": "Catálogo exclusivo de Kiosco: 1.277 artículos (golosinas, bebidas, galletitas, almacén, cigarrillos y snacks) con precios y stock de IberáSoft; branding unificado Kiosco POS y acceso directo a 1 Clic.",
+  "changelog": "Logo NXO y avatar de Nora integrados inline como Data URL (cero fallos visuales); chat modal responsivo para celular sin recortes de botonera; auto-scroll a borrador de factura y explicacion clara de comprobante.",
   "files": {
     "public/app.js": "https://nexora-store-app.vercel.app/ota/nora-kiosco/app.js",
     "public/styles.css": "https://nexora-store-app.vercel.app/ota/nora-kiosco/styles.css",
     "public/index.html": "https://nexora-store-app.vercel.app/ota/nora-kiosco/index.html",
-    "public/nora-avatar-circle.png": "https://nexora-store-app.vercel.app/ota/nora-kiosco/nora-avatar-circle.png",
-    "public/nora-avatar.png": "https://nexora-store-app.vercel.app/ota/nora-kiosco/nora-avatar.png",
-    "public/app-logo.png": "https://nexora-store-app.vercel.app/ota/nora-kiosco/app-logo.png"
+    "public/app-logo.png": "https://nexora-store-app.vercel.app/ota/nora-kiosco/app-logo.png",
+    "public/nora-avatar-circle.png": "https://nexora-store-app.vercel.app/ota/nora-kiosco/nora-avatar-circle.png"
   }
 }

@@ -671,6 +671,16 @@ async function enviarImagenFacturaANora(imageBase64) {
     if (data.spokenResponse) hablarNora(data.spokenResponse);
     if (!data.ok) {
       alert(data.error || 'No se pudo leer la factura');
+    } else {
+      cambiarTab('facturas');
+      setTimeout(() => {
+        const contenedor = document.getElementById('contenedor-borradores-facturas');
+        if (contenedor) {
+          contenedor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          contenedor.classList.add('pulse-highlight');
+          setTimeout(() => contenedor.classList.remove('pulse-highlight'), 3000);
+        }
+      }, 350);
     }
   } catch (e) {
     alert('Error procesando factura: ' + e.message);
@@ -695,6 +705,15 @@ async function cargarFacturaPreset(presetDemo) {
   });
   const data = await res.json();
   if (data.spokenResponse) hablarNora(data.spokenResponse);
+  cambiarTab('facturas');
+  setTimeout(() => {
+    const contenedor = document.getElementById('contenedor-borradores-facturas');
+    if (contenedor) {
+      contenedor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      contenedor.classList.add('pulse-highlight');
+      setTimeout(() => contenedor.classList.remove('pulse-highlight'), 3000);
+    }
+  }, 350);
 }
 
 // =========================================================================
