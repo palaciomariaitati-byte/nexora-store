@@ -1,6 +1,6 @@
 {
   "systemId": "nora-kiosco-iberasoft",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "releaseDate": "2026-11-20",
   "changelog": "Lanzador 1-Clic corregido con arranque simultaneo de IberaSoft POS; opcion de autoarranque al prender la PC; voz femenina argentina calida; busqueda conversacional directa por articulo; OCR de facturas expandido a 1800 tokens con campos contables.",
   "files": {

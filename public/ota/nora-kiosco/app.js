@@ -136,24 +136,113 @@ function normalizarMonedaParaVozArgentina(texto) {
     .replace(/\bARS\b/g, 'pesos');
 }
 
+// =========================================================================
+// MOTOR DE VOZ FEMENINA ARGENTINA CÁLIDA (NORA AI TTS)
+// =========================================================================
+let VOCES_DISPONIBLES_NORA = [];
+
+function cargarVocesNora() {
+  if ('speechSynthesis' in window) {
+    VOCES_DISPONIBLES_NORA = window.speechSynthesis.getVoices() || [];
+  }
+}
+
+if ('speechSynthesis' in window) {
+  cargarVocesNora();
+  window.speechSynthesis.onvoiceschanged = cargarVocesNora;
+}
+
+function obtenerMejorVozFemeninaEspanol() {
+  if (!VOCES_DISPONIBLES_NORA || VOCES_DISPONIBLES_NORA.length === 0) {
+    cargarVocesNora();
+  }
+  const voices = VOCES_DISPONIBLES_NORA || [];
+  if (voices.length === 0) return null;
+
+  // 1. Prioridad: Voces femeninas latinas / argentinas / españolas naturales
+  const preferencias = [
+    'sabina', 'helena', 'laura', 'paulina', 'francisca', 'victoria', 
+    'monica', 'zira', 'es-ar', 'spanish argentina', 'google español', 'es-419', 'es-us', 'es-mx', 'es-es'
+  ];
+  const masculinas = ['david', 'raul', 'pablo', 'jorge', 'diego', 'carlos', 'male', 'hombre'];
+
+  for (const p of preferencias) {
+    const v = voices.find(vox => {
+      const nom = (vox.name || '').toLowerCase();
+      const lan = (vox.lang || '').toLowerCase();
+      const esHombre = masculinas.some(m => nom.includes(m));
+      return !esHombre && (nom.includes(p) || lan.includes(p));
+    });
+    if (v) return v;
+  }
+
+  // 2. Cualquier voz en español que no sea explícitamente masculina
+  const fallbackFemenina = voices.find(vox => {
+    const nom = (vox.name || '').toLowerCase();
+    const lan = (vox.lang || '').toLowerCase();
+    const esHombre = masculinas.some(m => nom.includes(m));
+    return !esHombre && lan.startsWith('es');
+  });
+  if (fallbackFemenina) return fallbackFemenina;
+
+  // 3. Cualquier voz en español
+  return voices.find(vox => (vox.lang || '').toLowerCase().startsWith('es')) || null;
+}
+
 function hablarNora(texto) {
   const textoLimpioPantalla = String(texto || '').replace(/\b(d[óo]lares|usd)\b/gi, 'pesos ARS');
   const box = document.getElementById('nora-speech-text');
   if (box && textoLimpioPantalla) {
     box.textContent = `"${textoLimpioPantalla}"`;
   }
-  if ('speechSynthesis' in window && textoLimpioPantalla) {
-    try {
-      window.speechSynthesis.cancel();
-      const textoHablado = normalizarMonedaParaVozArgentina(textoLimpioPantalla);
-      const u = new SpeechSynthesisUtterance(textoHablado);
-      u.lang = 'es-AR';
-      u.rate = 1.03;
-      window.speechSynthesis.speak(u);
-    } catch (e) {
-      // Silencioso si el navegador bloquea TTS sin clic
+
+  if (!('speechSynthesis' in window) || !textoLimpioPantalla) return;
+
+  try {
+    if (window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
     }
+    window.speechSynthesis.cancel();
+
+    // Pequeño timeout para no colisionar con el cancel() en Chromium
+    setTimeout(() => {
+      try {
+        if (window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+        }
+        const textoHablado = normalizarMonedaParaVozArgentina(textoLimpioPantalla);
+        const u = new SpeechSynthesisUtterance(textoHablado);
+        
+        const bestVoice = obtenerMejorVozFemeninaEspanol();
+        if (bestVoice) {
+          u.voice = bestVoice;
+          u.lang = bestVoice.lang || 'es-AR';
+        } else {
+          u.lang = 'es-AR';
+        }
+
+        u.rate = 1.02;
+        u.pitch = 1.15; // Tono más dulce y femenino
+        u.volume = 1.0;
+
+        u.onerror = (err) => {
+          console.warn('[Nora TTS Error]:', err);
+        };
+
+        window.speechSynthesis.speak(u);
+      } catch (errInner) {
+        console.warn('[Nora TTS] Error al reproducir:', errInner);
+      }
+    }, 60);
+  } catch (e) {
+    console.warn('[Nora TTS] SpeechSynthesis error:', e);
   }
+}
+
+function probarVozNoraManual() {
+  const box = document.getElementById('nora-speech-text');
+  const texto = box ? box.textContent.replace(/^"|"$/g, '') : 'Hola, soy Nora. Estoy conectada al sistema de IberáSoft y lista para ayudarte.';
+  hablarNora(texto || 'Hola, soy Nora. El sistema está funcionando correctamente.');
 }
 
 // =========================================================================
