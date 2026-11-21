@@ -1,7 +1,7 @@
 ﻿# lanzar_kiosco.ps1 - Lanzador Unificado 1 Solo Clic (IberáSoft + Nora AI)
 $ErrorActionPreference = 'SilentlyContinue'
 $rootDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-if (-not $rootDir) { $rootDir = 'D:\Kioscos 2026' }
+if (-not $rootDir) { $rootDir = (Get-Location).Path }
 
 Write-Host "======================================================================" -ForegroundColor Green
 Write-Host "   NORA AI x IBERASOFT POS - KIOSCO Y MAXIKIOSCO 2026" -ForegroundColor Green

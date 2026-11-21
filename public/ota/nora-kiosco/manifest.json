@@ -1,6 +1,6 @@
 {
   "systemId": "nora-kiosco-iberasoft",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "releaseDate": "2026-11-20",
   "changelog": "Lanzador 1-Clic corregido con arranque simultaneo de IberaSoft POS; opcion de autoarranque al prender la PC; voz femenina argentina calida; busqueda conversacional directa por articulo; OCR de facturas expandido a 1800 tokens con campos contables.",
   "files": {
@@ -20,6 +20,7 @@
     "public/icon-512.png": "https://nexora-store-app.vercel.app/ota/nora-kiosco/icon-512.png",
     "public/icon-192.png": "https://nexora-store-app.vercel.app/ota/nora-kiosco/icon-192.png",
     "public/app-logo.png": "https://nexora-store-app.vercel.app/ota/nora-kiosco/app-logo.png",
-    "lanzar_kiosco.ps1": "https://nexora-store-app.vercel.app/ota/nora-kiosco/lanzar_kiosco.ps1"
+    "lanzar_kiosco.ps1": "https://nexora-store-app.vercel.app/ota/nora-kiosco/lanzar_kiosco.ps1",
+    "create_shortcuts.ps1": "https://nexora-store-app.vercel.app/ota/nora-kiosco/create_shortcuts.ps1"
   }
 }
