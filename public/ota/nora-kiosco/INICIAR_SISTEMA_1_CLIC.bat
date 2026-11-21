@@ -1,5 +1,5 @@
 @echo off
-title Nora AI x IberaSoft POS - Kiosco & Maxikiosco (1 Clic)
+title Nora AI x IberaSoft POS - Kiosco y Maxikiosco (1 Clic)
 color 0A
 
 set "ROOT_DIR=%~dp0"
@@ -7,7 +7,7 @@ cd /d "%ROOT_DIR%"
 set "PATH=%PATH%;C:\Program Files\nodejs;C:\Program Files (x86)\nodejs;%LOCALAPPDATA%\Programs\nodejs"
 
 echo ======================================================================
-echo    NORA AI x IBERASOFT POS - KIOSCO & MAXIKIOSCO 2026
+echo    NORA AI x IBERASOFT POS - KIOSCO Y MAXIKIOSCO 2026
 echo             Iniciando Sistema Completo a UN SOLO CLIC
 echo ======================================================================
 echo.
@@ -33,28 +33,75 @@ for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr ":3040" ^| findstr "LI
 )
 
 :: 3. Iniciar Servidor Local de Nora AI en segundo plano
-echo [1/3] Iniciando Servidor Local (Cerebro Nora AI + 1.277 articulos de Kiosco)...
-:: El servidor corre en bucle: si se reinicia (actualizacion remota), vuelve a levantar solo
+echo [1/4] Iniciando Motor Nora AI (Cerebro + Catalogo Kiosco)...
 taskkill /F /IM cloudflared.exe >nul 2>&1
-start "Nora Kiosco - Servidor" /min cmd /c ""%ROOT_DIR%backend\NORA_SERVIDOR_BUCLE.bat""
+cd /d "%ROOT_DIR%backend"
+start "Nora Kiosco - Servidor" /min cmd /c "NORA_SERVIDOR_BUCLE.bat"
+cd /d "%ROOT_DIR%"
 
-:: 4. El Tunel Remoto 4G lo abre el propio servidor y manda el link nuevo por WhatsApp
-echo [2/3] Conectando Tunel Remoto 4G para el Celular del Duenio...
+:: 4. INICIAR IBERASOFT POS EN SIMULTANEO (1 SOLO CLIC PARA AMBOS SISTEMAS)
+echo [2/4] Detectando y abriendo IberaSoft POS en simultaneo...
+set "IBERA_FOUND="
 
-:: 5. Esperar confirmacion de puerto 3040
-echo [3/3] Abriendo Mostrador Kiosco...
+for %%D in (
+    "%USERPROFILE%\Desktop"
+    "%PUBLIC%\Desktop"
+    "%USERPROFILE%\OneDrive\Escritorio"
+    "%USERPROFILE%\OneDrive\Desktop"
+) do (
+    if not defined IBERA_FOUND (
+        if exist "%%~D\*Ibera*.lnk" (
+            for %%F in ("%%~D\*Ibera*.lnk") do (
+                if not defined IBERA_FOUND (
+                    set "IBERA_FOUND=%%~fF"
+                    echo [OK] IberaSoft detectado en Escritorio: "%%~nxF"
+                    start "" "%%~fF"
+                )
+            )
+        )
+    )
+)
+
+if not defined IBERA_FOUND (
+    for %%P in (
+        "C:\IberaSoft\IberaSoft.exe"
+        "C:\IberaSoft\Ibera.exe"
+        "C:\IberaSoft\Kiosco.exe"
+        "C:\Program Files (x86)\IberaSoft\*.exe"
+        "C:\Program Files\IberaSoft\*.exe"
+        "C:\Ibera\*.exe"
+    ) do (
+        if not defined IBERA_FOUND (
+            if exist %%P (
+                set "IBERA_FOUND=%%~fP"
+                echo [OK] IberaSoft detectado en disco: "%%~fP"
+                start "" "%%~fP"
+            )
+        )
+    )
+)
+
+if defined IBERA_FOUND (
+    echo [OK] IberaSoft POS iniciado correctamente junto a Nora.
+) else (
+    echo [INFO] IberaSoft ya iniciado o listo para uso manual si tiene acceso personalizado.
+)
+
+:: 5. Esperar confirmacion de puerto 3040 del Servidor Nora
+echo [3/4] Verificando conexion del motor Nora...
 set TRIES=0
 :wait_ready
-timeout /t 1 /nobreak >nul
+ping 127.0.0.1 -n 2 >nul
 set /a TRIES=%TRIES%+1
-netstat -ano | findstr ":3040" | findstr "LISTENING" >nul 2>&1
+netstat -ano 2>nul | findstr ":3040" | findstr "LISTENING" >nul 2>&1
 if %ERRORLEVEL% NEQ 0 (
-    if %TRIES% LEQ 8 (
+    if %TRIES% LEQ 10 (
         goto wait_ready
     )
 )
 
 :: 6. Abrir Navegador en Modo App Mostrador
+echo [4/4] Abriendo Asistente Mostrador Kiosco...
 if exist "%ProgramFiles%\Google\Chrome\Application\chrome.exe" (
     start "" "%ProgramFiles%\Google\Chrome\Application\chrome.exe" --app=http://localhost:3040/
 ) else if exist "%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe" (
@@ -66,10 +113,12 @@ if exist "%ProgramFiles%\Google\Chrome\Application\chrome.exe" (
 echo.
 echo ======================================================================
 echo    SISTEMA OPERANDO CON EXITO (A UN SOLO CLIC):
-echo    - Mostrador Kiosco:               http://localhost:3040/
-echo    - Supervisi?n Celular del Due?o:  http://localhost:3040/?rol=duenio
-echo    - Planilla Iber?Soft Sincronizada: %ROOT_DIR%sincronizacion_iberasoft\
+echo    - IberaSoft POS:                 Iniciado en simultaneo
+echo    - Mostrador Kiosco:              http://localhost:3040/
+echo    - Acceso Remoto Celular Duenio:  http://localhost:3040/?rol=duenio
+echo    - Planilla IberaSoft Sincronizada: %ROOT_DIR%sincronizacion_iberasoft\
 echo ======================================================================
 echo  (Podes minimizar esta ventana. Nora queda activa atendiendo el local).
 echo.
-pause
+ping 127.0.0.1 -n 4 >nul
+exit /b 0
